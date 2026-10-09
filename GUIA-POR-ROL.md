@@ -38,7 +38,37 @@ En esta guía los ejemplos están en formato Claude Code. En Codex, cambia `/bma
 
 ### Dónde quedan las cosas
 
-Todo lo que produce BMad (spec, arquitectura, tickets, planes de cada ticket) se guarda en `_bmad-output/initiative-<nombre>/`. Los documentos del equipo (`reto.md`, `evidencia.md`, `demo-estado.md`) van **en esa misma carpeta**, para que las skills los encuentren.
+Todo lo que produce BMad (spec, arquitectura, tickets, planes de cada ticket) se guarda en `_bmad-output/initiative-<nombre>/`. Los documentos del equipo (`reto.md`, `evidencia.md`, `demo-estado.md`) y el material en bruto van **en esa misma carpeta**, para que las skills los encuentren sin pegarlos en el chat (eso también ahorra tokens).
+
+```text
+_bmad-output/initiative-<reto>/
+├── initiative-<reto>.md          ← la crea Jostin con /bmad (09:30)
+│
+├── insumos/                      ← material en bruto
+│   ├── reto-original.pdf         ← enunciado y rúbrica tal como los entregan
+│   ├── datos/                    ← datasets o ejemplos de los organizadores
+│   ├── apis.md                   ← enlaces y notas de APIs disponibles (sin claves)
+│   └── notas-entrevistas/        ← apuntes rápidos de cada entrevista
+│
+├── reto.md                       ← Jostin: criterios de la rúbrica → cómo los demostramos
+├── evidencia.md                  ← Jostin: hecho / interpretación / supuesto / fuente
+├── demo-estado.md                ← Jostin: qué es real, grabado o simulado
+├── ASIGNACION.md                 ← Jean Pierre: quién hace qué historia
+│
+├── research-<tema>/              ← Manuel Alexis con bmad-deep-recon (si hace falta)
+├── brainstorm-<tema>/            ← bmad-brainstorming
+├── forge-<idea>/                 ← bmad-forge-idea (decisión GO)
+├── spec-<producto>/              ← Jostin con bmad-spec
+├── architecture-<producto>/      ← Jean Pierre con bmad-architecture
+├── ux-<producto>/                ← Manuel Alexis con bmad-ux (si aplica)
+└── <épica>/tickets.toml          ← Jean Pierre con bmad-ticket; aquí también quedan
+                                    los planes de cada historia que genera bmad-build
+```
+
+- Las carpetas `research-…`, `brainstorm-…`, `forge-…`, `spec-…`, `architecture-…` y `ux-…` las crea BMad. El nombre exacto de la carpeta de la épica lo pone `bmad-ticket`.
+- `insumos/`, `reto.md`, `evidencia.md`, `demo-estado.md` y `ASIGNACION.md` son del equipo: se crean a mano.
+- **Nada de claves ni datos personales en `insumos/`.** Datos sensibles: fuera del repo o anonimizados.
+- **Archivos grandes** (más de unas decenas de MB): fuera del repo; en `apis.md` se anota dónde están.
 
 ---
 
