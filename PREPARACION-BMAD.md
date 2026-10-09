@@ -88,6 +88,8 @@ Abre tu herramienta **desde la carpeta `Hackathon-LagTeam`** (no desde otra carp
 
 ⚠️ **Si te ofrece actualizar o hacer setup: responde que NO.**
 
+**Claude Code y Codex ya están comprobados** con este repo: ven las skills y ejecutan `bmad` sin instalar nada más.
+
 **Si usas OpenCode:** fíjate además en que las skills `bmad-...` aparezcan **una sola vez** (no duplicadas). Es lo único que no hemos podido comprobar todavía.
 
 ### Paso 5. Avisa a Jean Pierre

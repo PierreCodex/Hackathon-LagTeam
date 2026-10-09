@@ -57,10 +57,11 @@ Objetivo: identificar el problema correcto, elegir una solución defendible, con
 
 ### Preguntas pendientes para el equipo [Pendiente]
 
-1. ¿Qué herramienta (Claude Code, OpenCode o Codex) usará cada persona?
+1. ¿Qué herramienta de IA usará Jostin? (Los demás ya están confirmados en `EQUIPO.md`: Claude Code para Manuel Alexis; Claude Code + Codex para Jean Pierre, Sandro David y Luis Armando.)
 2. ¿Qué saldo, límites de uso y modelos tenemos realmente en OpenAI y en Claude? (tarea previa de la sección 10)
-3. ¿Qué portátil será el de respaldo? (El principal ya está decidido: el del organizador del equipo, propietario del repositorio [Confirmado].)
-4. ¿Cuánto dura el pitch?
+3. ¿Quién presenta el pitch y cuánto dura?
+
+Ya resuelto [Confirmado]: roles y personas (sección 5 y `EQUIPO.md`); portátil principal el de Jean Pierre y de respaldo el de Luis Armando.
 
 ---
 
@@ -163,7 +164,7 @@ Como los organizadores autorizan preparar skills y scripts, los cinco problemas 
 |---|---|---|---|---|
 | `reto.md` | Une cada criterio de la rúbrica con una demostración concreta. Evita construir algo que no puntúa | P1 | Todos, y el pitch | Siempre |
 | `evidencia.md` | Separa hecho, interpretación y supuesto. Permite elegir el problema con evidencia y defenderlo ante el jurado | P1 | Brainstorming, forge, spec, pitch | Siempre |
-| `research-<tema>.md` | Responde preguntas de dominio que bloquean la decisión | P4 | P1, P2 | Solo si hay preguntas de dominio abiertas |
+| `research-<tema>.md` | Responde preguntas de dominio que bloquean la decisión | P3 | P1, P2 | Solo si hay preguntas de dominio abiertas |
 | `brainstorm-<tema>.md` | Reduce las opciones a ≤3 | P1 | Equipo | Solo si no hay una propuesta obvia |
 | `forge-<slug>.md` | Es la base del GO o NO-GO de las 13:30 | P1 | Spec | Siempre (abreviado en B) |
 | `spec-<slug>.md` | Fija el contrato del MVP y lo que queda fuera. Los tickets citan sus `CAP-N` | P1 | Tickets, builds | Siempre |
@@ -207,13 +208,15 @@ Meta [Eq]: unas 5 entrevistas, o al menos 3 fuentes que coincidan en el mismo do
 
 Los horarios internos son **[Eq]**; las comidas y los breaks son **[Confirmado]**. A = activo, C = consulta puntual (≤10 min), Ap = aprobación.
 
-| Hora | P1 Producto | P2 Tech lead | P3 Frontend/UX | P4 Backend/IA | P5 DevOps/QA |
+Personas [Confirmado]: **P1 Jostin · P2 Jean Pierre · P3 Manuel Alexis · P4 Sandro David · P5 Luis Armando**. Detalle en `EQUIPO.md`.
+
+| Hora | P1 Producto (Jostin) | P2 Tech lead (Jean Pierre) | P3 Frontend/UX (Manuel Alexis) | P4 Backend/IA (Sandro David) | P5 DevOps/QA (Luis Armando) |
 |---|---|---|---|---|---|
 | 08:30–09:30 | Apertura y sorteo, esperando el reto. **No es tiempo de trabajo** [Confirmado] | | | | |
 | **09:30–10:00 (H0)** | A: dirige la lectura del reto y la rúbrica → `reto.md` (desde la plantilla); `bmad` (crea la iniciativa); prepara las preguntas | A: lectura; activa la iniciativa | A: lectura; activa | A: lectura; activa | A: lectura; activa |
-| 10:00–11:00 | A: entrevistas → `evidencia.md` | A: inventario técnico del reto (APIs, datos, créditos). C para P4 y P5 en la sincronización de las 10:45 | A: coentrevista | A: `bmad-deep-recon` en modo de investigación en la sesión (si aplica) | A: spike desechable de la integración más arriesgada |
-| 11:00–11:30 (coffee) | A: entrevista a mentores | A: preguntas técnicas a mentores (APIs, datos, formato de la demo) | A: coentrevista | A: preguntas de dominio a mentores | A: termina el spike |
-| 11:30–12:00 | A: consolida `evidencia.md` | A: cierra el inventario técnico | A: con P1 | A: cierra el research | A: nota del spike |
+| 10:00–11:00 | A: entrevistas → `evidencia.md` | A: inventario técnico del reto (APIs, datos, créditos). C para P3 y P5 en la sincronización de las 10:45 | A: `bmad-deep-recon` en modo de investigación en la sesión (si aplica) | A: coentrevista; pregunta por datos, APIs y restricciones | A: spike desechable de la integración más arriesgada |
+| 11:00–11:30 (coffee) | A: entrevista a mentores | A: preguntas técnicas a mentores (APIs, datos, formato de la demo) | A: escucha las entrevistas con mentores | A: coentrevista; preguntas de datos e IA | A: termina el spike |
+| 11:30–12:00 | A: consolida `evidencia.md` | A: cierra el inventario técnico | A: cierra el research y lee `evidencia.md` | A: consolida la evidencia con P1 | A: nota del spike |
 | 12:00–12:45 | A: dirige `bmad-brainstorming` | A | A | A | A |
 | 12:45–13:30 | A: `bmad-forge-idea` | A | A | A | C en forge; A: viabilidad de los entornos candidatos (despliegue o local) |
 | **13:30** | **Ap: GO** | **Ap: GO** | — | — | — |
@@ -239,17 +242,17 @@ Los horarios internos son **[Eq]**; las comidas y los breaks son **[Confirmado]*
 | 09:00–09:30 | Margen para incidencias de entrega | | | | |
 | **09:30 (H24)** | **Stop de desarrollo y bloqueo de repositorios** | | | | |
 | 09:30–10:30 | A: último ensayo, sin desarrollo | A | A | A | A: vigila que la solución siga accesible si el jurado la necesita [Pendiente] |
-| **10:30** | **Presenta el pitch** | **Maneja la demo** | Apoyo en preguntas | Apoyo en preguntas | Guardia técnica |
+| **10:30** | **Pitch** (presentador por definir; P1 aporta el guion y la evidencia) | **Maneja la demo** en su portátil | Apoyo en preguntas | Apoyo en preguntas | Guardia técnica; portátil de respaldo listo |
 
 ### Turnos de sueño [Eq]
 
 | Persona | Turno | Motivo |
 |---|---|---|
-| P3 | 23:00–01:30 | Después del flujo completo |
-| P2 | 00:00–02:30 | P5 cubre la integración; P2 vuelve para el congelamiento |
-| P4 | 01:30–04:00 | Vuelve para verificar los modos grabado y simulado |
-| P5 | 02:30–05:00 | Después de las E2E; vuelve para la versión final |
-| P1 | 04:00–06:30 | Acepta el congelamiento y llega descansado a los entregables y al pitch |
+| P3 · Manuel Alexis | 23:00–01:30 | Después del flujo completo |
+| P2 · Jean Pierre | 00:00–02:30 | P5 cubre la integración; P2 vuelve para el congelamiento |
+| P4 · Sandro David | 01:30–04:00 | Vuelve para verificar los modos grabado y simulado |
+| P5 · Luis Armando | 02:30–05:00 | Después de las E2E; vuelve para la versión final |
+| P1 · Jostin | 04:00–06:30 | Acepta el congelamiento y llega descansado a los entregables y al pitch |
 
 Nunca duermen más de dos personas a la vez, P2 y P5 nunca coinciden, y quien lleva el congelamiento (P2) está despierto a las 03:15.
 
@@ -279,13 +282,13 @@ Nunca duermen más de dos personas a la vez, P2 y P5 nunca coinciden, y quien ll
 
 ### Equipo
 
-| Persona | Rol | Por qué así |
-|---|---|---|
-| P1 | Producto, investigación, alcance, pitch, entregables y **aceptación funcional** | No programa. Así alguien mira el producto con los ojos del jurado |
-| P2 | Liderazgo técnico, arquitectura, integración, dueño de los tickets, revisor del flujo de la demo y quien maneja la demo en el pitch | Solo tickets cortos que no bloqueen a nadie, para que la revisión no se atasque |
-| P3 | Frontend y experiencia | **Coentrevista en la primera fase.** Quien diseña la experiencia tiene que haber escuchado al usuario |
-| P4 | Backend, datos o IA, e investigación de dominio | Graba las respuestas reales que alimentan el modo grabado |
-| P5 | CI, entorno de demostración (despliegue o local), QA y apoyo en integración | **Comprueba la viabilidad del entorno desde las 12:45**, no al final. Un entorno de demo que falla tarde es el fallo más típico de una hackathon |
+| Rol | Persona [Confirmado] | Responsabilidades | Por qué así |
+|---|---|---|---|
+| P1 | Jostin | Producto, investigación, alcance, guion del pitch, entregables y **aceptación funcional** | No programa. Así alguien mira el producto con los ojos del jurado. **Quién presenta el pitch está por definir** |
+| P2 | Jean Pierre | Liderazgo técnico, arquitectura, integración, dueño de los tickets, revisor del flujo de la demo, manejo de la demo en su portátil (principal) y **responsable de BMad** | Instaló BMad y la demo corre en su portátil. Solo tickets cortos que no bloqueen a nadie, para que la revisión no se atasque |
+| P3 | Manuel Alexis | Frontend y experiencia; investigación del dominio en la mañana | Escucha las entrevistas del coffee break y lee `evidencia.md`, porque quien diseña la experiencia tiene que conocer al usuario. Valida el prototipo con P1 a las 19:00 |
+| P4 | Sandro David | Backend, datos o IA; coentrevista con P1 en la mañana | Escuchar de primera mano qué datos, APIs y restricciones hay le ayuda a diseñar su parte. Graba las respuestas reales que alimentan el modo grabado |
+| P5 | Luis Armando | CI, entorno de demostración (despliegue o local), QA, apoyo en integración, **respaldo de BMad** y portátil de respaldo | **Comprueba la viabilidad del entorno desde las 12:45**, no al final. Cubre integración, PRs y dudas de BMad mientras P2 descansa |
 
 ---
 
@@ -457,24 +460,24 @@ Se omiten `bmad-brainstorming`, `bmad-party-mode`, `bmad-ux` y `bmad-architectur
 
 | # | Tarea | Riesgo que reduce | Responsable [Eq] |
 |---|---|---|---|
-| 1 | Versionar `.agents/`, `skills-lock.json` y las skills; corregir los enlaces absolutos de `.claude/skills` (relativos o copias) | Que los compañeros clonen el repo sin skills | P2 |
-| 2 | `bmad setup` y commit de `_bmad/`, **sin** la configuración personal (`_bmad/custom/config.user.toml` en `.gitignore`) | Que `bmad-build` y `bmad-ticket` no encuentren sus scripts | P2 |
+| 1 | Versionar `.agents/`, `skills-lock.json` y las skills; corregir los enlaces absolutos de `.claude/skills` (relativos o copias) | Que los compañeros clonen el repo sin skills | P2 · **Hecho** (copias en `.claude/skills`) |
+| 2 | `bmad setup` y commit de `_bmad/`, **sin** la configuración personal (`_bmad/custom/config.user.toml` en `.gitignore`) | Que `bmad-build` y `bmad-ticket` no encuentren sus scripts | P2 · **Hecho** (BMad 6.13.0-next, `current: true`) |
 | 3 | `AGENTS.md` con un bloque mínimo de reglas que no dependen del reto (ramas, PRs, adaptadores para servicios externos, nada de secretos en el repo), y `CLAUDE.md` con `@AGENTS.md` | Que Claude Code, OpenCode y Codex sigan reglas distintas | P2 |
 | 4 | Plantillas de `reto.md`, `evidencia.md`, `demo-estado.md`, `README.md` y del guion del pitch | Formato improvisado bajo presión | P1 |
 | 5 | Configuración de CI genérica: plantillas de flujo de trabajo para los 2 o 3 stacks de referencia (instalar, lint, pruebas, build), sin código de aplicación. Se activa la que corresponda cuando se elija el stack | Perder tiempo configurando CI durante el evento | P5 |
 | 6 | Plantilla de PR (ticket, cómo verificar, modo real, grabado o simulado) y protección de `main` | PRs sin contexto y cambios directos en `main` | P5 |
-| 7 | Script de comprobación de las APIs de IA: verifica las claves y los modelos disponibles **sin guardar secretos en el repo** | Descubrir a las 15:00 que una clave o un modelo no funciona | P4 |
+| 7 | Script de comprobación de las APIs de IA: verifica las claves y los modelos disponibles **sin guardar secretos en el repo** | Descubrir a las 15:00 que una clave o un modelo no funciona | P4 (Sandro David) |
 
 ### Equipos y cuentas de cada persona
 
 | # | Tarea | Riesgo que reduce | Responsable [Eq] |
 |---|---|---|---|
 | 8 | `uv`, Git, `gh` y la herramienta de IA de cada persona instalados y con sesión iniciada | Bloqueos de entorno a las 09:30 | Cada persona |
-| 9 | **Decidir qué herramienta (Claude Code, OpenCode o Codex) usa cada persona** y comprobar en su clon que ve las skills e invoca `bmad` | Confirmar el supuesto de que las tres ven las skills | P2 coordina |
+| 9 | **Decidir qué herramienta (Claude Code, OpenCode o Codex) usa cada persona** y comprobar en su clon que ve las skills e invoca `bmad` | Confirmar el supuesto de que las tres ven las skills | P2 coordina · **En curso:** asignación hecha (ver `EQUIPO.md`); Claude Code y Codex comprobados; falta la herramienta de Jostin y las pruebas de cada integrante |
 | 10 | **Comprobar saldo, límites de uso y modelos disponibles en OpenAI y en Claude**, y anotar cuáles se pueden usar en el producto y cuáles en los agentes | Quedarse sin saldo o con límites de uso en mitad del evento | P4 |
 | 11 | Claves y créditos en un gestor de secretos compartido, nunca en el repo | Filtración de claves o bloqueo de acceso | P4 |
 | 12 | Cuentas en GitHub y en 1–2 servicios de hosting candidatos (por si se elige despliegue) | Bloqueo de accesos el día del evento | P5 |
-| 13 | **Elegir el portátil principal y el de respaldo** y dejar ambos con navegador, runtimes de los stacks de referencia, adaptador de vídeo y cargador | Fallos en la ejecución local o en la conexión al proyector | Principal: el del organizador del equipo [Confirmado]. Si esa persona no es P2, P2 maneja la demo en ese portátil. Respaldo: P5 [Eq] |
+| 13 | **Elegir el portátil principal y el de respaldo** y dejar ambos con navegador, runtimes de los stacks de referencia, adaptador de vídeo y cargador | Fallos en la ejecución local o en la conexión al proyector | Principal: el de Jean Pierre (P2) [Confirmado]. Respaldo: el de Luis Armando (P5) [Confirmado] |
 
 ### Práctica y coordinación
 
@@ -557,7 +560,7 @@ PREPARACIÓN: skills, scripts, plantillas y CI en el repo; APIs comprobadas;
 08:30  apertura y sorteo (no es tiempo de trabajo)
 09:30  (P1)  lectura del reto y la rúbrica      → reto.md (desde la plantilla)
        (P1)  bmad                                → iniciativa (los 5 la activan)
-10:00  (P1/P3) entrevistas  ∥ (P4) bmad-deep-recon  ∥ (P5) spike  → evidencia.md
+10:00  (P1/P4) entrevistas  ∥ (P3) bmad-deep-recon  ∥ (P5) spike  → evidencia.md
 11:00  coffee break = entrevistas con mentores
 12:00  (P1)  bmad-brainstorming                  → ≤3 propuestas
 12:45  (P1)  bmad-forge-idea                     → GO a las 13:30  (si no hay GO → ruta B)
