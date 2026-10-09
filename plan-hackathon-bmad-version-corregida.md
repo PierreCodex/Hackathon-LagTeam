@@ -130,13 +130,13 @@ Cómo invocar una skill: en Claude Code, `/nombre-skill`; en Codex y OpenCode, n
 
 ### Problemas que hay que resolver antes del evento
 
-1. **BMad todavía no está configurado.** No existe la carpeta `_bmad/`. Hay que ejecutar `bmad setup`, que necesita `uv`, porque las skills llaman a scripts compartidos.
-2. **Nada de BMad está en GitHub.** `.agents/`, `.claude/` y `skills-lock.json` no están versionados.
-3. **Los enlaces de `.claude/skills/*` usan rutas absolutas** del tipo `/d/Hackathon-LagTeam/.agents/...`. En otra máquina, o en Windows sin `core.symlinks`, van a fallar.
+1. **Resuelto:** `bmad setup` ya está hecho (`_bmad/` existe; BMad 6.13.0-next, `current: true`). No hay que reinstalar, actualizar ni repetir el setup.
+2. **Resuelto:** `.agents/`, `.claude/skills/`, `_bmad/` y `skills-lock.json` están versionados en GitHub.
+3. **Resuelto:** `.claude/skills/` contiene copias reales, no enlaces con rutas absolutas.
 4. **`active_initiative` es una configuración personal** (`_bmad/custom/config.user.toml`). Las 5 personas tienen que activar la misma iniciativa, o los artefactos quedarán repartidos en carpetas distintas.
-5. **No está verificado que cada herramienta vea las skills.** Claude Code lee `.claude/skills`; que Codex y OpenCode lean `.agents/skills` hay que comprobarlo en el clon de cada miembro.
+5. **En curso:** Claude Code y Codex ya están comprobados con el repo. Falta que cada integrante lo compruebe en su clon (`EQUIPO.md`).
 
-Como los organizadores autorizan preparar skills y scripts, los cinco problemas se resuelven antes del evento (sección 10).
+Estado comprobado por inspección local; no se ejecuta setup de nuevo.
 
 ---
 
@@ -207,6 +207,10 @@ Meta [Eq]: unas 5 entrevistas, o al menos 3 fuentes que coincidan en el mismo do
 ## 5. Ruta A: la recomendada (cronograma por persona)
 
 Los horarios internos son **[Eq]**; las comidas y los breaks son **[Confirmado]**. A = activo, C = consulta puntual (≤10 min), Ap = aprobación.
+
+**Los horarios internos son límites orientativos, no tiempos de espera.** Una tarea puede empezar antes si ya tiene alcance, contratos y responsable claros. El horario oficial del evento (inicio 09:30, comidas, cierre y entrega a las 09:30 del día 2) sí se respeta siempre.
+
+**Ahorro de tokens:** cada skill compartida (brainstorming, forge, spec, arquitectura, UX, tickets) la ejecuta **un solo responsable**; los demás leen sus documentos. No se repite el mismo análisis cinco veces. Las skills opcionales y las revisiones adicionales se usan solo cuando aportan valor.
 
 Personas [Confirmado]: **P1 Jostin · P2 Jean Pierre · P3 Manuel Alexis · P4 Sandro David · P5 Luis Armando**. Detalle en `EQUIPO.md`.
 
@@ -483,7 +487,7 @@ Se omiten `bmad-brainstorming`, `bmad-party-mode`, `bmad-ux` y `bmad-architectur
 
 | # | Tarea | Riesgo que reduce | Responsable [Eq] |
 |---|---|---|---|
-| 14 | Ensayo de 1 h con un reto de juguete en un **repositorio de práctica aparte**: spec → ticket → build → PR, con las tres herramientas. **Nada de ese repositorio pasa al del evento** [Confirmado] | Fricción la primera vez y tiempos desconocidos | P2 |
+| 14 | Comprobación económica: cada integrante verifica que su herramienta reconoce las skills (`/bmad status`), y el equipo prueba **a mano** en un **repositorio de práctica aparte** el flujo rama → cambio de texto → PR → revisión → merge. Sin ejecutar skills de planificación ni de build. **Nada de ese repositorio pasa al del evento** [Confirmado] | Fricción con Git y GitHub el primer día, sin gastar tokens | P2 |
 | 15 | Evaluar sobre el papel 2 o 3 stacks de referencia con sus opciones de despliegue y ejecución local | Ahorra tiempo en la arquitectura; la elección final depende del reto [Confirmado] | P2 |
 | 16 | Acordar los turnos de sueño de la sección 5 | Un integrador agotado a las 03:15 | P1 |
 
@@ -517,7 +521,8 @@ Si al final se usa `develop`, la regla es integrarla en `main` en cada ventana d
 - **Revisión:** P2 en el flujo de la demo; P3 y P4 se revisan entre sí el resto. Mientras P2 duerme (00:00–02:30), P5 aprueba.
 - **Aceptación funcional:** P1.
 - **Ventanas de integración:** 18:30, 19:45, 22:30, 00:00 y 03:00. Cada dev integra al menos cada 2 h, tras hacer rebase.
-- **Estado de los tickets:** P2 marca "done" en `main` en cada ventana de integración, para que solo una persona escriba los estados.
+- **Estado de los tickets:** P2 marca "done" en cada ventana de integración, para que solo una persona escriba los estados.
+- **Documentos de planificación** (iniciativa, `ASIGNACION.md`, estados de tickets, spec…): también por rama `plan/...` → PR → merge. Nadie hace push directo a `main`; los demás hacen `git pull` de `main` después del merge.
 - **Congelamiento:** a las 03:15, con el tag `freeze`; después solo `fix/` aprobados por P2.
 - **Versión final:** tag `demo-v1` a las 06:00; después, solo un nuevo tag si P1 valida el recorrido completo.
 - **Entregables:** listos en `main` a las 08:30; después de las 09:00 no se integra nada salvo una incidencia de entrega.
@@ -555,7 +560,7 @@ Si al final se usa `develop`, la regla es integrarla en `main` en cada ventana d
 ```
 PREPARACIÓN: skills, scripts, plantillas y CI en el repo; APIs comprobadas;
              herramienta por persona; portátiles principal y de respaldo;
-             ensayo en un repositorio aparte (sección 10)
+             comprobación manual de Git en un repositorio aparte (sección 10)
 
 08:30  apertura y sorteo (no es tiempo de trabajo)
 09:30  (P1)  lectura del reto y la rúbrica      → reto.md (desde la plantilla)

@@ -109,8 +109,8 @@ Mándale un mensaje con:
 | Hora | Quién | Qué hace |
 |---|---|---|
 | 09:30 | Todos | En la terminal, dentro del repo: `git pull` |
-| 09:30–10:00 | P1 | En el chat: `bmad: crea una iniciativa nueva llamada <nombre-del-reto> y actívala`. Luego hace commit y push |
-| Después | Los demás | `git pull` y en el chat: `bmad: activa la iniciativa initiative-<nombre-que-diga-P1>` |
+| 09:30–10:00 | P1 | En el chat: `bmad: crea una iniciativa nueva llamada <nombre-del-reto> y actívala`. Luego la publica por PR, en una rama `plan/iniciativa` (nunca push directo a `main`) |
+| Tras el merge | Los demás | `git switch main`, `git pull` y en el chat: `bmad: activa la iniciativa initiative-<nombre-que-diga-P1>` |
 
 Los cinco deben tener **la misma iniciativa** activa. A partir de ahí se sigue el plan del evento.
 
