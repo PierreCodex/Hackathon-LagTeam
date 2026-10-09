@@ -1,0 +1,19 @@
+# BMad: respuestas personales (el setup también crea _bmad/custom/.gitignore con *.user.toml)
+_bmad/custom/*.user.toml
+.bmad-help-setup-modules*.toml
+
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Configuración personal de las herramientas de IA
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Dependencias, cachés y sistema
+node_modules/
+.venv/
+__pycache__/
+.DS_Store
+Thumbs.db
