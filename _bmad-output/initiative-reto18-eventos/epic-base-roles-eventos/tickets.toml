@@ -1,0 +1,70 @@
+# Historias del epic 1 (Base, roles y eventos), en orden de construcción. tickets.py lee este archivo.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Esqueleto desplegado"
+description = "Monta el monorepo pnpm con apps/web (Next.js >= 16.3.3), apps/api (NestJS 12) y packages/shared, con una página que llama a /api/v1/salud y esta consulta Supabase, desplegado en Vercel y Railway Hobby con CI de compilación y lint; es la base que necesitan todos los epics."
+verify = "Desde un móvil, la URL de Vercel muestra 'API ok · BD ok' con datos leídos de Supabase a través de la API desplegada en Railway."
+covers = []
+after = []
+hitl = true
+risk = "medium"
+references = ["architecture-reto18-plataforma-eventos/architecture-reto18-plataforma-eventos.md#semilla-estructural", "architecture-reto18-plataforma-eventos/architecture-reto18-plataforma-eventos.md#stack"]
+notes = ["Persona: Jean Pierre crea los proyectos de Supabase, Vercel y Railway Hobby (su cuenta), conecta GitHub y carga las variables de .env.example."]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Registro, inicio de sesión y roles"
+description = "Añade Supabase Auth, la tabla identidad_perfiles (rol admin|organizador|publico, WhatsApp en E.164, ciudad opcional y consentimiento de avisos), el guard @Roles() en la API, un administrador sembrado y menús por rol en la web (CAP-1, AD-3); el WhatsApp del perfil es el que usa el epic 2 para enviar el QR."
+verify = "Con tres cuentas en un móvil, cada rol ve solo su menú y la API responde 403 cuando un rol llama a un endpoint de otro."
+covers = ["CAP-1"]
+after = [1]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Esquema de sedes, mapa y eventos"
+description = "Crea las migraciones de sede > sección (numerada|general con capacidad) > fila > bloque > asiento, eventos (estado, destacado, inicio, distrito, categoría, descripción, hay_musica, constancia) y categorías de precio del evento, sus esquemas zod en packages/shared y seed.sql con la sede de ejemplo de los croquis y los eventos de la demo (CAP-2, AD-4); el organizador se enlaza a auth.users para no depender de la historia 2. Es el contrato que usan la pizarra del epic 2 y la IA del epic 3."
+verify = "La migración se aplica en Supabase, la semilla carga y las filas, bloques y asientos de la sede de ejemplo coinciden con los dos croquis de insumos/."
+covers = ["CAP-2"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["spec-reto18-plataforma-eventos/mapa-asientos.md", "insumos/WhatsApp Image 2026-10-10 at 3.57.46 PM.jpeg", "insumos/WhatsApp Image 2026-10-10 at 3.57.46 PM (1).jpeg"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Alta de evento por el organizador"
+description = "Entrega el formulario híbrido del organizador: datos del evento, elegir una sede existente o crear una de zona general con capacidad, categorías de precio con IGV incluido en céntimos, 2-3 frases, foto del evento y la pregunta '¿Habrá música?' con subida de la constancia de APDAYC a Storage; el evento queda pendiente (CAP-2). Las sedes numeradas y el precio por rango de asientos son de la pizarra del epic 2."
+verify = "Un organizador completa el alta desde el móvil en menos de 2 minutos y el evento queda pendiente; si marca música sin constancia, no puede enviar."
+covers = ["CAP-2"]
+after = [2, 3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Aprobación y destacado"
+description = "Entrega la pantalla del administrador para ver eventos pendientes con su constancia, aprobar, rechazar con motivo y destacar (CAP-3), con un hueco para la alerta de APDAYC que rellena el epic 3 desde el módulo ia."
+verify = "Un evento pendiente no aparece en el catálogo y aparece al aprobarlo; uno rechazado muestra al organizador su motivo; uno destacado sale primero."
+covers = ["CAP-3"]
+after = [4]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Catálogo público y calendario"
+description = "Entrega el catálogo sin inicio de sesión: eventos aprobados con búsqueda, filtros por fecha, categoría, distrito y precio, destacados primero, ficha del evento y vista de calendario mensual, adaptado al móvil (CAP-4)."
+verify = "Sobre los eventos de la semilla, combinar filtros muestra solo los aprobados que los cumplen y el calendario muestra los del mes."
+covers = ["CAP-4"]
+after = [3]
+hitl = false
+risk = "low"

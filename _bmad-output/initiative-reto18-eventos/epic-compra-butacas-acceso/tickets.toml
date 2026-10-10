@@ -1,0 +1,81 @@
+# Historias del epic 2 (Compra, butacas y acceso), en orden de construcción. tickets.py lee este archivo.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Compra mínima y puerta"
+description = "Recorre de punta a punta una entrada de zona general de un evento sembrado: orden pendiente > pagada | expirada, pago simulado tras la interfaz PasarelaPago (tarjeta, Yape, Plin), cupo atómico (AD-5), ventas_config_comision con comisión por entrada por defecto y congelada en la orden (AD-10), ref guardado en la orden y servicio de lectura de ventas por ref para el epic 3 (AD-8), entradas con QR firmado HMAC, 'Mis entradas', escáner en línea de un solo uso con usada_en para el epic 4 (AD-7), y notificaciones.encolar() que solo escribe en la bandeja de salida (AD-9)."
+verify = "Desde un móvil se compra una entrada general con pago simulado, el QR aparece en 'Mis entradas', el escáner lo acepta y al segundo escaneo lo rechaza, y la bandeja de salida tiene una fila pendiente."
+covers = ["CAP-5", "CAP-6", "CAP-7"]
+after = ["1.2", "1.3"]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 2
+type = "story"
+title = "QR por WhatsApp con Evolution API"
+description = "Despliega Evolution API v2 en Railway (con su Postgres y su Redis) y añade al módulo notificaciones el proceso que envía la bandeja de salida con 3 reintentos y marca enviado|fallido, enviando la imagen del QR al pagar (CAP-6, AD-9); el epic 3 reutiliza este servicio para los avisos de campaña."
+verify = "Tras pagar, el QR llega al WhatsApp del comprador; con Evolution API detenido la compra se completa y el envío queda como fallido tras 3 intentos."
+covers = ["CAP-6"]
+after = [1]
+hitl = true
+risk = "high"
+unknown = "Si Evolution API envía la imagen del QR de forma estable con el número de prueba del equipo."
+notes = ["Persona: vincular el número de prueba del equipo escaneando el QR de Evolution API; nunca el número del Club."]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Pizarra: mapa de la sede"
+description = "Entrega la pizarra visual del organizador para crear una sede numerada y editar su mapa en eventos: añadir y quitar secciones y filas, '+' al final de una fila, tocar un asiento para quitarlo, bloques separados por pasillos con numeración continua; una sede con eventos aprobados no se edita y se duplica (CAP-15, AD-4). El epic 5 rellena esta pizarra con la propuesta de la IA."
+verify = "Desde la pizarra vacía se reproduce uno de los croquis de ejemplo con sus secciones, filas, bloques y numeración, y se guarda."
+covers = ["CAP-15"]
+after = ["1.3"]
+hitl = false
+risk = "medium"
+references = ["spec-reto18-plataforma-eventos/mapa-asientos.md"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Pizarra: precios por rango"
+description = "Permite al organizador seleccionar un rango de asientos en la pizarra y asignarle una categoría de precio de su evento, pintada en su color, guardada como dato del evento en el módulo eventos para que ventas la copie al inventario (CAP-15, AD-4)."
+verify = "Se reproducen y guardan los colores de precio del croquis de ejemplo, incluidas filas con varias categorías."
+covers = ["CAP-15"]
+after = [3, "1.4"]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Inventario y bloqueo de butacas"
+description = "Añade a ventas asegurarInventario() idempotente, que crea las butacas del evento con su categoría desde eventos, y el bloqueo de 10 minutos con UPDATE atómico que libera al vencer y cierra la venta a la hora de inicio (CAP-5, CAP-15, AD-5)."
+verify = "Una prueba con dos compradores simultáneos de la misma butaca deja solo uno con el bloqueo; al vencer el bloqueo la butaca vuelve a estar disponible; después del inicio la venta se rechaza."
+covers = ["CAP-5", "CAP-15"]
+after = [1, 4]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Elegir butaca en el mapa"
+description = "Entrega al público el mapa del evento con colores de precio y butacas vendidas en gris, actualizado con Supabase Realtime (lectura permitida por AD-1), para elegir butaca y comprarla con el flujo de la historia 1; la entrada y el QR indican sección, fila y asiento (CAP-15)."
+verify = "El jurado elige y compra una butaca desde su móvil, la ve en su QR, y en otro móvil abierto la butaca pasa a gris sin recargar."
+covers = ["CAP-15", "CAP-5"]
+after = [5]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Puerta sin conexión"
+description = "Añade a la app de puerta el manifiesto del evento en IndexedDB, la validación local de la firma, la cola de sincronización y el registro de conflictos, donde gana el primer uso que llega a la API (CAP-7, AD-7)."
+verify = "En modo avión un QR válido se acepta y al reconectar queda sincronizado; el mismo QR usado en dos móviles sin conexión deja el segundo como conflicto registrado."
+covers = ["CAP-7"]
+after = [1]
+hitl = false
+risk = "high"
