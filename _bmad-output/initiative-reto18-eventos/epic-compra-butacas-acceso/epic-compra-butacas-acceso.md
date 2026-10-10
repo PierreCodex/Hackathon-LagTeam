@@ -52,3 +52,6 @@ Se corta por capacidad. Incluye los módulos `ventas`, `acceso` y `notificacione
 - Decision: los precios por asiento son un dato del evento en el módulo `eventos`, y `ventas` los copia al inventario (AD-4) (10/10/2026).
 - Open question: ¿acepta el jurado el pago simulado para el criterio 3?
 - Unknown: si Evolution API envía la imagen del QR de forma estable con un número de prueba. Hay que comprobarlo al empezar el envío por WhatsApp.
+- Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
+- Decision: el primer recorrido de punta a punta son la 2.1 (API) y la 2.8 (UI) juntas; la 2.8 envía el ?ref= con la orden (10/10/2026).
+- Decision: el manifiesto de la puerta sin conexión lleva la lista de códigos válidos del evento, nunca el secreto HMAC; el móvil valida comprobando la lista (usuario, 10/10/2026).

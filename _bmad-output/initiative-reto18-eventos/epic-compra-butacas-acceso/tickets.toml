@@ -1,15 +1,29 @@
 # Historias del epic 2 (Compra, butacas y acceso), en orden de construcción. tickets.py lee este archivo.
+# `assignee` es una clave propia del equipo (tickets.py la ignora): dice quién construye cada historia.
 
 [[entry]]
 id = 1
 type = "story"
-title = "Compra mínima y puerta"
-description = "Recorre de punta a punta una entrada de zona general de un evento sembrado: orden pendiente > pagada | expirada, pago simulado tras la interfaz PasarelaPago (tarjeta, Yape, Plin), cupo atómico (AD-5), ventas_config_comision con comisión por entrada por defecto y congelada en la orden (AD-10), ref guardado en la orden y servicio de lectura de ventas por ref para el epic 3 (AD-8), entradas con QR firmado HMAC, 'Mis entradas', escáner en línea de un solo uso con usada_en para el epic 4 (AD-7), y notificaciones.encolar() que solo escribe en la bandeja de salida (AD-9)."
-verify = "Desde un móvil se compra una entrada general con pago simulado, el QR aparece en 'Mis entradas', el escáner lo acepta y al segundo escaneo lo rechaza, y la bandeja de salida tiene una fila pendiente."
+title = "API: compra mínima y validación en puerta"
+description = "Recorre en la API una entrada de zona general de un evento sembrado: orden pendiente > pagada | expirada, pago simulado tras la interfaz PasarelaPago (tarjeta, Yape, Plin), cupo atómico (AD-5), ventas_config_comision con comisión por entrada por defecto y congelada en la orden (AD-10), ref guardado en la orden y servicio de lectura de ventas por ref para el epic 3 (AD-8), entradas con QR firmado HMAC, endpoint de 'mis entradas', endpoint de validación de un solo uso con usada_en para el epic 4 (AD-7), y notificaciones.encolar() que solo escribe en la bandeja de salida (AD-9)."
+verify = "Pruebas de integración: se paga una orden simulada, 'mis entradas' devuelve el QR firmado, la validación lo acepta y al segundo intento lo rechaza, y la bandeja de salida tiene una fila pendiente."
 covers = ["CAP-5", "CAP-6", "CAP-7"]
 after = ["1.2", "1.3"]
 hitl = false
 risk = "high"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 8
+type = "story"
+title = "UI: compra, Mis entradas y escáner"
+description = "Entrega al público el checkout de zona general con pago simulado (tarjeta, Yape, Plin) y el WhatsApp del perfil prellenado, que envía con la orden el ?ref= con el que llegó el comprador (AD-8), 'Mis entradas' con el QR, y la pantalla de escáner de la puerta con la cámara del móvil en línea (CAP-5, CAP-6, CAP-7)."
+verify = "Desde un móvil se compra una entrada general con pago simulado, el QR aparece en 'Mis entradas', el escáner de otro móvil lo acepta y al segundo escaneo lo rechaza."
+covers = ["CAP-5", "CAP-6", "CAP-7"]
+after = [1, "1.8"]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 2
@@ -21,31 +35,59 @@ covers = ["CAP-6"]
 after = [1]
 hitl = true
 risk = "high"
+assignee = "Jean Pierre"
 unknown = "Si Evolution API envía la imagen del QR de forma estable con el número de prueba del equipo."
 notes = ["Persona: vincular el número de prueba del equipo escaneando el QR de Evolution API; nunca el número del Club."]
 
 [[entry]]
 id = 3
 type = "story"
-title = "Pizarra: mapa de la sede"
-description = "Entrega la pizarra visual del organizador para crear una sede numerada y editar su mapa en eventos: añadir y quitar secciones y filas, '+' al final de una fila, tocar un asiento para quitarlo, bloques separados por pasillos con numeración continua; una sede con eventos aprobados no se edita y se duplica (CAP-15, AD-4). El epic 5 rellena esta pizarra con la propuesta de la IA."
-verify = "Desde la pizarra vacía se reproduce uno de los croquis de ejemplo con sus secciones, filas, bloques y numeración, y se guarda."
+title = "API: guardar el mapa de la sede"
+description = "Añade los endpoints de eventos para crear una sede numerada y guardar su mapa completo (secciones, filas, bloques y asientos con numeración continua) validado con los esquemas zod de packages/shared, y para duplicar una sede que ya tiene eventos aprobados, que no se edita (CAP-15, AD-4)."
+verify = "Pruebas de integración: guardar el mapa de uno de los croquis de ejemplo y leerlo devuelve las mismas secciones, filas, bloques y numeración; editar una sede con eventos aprobados se rechaza y duplicarla funciona."
 covers = ["CAP-15"]
 after = ["1.3"]
 hitl = false
 risk = "medium"
+assignee = "Jean Pierre"
+references = ["spec-reto18-plataforma-eventos/mapa-asientos.md"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "UI: pizarra del mapa de la sede"
+description = "Entrega la pizarra visual del organizador: añadir y quitar secciones y filas, '+' al final de una fila, tocar un asiento para quitarlo, bloques separados por pasillos con numeración continua, y guardar con la API; una sede con eventos aprobados se ofrece duplicar (CAP-15). El epic 5 rellena esta pizarra con la propuesta de la IA."
+verify = "Desde la pizarra vacía se reproduce uno de los croquis de ejemplo con sus secciones, filas, bloques y numeración, y se guarda."
+covers = ["CAP-15"]
+after = [3, "1.7"]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 references = ["spec-reto18-plataforma-eventos/mapa-asientos.md"]
 
 [[entry]]
 id = 4
 type = "story"
-title = "Pizarra: precios por rango"
-description = "Permite al organizador seleccionar un rango de asientos en la pizarra y asignarle una categoría de precio de su evento, pintada en su color, guardada como dato del evento en el módulo eventos para que ventas la copie al inventario (CAP-15, AD-4)."
-verify = "Se reproducen y guardan los colores de precio del croquis de ejemplo, incluidas filas con varias categorías."
+title = "API: precios por rango de asientos"
+description = "Añade a eventos el endpoint que asigna a un rango de asientos una categoría de precio del evento, guardado como dato del evento para que ventas lo copie al inventario (CAP-15, AD-4)."
+verify = "Pruebas de integración: se guardan los rangos de precio del croquis de ejemplo, incluidas filas con varias categorías, y al leerlos cada asiento tiene su categoría."
 covers = ["CAP-15"]
 after = [3, "1.4"]
 hitl = false
 risk = "medium"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 10
+type = "story"
+title = "UI: pintar precios en la pizarra"
+description = "Permite al organizador seleccionar un rango de asientos en la pizarra y asignarle una categoría de precio de su evento, pintada en su color, y guardarlo con la API (CAP-15)."
+verify = "Se reproducen y guardan los colores de precio del croquis de ejemplo, incluidas filas con varias categorías."
+covers = ["CAP-15"]
+after = [4, 9]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 5
@@ -57,25 +99,52 @@ covers = ["CAP-5", "CAP-15"]
 after = [1, 4]
 hitl = false
 risk = "high"
+assignee = "Jean Pierre"
 
 [[entry]]
 id = 6
 type = "story"
-title = "Elegir butaca en el mapa"
-description = "Entrega al público el mapa del evento con colores de precio y butacas vendidas en gris, actualizado con Supabase Realtime (lectura permitida por AD-1), para elegir butaca y comprarla con el flujo de la historia 1; la entrada y el QR indican sección, fila y asiento (CAP-15)."
-verify = "El jurado elige y compra una butaca desde su móvil, la ve en su QR, y en otro móvil abierto la butaca pasa a gris sin recargar."
+title = "API: mapa del evento y compra de butaca"
+description = "Añade el endpoint del mapa del evento con categoría y estado de cada butaca, la política de lectura de Supabase Realtime sobre las butacas (AD-1) y la compra de una butaca concreta con el flujo de la historia 1, con sección, fila y asiento en la entrada y el QR (CAP-15, CAP-5)."
+verify = "Pruebas de integración: el mapa devuelve los estados de la semilla, comprar una butaca la marca vendida y su entrada lleva sección, fila y asiento; un cliente suscrito a Realtime recibe el cambio."
 covers = ["CAP-15", "CAP-5"]
 after = [5]
 hitl = false
 risk = "medium"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 11
+type = "story"
+title = "UI: elegir butaca en el mapa"
+description = "Entrega al público el mapa del evento con colores de precio y butacas vendidas en gris, actualizado con Supabase Realtime y reutilizando el dibujo del mapa de la pizarra (9, 10), para elegir butaca y comprarla con el checkout de la historia 8; 'Mis entradas' muestra sección, fila y asiento (CAP-15)."
+verify = "El jurado elige y compra una butaca desde su móvil, la ve en su QR, y en otro móvil abierto la butaca pasa a gris sin recargar."
+covers = ["CAP-15", "CAP-5"]
+after = [6, 8, 10]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 7
 type = "story"
-title = "Puerta sin conexión"
-description = "Añade a la app de puerta el manifiesto del evento en IndexedDB, la validación local de la firma, la cola de sincronización y el registro de conflictos, donde gana el primer uso que llega a la API (CAP-7, AD-7)."
-verify = "En modo avión un QR válido se acepta y al reconectar queda sincronizado; el mismo QR usado en dos móviles sin conexión deja el segundo como conflicto registrado."
+title = "API: manifiesto y sincronización de la puerta"
+description = "Añade el endpoint del manifiesto del evento (la lista de códigos de entrada válidos del evento, sin el secreto HMAC, que nunca sale de la API) y el de sincronización por lotes de usos hechos sin conexión, con registro de conflictos donde gana el primer uso que llega a la API (CAP-7, AD-7)."
+verify = "Pruebas de integración: el manifiesto trae las entradas del evento; dos lotes con el mismo QR dejan el primero como uso y el segundo como conflicto registrado."
 covers = ["CAP-7"]
 after = [1]
 hitl = false
 risk = "high"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 12
+type = "story"
+title = "UI: puerta sin conexión"
+description = "Añade a la pantalla de escáner el manifiesto en IndexedDB, la validación local comprobando que el código está en la lista del manifiesto y no se ha usado en ese móvil, la cola de sincronización que se vacía al reconectar y el aviso de conflicto (CAP-7, AD-7)."
+verify = "En modo avión un QR válido se acepta y al reconectar queda sincronizado; el mismo QR usado en dos móviles sin conexión deja el segundo como conflicto registrado."
+covers = ["CAP-7"]
+after = [7, 8]
+hitl = false
+risk = "high"
+assignee = "Manuel Alexis"

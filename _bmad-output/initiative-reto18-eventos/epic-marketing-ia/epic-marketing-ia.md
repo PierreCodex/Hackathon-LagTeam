@@ -52,3 +52,5 @@ Se corta por capacidad. Incluye los módulos `marketing` e `ia`, y las plantilla
 - Decision: cada función de IA va en su propio archivo (`ia/funciones/<nombre>.ts`) para que las historias en paralelo no choquen. El adaptador de Claude es del epic 5 (10/10/2026).
 - Decision: Ollama en el PC de Jean Pierre para los textos, con la API de Claude solo para el croquis (usuario, 10/10/2026).
 - Unknown: el modelo de Ollama, y si el plan gratuito de Upload-Post o Zernio permite publicar y programar. Hay que comprobarlo al empezar la publicación.
+- Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
+- Decision: la 3.4 no se parte; el botón "Publicar ahora" lo añade Luis Armando a la pantalla de la 3.9. La 3.6 tampoco: la alerta se muestra en el hueco de la 1.10 (10/10/2026).

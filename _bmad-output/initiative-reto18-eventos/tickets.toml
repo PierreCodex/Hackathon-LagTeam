@@ -29,6 +29,7 @@ slug = "epic-paneles-negocio"
 title = "Paneles y negocio"
 covers = ["CAP-11", "CAP-12", "CAP-13"]
 after = [
+  { epic = 1, needs = "sistema de diseño y layout móvil (1.7)" },
   { epic = 2, needs = "órdenes pagadas con comisión congelada, asistencia y ventas_config_comision (AD-10)" },
   { epic = 3, needs = "enlaces rastreables y clics por pieza (AD-8)" },
 ]
@@ -39,6 +40,6 @@ slug = "epic-croquis-ia"
 title = "Croquis con IA (opcional)"
 covers = ["CAP-16"]
 after = [
-  { epic = 2, needs = "pizarra del mapa (CAP-15) que recibe una propuesta" },
+  { epic = 2, needs = "pizarra del mapa (CAP-15, UI en 2.9) que recibe una propuesta" },
   { epic = 3, needs = "módulo ia (3.1); el adaptador de la API de Claude lo construye el epic 5" },
 ]

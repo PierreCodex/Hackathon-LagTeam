@@ -1,4 +1,5 @@
 # Historias del epic 1 (Base, roles y eventos), en orden de construcción. tickets.py lee este archivo.
+# `assignee` es una clave propia del equipo (tickets.py la ignora): dice quién construye cada historia.
 
 [[entry]]
 id = 1
@@ -10,61 +11,130 @@ covers = []
 after = []
 hitl = true
 risk = "medium"
+assignee = "Jean Pierre"
 references = ["architecture-reto18-plataforma-eventos/architecture-reto18-plataforma-eventos.md#semilla-estructural", "architecture-reto18-plataforma-eventos/architecture-reto18-plataforma-eventos.md#stack"]
 notes = ["Persona: Jean Pierre crea los proyectos de Supabase, Vercel y Railway Hobby (su cuenta), conecta GitHub y carga las variables de .env.example."]
 
 [[entry]]
+id = 7
+type = "story"
+title = "UI: sistema de diseño y layout móvil"
+description = "Fija la paleta de colores y la tipografía de la plataforma (no la de las piezas de marketing, que genera la IA), elige la librería de UI y deja en apps/web los componentes base (botones, formularios, tarjetas, avisos de error y de carga), el layout móvil con cabecera y navegación, y un cliente HTTP que lee el formato de error de la API; es la base de todas las pantallas."
+verify = "Una página de muestra en Vercel enseña la paleta y los componentes base y se ve bien en un móvil de 360 px sin scroll horizontal."
+covers = []
+after = [1]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
+references = ["insumos/notas-entrevistas/entrevista-01.md"]
+notes = ["Paleta de la plataforma: Manuel Alexis la define; si el Club comparte su manual de marca, sale de ahí."]
+
+[[entry]]
 id = 2
 type = "story"
-title = "Registro, inicio de sesión y roles"
-description = "Añade Supabase Auth, la tabla identidad_perfiles (rol admin|organizador|publico, WhatsApp en E.164, ciudad opcional y consentimiento de avisos), el guard @Roles() en la API, un administrador sembrado y menús por rol en la web (CAP-1, AD-3); el WhatsApp del perfil es el que usa el epic 2 para enviar el QR."
-verify = "Con tres cuentas en un móvil, cada rol ve solo su menú y la API responde 403 cuando un rol llama a un endpoint de otro."
+title = "API: registro, inicio de sesión y roles"
+description = "Añade Supabase Auth, la tabla identidad_perfiles (rol admin|organizador|publico, WhatsApp en E.164, ciudad opcional y consentimiento de avisos), el endpoint de perfil, el guard @Roles() en la API y un administrador sembrado (CAP-1, AD-3); el WhatsApp del perfil es el que usa el epic 2 para enviar el QR."
+verify = "Pruebas de integración con tres tokens: cada rol accede a su endpoint y la API responde 403 cuando un rol llama al de otro."
 covers = ["CAP-1"]
 after = [1]
 hitl = false
 risk = "low"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 8
+type = "story"
+title = "UI: registro, inicio de sesión y menús por rol"
+description = "Entrega las pantallas de registro (con WhatsApp, ciudad opcional y casilla de avisos) e inicio de sesión con Supabase Auth, y el menú de cada rol, que oculta lo que no es suyo (CAP-1)."
+verify = "Con tres cuentas en un móvil, cada rol se registra o inicia sesión y ve solo su menú."
+covers = ["CAP-1"]
+after = [2, 7]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 3
 type = "story"
 title = "Esquema de sedes, mapa y eventos"
-description = "Crea las migraciones de sede > sección (numerada|general con capacidad) > fila > bloque > asiento, eventos (estado, destacado, inicio, distrito, categoría, descripción, hay_musica, constancia) y categorías de precio del evento, sus esquemas zod en packages/shared y seed.sql con la sede de ejemplo de los croquis y los eventos de la demo (CAP-2, AD-4); el organizador se enlaza a auth.users para no depender de la historia 2. Es el contrato que usan la pizarra del epic 2 y la IA del epic 3."
+description = "Crea las migraciones de sede > sección (numerada|general con capacidad) > fila > bloque > asiento, eventos (estado, destacado, inicio, distrito, categoría, descripción, hay_musica, constancia) y categorías de precio del evento, sus esquemas zod en packages/shared y seed.sql con la sede de ejemplo de los croquis y los eventos de la demo (CAP-2, AD-4); el organizador se enlaza a auth.users para no depender de la historia 2. También deja montadas las pruebas de integración de la API (runner, base de datos de prueba y ayudas para tokens por rol) que usan las historias API. Es el contrato que usan la pizarra del epic 2 y la IA del epic 3."
 verify = "La migración se aplica en Supabase, la semilla carga y las filas, bloques y asientos de la sede de ejemplo coinciden con los dos croquis de insumos/."
 covers = ["CAP-2"]
 after = [1]
 hitl = false
 risk = "medium"
+assignee = "Jean Pierre"
 references = ["spec-reto18-plataforma-eventos/mapa-asientos.md", "insumos/WhatsApp Image 2026-10-10 at 3.57.46 PM.jpeg", "insumos/WhatsApp Image 2026-10-10 at 3.57.46 PM (1).jpeg"]
 
 [[entry]]
 id = 4
 type = "story"
-title = "Alta de evento por el organizador"
-description = "Entrega el formulario híbrido del organizador: datos del evento, elegir una sede existente o crear una de zona general con capacidad, categorías de precio con IGV incluido en céntimos, 2-3 frases, foto del evento y la pregunta '¿Habrá música?' con subida de la constancia de APDAYC a Storage; el evento queda pendiente (CAP-2). Las sedes numeradas y el precio por rango de asientos son de la pizarra del epic 2."
-verify = "Un organizador completa el alta desde el móvil en menos de 2 minutos y el evento queda pendiente; si marca música sin constancia, no puede enviar."
+title = "API: alta de evento"
+description = "Añade los endpoints del organizador para crear un evento con sede existente o nueva de zona general con capacidad, categorías de precio con IGV incluido en céntimos, 2-3 frases, foto y '¿Habrá música?', con subida de la foto y la constancia de APDAYC a Storage; el evento queda pendiente y se rechaza si hay música sin constancia (CAP-2). Las sedes numeradas y el precio por rango son de la pizarra del epic 2."
+verify = "Pruebas de integración: un alta válida deja el evento pendiente con sus categorías, y un alta con música sin constancia responde error con su código."
 covers = ["CAP-2"]
 after = [2, 3]
 hitl = false
 risk = "medium"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 9
+type = "story"
+title = "UI: formulario de alta de evento"
+description = "Entrega el formulario híbrido del organizador sobre la API de alta: datos, elegir o crear sede, categorías de precio, frases, foto y la pregunta de música con subida de la constancia, que impide enviar sin ella (CAP-2)."
+verify = "Un organizador completa el alta desde el móvil en menos de 2 minutos y el evento queda pendiente; si marca música sin constancia, no puede enviar."
+covers = ["CAP-2"]
+after = [4, 8]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 5
 type = "story"
-title = "Aprobación y destacado"
-description = "Entrega la pantalla del administrador para ver eventos pendientes con su constancia, aprobar, rechazar con motivo y destacar (CAP-3), con un hueco para la alerta de APDAYC que rellena el epic 3 desde el módulo ia."
-verify = "Un evento pendiente no aparece en el catálogo y aparece al aprobarlo; uno rechazado muestra al organizador su motivo; uno destacado sale primero."
+title = "API: aprobación y destacado"
+description = "Añade los endpoints del administrador para listar pendientes con su constancia, aprobar, rechazar con motivo y destacar, y el campo alerta_apdayc en la respuesta, vacío hasta que lo rellene el epic 3, con un evento pendiente de la semilla que lo trae relleno para probar la pantalla (CAP-3)."
+verify = "Pruebas de integración: aprobar pasa el evento a aprobado, rechazar guarda el motivo y el organizador lo lee en su listado de eventos, y destacar marca el evento; solo el administrador puede hacerlo."
 covers = ["CAP-3"]
 after = [4]
 hitl = false
 risk = "low"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 10
+type = "story"
+title = "UI: pantalla de aprobación"
+description = "Entrega la pantalla del administrador con los eventos pendientes y su constancia, aprobar, rechazar con motivo y destacar, el motivo del rechazo en la lista 'Mis eventos' del organizador y el hueco que muestra alerta_apdayc cuando la API la trae (CAP-3)."
+verify = "Desde el móvil, el administrador aprueba, rechaza con motivo y destaca; el organizador ve el motivo en 'Mis eventos'; un evento pendiente de la semilla con alerta_apdayc rellena la muestra en el hueco."
+covers = ["CAP-3"]
+after = [5, 8]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 6
 type = "story"
-title = "Catálogo público y calendario"
-description = "Entrega el catálogo sin inicio de sesión: eventos aprobados con búsqueda, filtros por fecha, categoría, distrito y precio, destacados primero, ficha del evento y vista de calendario mensual, adaptado al móvil (CAP-4)."
-verify = "Sobre los eventos de la semilla, combinar filtros muestra solo los aprobados que los cumplen y el calendario muestra los del mes."
+title = "API: catálogo público"
+description = "Añade el endpoint público sin sesión de eventos aprobados con búsqueda, filtros por fecha, categoría, distrito y precio, destacados primero, la ficha del evento y los eventos de un mes (CAP-4)."
+verify = "Pruebas de integración sobre la semilla: un pendiente no sale, combinar filtros devuelve solo los aprobados que los cumplen con los destacados primero, y la consulta por mes devuelve los de ese mes."
 covers = ["CAP-4"]
 after = [3]
 hitl = false
 risk = "low"
+assignee = "Jean Pierre"
+
+[[entry]]
+id = 11
+type = "story"
+title = "UI: catálogo, ficha y calendario"
+description = "Entrega el catálogo sin inicio de sesión con búsqueda y filtros, destacados primero, la ficha del evento y la vista de calendario mensual, adaptados al móvil (CAP-4)."
+verify = "Sobre los eventos de la semilla, combinar filtros en el móvil muestra solo los aprobados que los cumplen y el calendario muestra los del mes."
+covers = ["CAP-4"]
+after = [6, 7]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
+notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]

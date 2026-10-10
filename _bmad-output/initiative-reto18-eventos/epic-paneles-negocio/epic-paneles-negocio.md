@@ -46,3 +46,4 @@ Se corta por capacidad. Incluye el módulo `negocio` y las pantallas de paneles.
 - Decision: sin la historia de cierre "Repaso final de limpieza", por el tiempo de la hackathon (usuario, 10/10/2026).
 - Decision: se añade la dependencia `negocio → identidad` a la arquitectura (AD-2), para leer el perfil del público (usuario, 10/10/2026).
 - Decision: con tarifa por evento, la orden congela el modelo y la tarifa con importe 0, y la liquidación descuenta la tarifa una vez por evento (10/10/2026).
+- Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
