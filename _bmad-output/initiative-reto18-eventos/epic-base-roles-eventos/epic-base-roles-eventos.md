@@ -49,3 +49,4 @@ Se corta por capacidad. Incluye los módulos `identidad` y `eventos` (sin la piz
 - Open question: ¿quién verifica los eventos en el Club y con qué criterios? Para la demo basta con la revisión manual.
 - Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
 - Decision: la 1.3 deja montadas las pruebas de integración de la API, que usan las demás historias API (10/10/2026).
+- Decision: Sandro David y Manuel Alexis intercambian roles, porque Manuel no puede usar Claude Code. Sandro pasa a P3 y construye todas las historias "UI:" (y la 3.6) a partir del DESIGN.md de Manuel; Manuel pasa a P1: aceptación funcional de los PRs, validación de las 19:00, pitch y la parte manual de la 3.4. Jean Pierre revisa el código de todos (usuario, 10/10/2026).
