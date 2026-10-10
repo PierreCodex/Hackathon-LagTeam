@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compilar-lint-pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Activar pnpm con corepack
+        run: corepack enable
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Compilar
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Pruebas
+        run: pnpm test
