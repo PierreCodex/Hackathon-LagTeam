@@ -101,6 +101,14 @@ Pasada 1 (lente `quick`). Veredictos: high 0 · medium 1 · low 4 · false 0 · 
 | Una cuenta borrada o con la sesión cerrada sigue pasando el JWT hasta que caduca (403 `SIN_PERFIL` en vez de 401) | low | rejected | Así funciona `getClaims` con claves asimétricas, y el plan lo aceptó; cambiarlo exige una llamada a Auth en cada petición. Raro en la demo. |
 | La prueba HTTP no cubre el tiempo límite de Auth ni el 503 `BD_NO_DISPONIBLE` al leer el perfil | low | patch (parcial) | El tiempo límite ya lo cubre `verificador-token.spec.ts` y el 503 de Auth en el guard lo cubre la prueba HTTP: se rechaza repetirlo con temporizadores falsos sobre un servidor real. Se añade la prueba HTTP del 503 `BD_NO_DISPONIBLE`. |
 
+Pasada 2 (revisión de Jean Pierre en el PR #9: adversarial, casos límite y huecos de verificación). Todo aplicado:
+
+- Rebase sobre `main` tras #8; `configurar-app.ts` une prefijo, filtro, `StandardSchemaValidationPipe` y CORS.
+- Integración real (`test/integracion/identidad.int.spec.ts`): matriz 3×3 de roles, 401 sin token, salud pública, registro + `signInWithPassword` + perfil, 409 y RLS de `identidad_perfiles` con la clave anon y con el JWT de un usuario. `tokenPorRol` crea el perfil.
+- Correcciones: `ciudad` `""`/`null` → sin ciudad; red, 429 y 5xx de Auth → 503 en el verificador y en el registro; `try/catch` en el insert y en el borrado, y reparación de la cuenta sin perfil al repetir el correo; correo vacío del JWT → se pide a Auth y sin cuenta → `null`; `sembrar:admin` se niega con otro rol salvo `--forzar` y resuelve `email_exists`.
+- Menores: WhatsApp `51…`/`00…` y móvil peruano de 9 dígitos; contraseña ≤ 72 bytes; `@Roles()` sin argumentos documentado y probado; `@UsuarioActual()` sin `@Roles()` da un 500 explícito; `sembrar-admin.cli.ts` como punto de entrada; `filtro-errores.spec.ts` y 503 como aviso de una línea.
+- `pnpm test:int` no se pudo ejecutar en local (sin Docker): lo verifica la CI.
+
 ## Design Notes
 
 El registro lo hace la API (`auth.admin.createUser` con `email_confirm: true`) en vez de `signUp` desde la web: la cuenta y el perfil se crean juntos (sin cuentas sin rol), no hay correo de confirmación que retrase la demo de 2 minutos, y se cumple AD-1 (solo la API escribe). La web solo usa Supabase para iniciar sesión y obtener el JWT.

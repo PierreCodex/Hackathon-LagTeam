@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   SetMetadata,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -28,14 +29,23 @@ type PeticionConUsuario = Request & { usuario?: UsuarioAutenticado };
 
 /**
  * Protege la ruta: exige un JWT de Supabase válido, un perfil y uno de los roles.
- * Las rutas sin `@Roles()` son públicas.
+ * `@Roles()` sin argumentos admite cualquier cuenta con perfil. Las rutas sin `@Roles()` son públicas.
  */
 export const Roles = (...roles: Rol[]) => SetMetadata(ROLES_KEY, roles);
 
-/** Inyecta el `UsuarioAutenticado` (solo en rutas con `@Roles()`). */
+/** Inyecta el `UsuarioAutenticado`. Solo funciona en rutas con `@Roles()`. */
 export const UsuarioActual = createParamDecorator(
-  (_dato: unknown, ctx: ExecutionContext): UsuarioAutenticado | undefined =>
-    ctx.switchToHttp().getRequest<PeticionConUsuario>().usuario,
+  (_dato: unknown, ctx: ExecutionContext): UsuarioAutenticado => {
+    const usuario = ctx.switchToHttp().getRequest<PeticionConUsuario>().usuario;
+    if (!usuario) {
+      // Error de programación: la ruta usa @UsuarioActual() pero no tiene @Roles().
+      throw new InternalServerErrorException({
+        codigo: "ERROR_INTERNO",
+        mensaje: "La ruta usa @UsuarioActual() sin @Roles()",
+      });
+    }
+    return usuario;
+  },
 );
 
 /** Guard global (AD-3): sin metadatos pasa; con `@Roles()` comprueba token, perfil y rol. */
@@ -72,7 +82,8 @@ export class RolesGuard implements CanActivate {
     }
 
     const { id, correo } = resultado.identidad;
-    const perfil = await this.identidad.perfilDe(id, correo);
+    // Sin claim `email` el correo llega vacío: `undefined` hace que `perfilDe` lo pida a Auth.
+    const perfil = await this.identidad.perfilDe(id, correo || undefined);
     if (!perfil) {
       throw new ForbiddenException({
         codigo: CODIGOS_IDENTIDAD.SIN_PERFIL,
@@ -86,7 +97,7 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    peticion.usuario = { id, correo, perfil };
+    peticion.usuario = { id, correo: perfil.correo, perfil };
     return true;
   }
 }

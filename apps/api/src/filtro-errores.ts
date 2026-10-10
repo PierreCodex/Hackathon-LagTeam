@@ -51,7 +51,12 @@ export class FiltroErrores implements ExceptionFilter {
         codigo: propio.codigo ?? CODIGOS[estado] ?? `HTTP_${estado}`,
         mensaje: propio.mensaje ?? excepcion.message,
       };
-      if (estado >= 500) this.logger.error(excepcion.stack);
+      if (estado === HttpStatus.SERVICE_UNAVAILABLE) {
+        // Dependencia caída y ya diagnosticada (Auth, BD): una línea basta, sin traza.
+        this.logger.warn(`${error.codigo}: ${error.mensaje}`);
+      } else if (estado >= 500) {
+        this.logger.error(excepcion.stack);
+      }
     } else {
       this.logger.error(excepcion instanceof Error ? excepcion.stack : String(excepcion));
     }

@@ -1,11 +1,12 @@
 /**
  * Crea o actualiza la cuenta de administrador (idempotente).
- * Uso: `pnpm --filter @reto18/api sembrar:admin`, con `ADMIN_CORREO`, `ADMIN_CONTRASENA`
- * y `ADMIN_WHATSAPP` en `.env` (además de `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`).
+ * Uso: `pnpm --filter @reto18/api sembrar:admin`, con `ADMIN_CORREO`, `ADMIN_CONTRASENA` y
+ * `ADMIN_WHATSAPP` en `.env` (además de `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`).
+ * Si el correo ya tiene otro rol, se niega; `… sembrar:admin -- --forzar` lo asciende igualmente.
  */
-import { pathToFileURL } from "node:url";
 import { RegistroSchema } from "@reto18/shared";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { buscarCuentaPorCorreo } from "./cuentas.js";
 import { TABLA_PERFILES } from "./identidad.service.js";
 
 /** Mismas reglas que el registro (correo, contraseña ≥ 8 y WhatsApp normalizado a E.164). */
@@ -37,41 +38,58 @@ export function leerDatosAdmin(entorno: NodeJS.ProcessEnv): DatosAdmin {
   return resultado.data;
 }
 
-async function buscarPorCorreo(supabase: SupabaseClient, correo: string): Promise<User | null> {
-  const porPagina = 1000;
-  for (let pagina = 1; ; pagina++) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page: pagina, perPage: porPagina });
-    if (error) throw new Error(`No se pudo listar las cuentas: ${error.message}`);
-    const usuario = data.users.find((u) => u.email?.toLowerCase() === correo);
-    if (usuario) return usuario;
-    if (data.users.length < porPagina) return null;
-  }
+export interface OpcionesSembrado {
+  /** Asciende a admin una cuenta que ya tiene otro rol (`--forzar`). */
+  forzar?: boolean;
+}
+
+export interface ResultadoSembrado {
+  id: string;
+  creado: boolean;
+  /** Rol que tenía la cuenta antes, si tenía perfil. */
+  rolAnterior: string | null;
 }
 
 /** Crea la cuenta (o actualiza su contraseña) y deja su perfil con rol `admin`. */
 export async function sembrarAdmin(
   supabase: SupabaseClient,
   datos: DatosAdmin,
-): Promise<{ id: string; creado: boolean }> {
-  let usuario = await buscarPorCorreo(supabase, datos.correo);
-  const creado = !usuario;
+  opciones: OpcionesSembrado = {},
+): Promise<ResultadoSembrado> {
+  const credenciales = { password: datos.contrasena, email_confirm: true };
+  let usuario: User | null = await buscarCuentaPorCorreo(supabase, datos.correo);
+  let creado = false;
 
-  if (usuario) {
-    const { error } = await supabase.auth.admin.updateUserById(usuario.id, {
-      password: datos.contrasena,
-      email_confirm: true,
-    });
-    if (error) throw new Error(`No se pudo actualizar la cuenta: ${error.message}`);
-  } else {
+  if (!usuario) {
     const { data, error } = await supabase.auth.admin.createUser({
       email: datos.correo,
-      password: datos.contrasena,
-      email_confirm: true,
+      ...credenciales,
     });
-    if (error || !data.user) {
+    if (data.user && !error) {
+      usuario = data.user;
+      creado = true;
+    } else if (error?.code === "email_exists" || error?.code === "user_already_exists") {
+      // Se creó entre la búsqueda y el alta: se busca otra vez y se actualiza.
+      usuario = await buscarCuentaPorCorreo(supabase, datos.correo);
+    } else {
       throw new Error(`No se pudo crear la cuenta: ${error?.message ?? "sin usuario"}`);
     }
-    usuario = data.user;
+    if (!usuario) throw new Error(`No se encuentra la cuenta de ${datos.correo}`);
+  }
+
+  const lectura = await supabase.from(TABLA_PERFILES).select("rol").eq("id", usuario.id).maybeSingle();
+  if (lectura.error) throw new Error(`No se pudo leer el perfil: ${lectura.error.message}`);
+  const rolAnterior = (lectura.data as { rol: string } | null)?.rol ?? null;
+  if (rolAnterior && rolAnterior !== "admin" && !opciones.forzar) {
+    throw new Error(
+      `La cuenta ${datos.correo} ya existe con el rol "${rolAnterior}". ` +
+        "Usa otro ADMIN_CORREO o repite con --forzar para hacerla admin.",
+    );
+  }
+
+  if (!creado) {
+    const { error } = await supabase.auth.admin.updateUserById(usuario.id, credenciales);
+    if (error) throw new Error(`No se pudo actualizar la cuenta: ${error.message}`);
   }
 
   const { error } = await supabase
@@ -79,25 +97,22 @@ export async function sembrarAdmin(
     .upsert({ id: usuario.id, rol: "admin", whatsapp: datos.whatsapp }, { onConflict: "id" });
   if (error) throw new Error(`No se pudo guardar el perfil del admin: ${error.message}`);
 
-  return { id: usuario.id, creado };
+  return { id: usuario.id, creado, rolAnterior };
 }
 
-async function principal(): Promise<void> {
-  const url = process.env.SUPABASE_URL;
-  const clave = process.env.SUPABASE_SERVICE_ROLE_KEY;
+/** Ejecución desde la terminal (`sembrar-admin.cli.ts`): lee el entorno y los argumentos. */
+export async function ejecutarSembrado(entorno: NodeJS.ProcessEnv, argumentos: string[]): Promise<string> {
+  const url = entorno.SUPABASE_URL;
+  const clave = entorno.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !clave) throw new Error("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
 
-  const datos = leerDatosAdmin(process.env);
+  const datos = leerDatosAdmin(entorno);
   const supabase = createClient(url, clave, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { id, creado } = await sembrarAdmin(supabase, datos);
-  console.log(`Admin ${creado ? "creado" : "actualizado"}: ${datos.correo} (${id})`);
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  principal().catch((e: unknown) => {
-    console.error(e instanceof Error ? e.message : String(e));
-    process.exitCode = 1;
+  const { id, creado, rolAnterior } = await sembrarAdmin(supabase, datos, {
+    forzar: argumentos.includes("--forzar"),
   });
+  const antes = rolAnterior && rolAnterior !== "admin" ? ` (antes era ${rolAnterior})` : "";
+  return `Admin ${creado ? "creado" : "actualizado"}: ${datos.correo} (${id})${antes}`;
 }

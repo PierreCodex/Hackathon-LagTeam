@@ -14,8 +14,10 @@ import {
   type Registro,
   type Rol,
 } from "@reto18/shared";
-import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
+import type { AuthError, SupabaseClient, User } from "@supabase/supabase-js";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
+import { buscarCuentaPorCorreo } from "./cuentas.js";
+import { authNoDisponible } from "./verificador-token.js";
 
 export const TABLA_PERFILES = "identidad_perfiles";
 export const COLUMNAS_PERFIL = "id, rol, whatsapp, ciudad, acepta_avisos";
@@ -40,20 +42,12 @@ export class IdentidadService {
 
   /**
    * Crea la cuenta de Supabase Auth ya confirmada y su perfil en un solo paso.
-   * Si el perfil falla, borra la cuenta para no dejar cuentas sin rol.
+   * Si el perfil falla, borra la cuenta para no dejar cuentas sin rol; si aun así quedó una
+   * (p. ej. falló el borrado), el siguiente registro con ese correo la repara.
    */
   async registrar(datos: Registro): Promise<Perfil> {
     const supabase = this.cliente();
-
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: datos.correo,
-      password: datos.contrasena,
-      email_confirm: true,
-    });
-    if (error || !data.user) {
-      throw this.errorDeCreacion(error);
-    }
-    const usuario = data.user;
+    const usuario = await this.crearCuenta(supabase, datos);
 
     const fila: FilaPerfil = {
       id: usuario.id,
@@ -62,21 +56,22 @@ export class IdentidadService {
       ciudad: datos.ciudad ?? null,
       acepta_avisos: datos.acepta_avisos,
     };
-    const insercion = await supabase
-      .from(TABLA_PERFILES)
-      .insert(fila)
-      .select(COLUMNAS_PERFIL)
-      .single();
+    let insercion: { data: unknown; error: { message: string } | null };
+    try {
+      insercion = await supabase
+        .from(TABLA_PERFILES)
+        .insert(fila)
+        .select(COLUMNAS_PERFIL)
+        .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_PERFIL_MS))
+        .single();
+    } catch (e) {
+      insercion = { data: null, error: { message: e instanceof Error ? e.message : String(e) } };
+    }
     if (insercion.error || !insercion.data) {
       this.logger.error(
         `No se pudo crear el perfil de ${usuario.id}: ${insercion.error?.message ?? "sin datos"}`,
       );
-      const borrado = await supabase.auth.admin.deleteUser(usuario.id);
-      if (borrado.error) {
-        this.logger.error(
-          `No se pudo borrar la cuenta huérfana ${usuario.id}: ${borrado.error.message}`,
-        );
-      }
+      await this.borrarCuentaSinPerfil(supabase, usuario.id);
       throw new InternalServerErrorException({
         codigo: "ERROR_INTERNO",
         mensaje: "No se pudo crear el perfil. Inténtalo de nuevo.",
@@ -118,7 +113,8 @@ export class IdentidadService {
           mensaje: "No se pudo leer la cuenta. Inténtalo de nuevo.",
         });
       }
-      correoFinal = usuario.data.user?.email ?? "";
+      if (!usuario.data.user) return null;
+      correoFinal = usuario.data.user.email ?? "";
     }
     return aPerfil(data as FilaPerfil, correoFinal);
   }
@@ -133,9 +129,64 @@ export class IdentidadService {
     return this.supabase;
   }
 
+  /** `createUser`; si el correo ya existe pero su cuenta quedó sin perfil, la repara y reintenta. */
+  private async crearCuenta(supabase: SupabaseClient, datos: Registro): Promise<User> {
+    const crear = () =>
+      supabase.auth.admin.createUser({
+        email: datos.correo,
+        password: datos.contrasena,
+        email_confirm: true,
+      });
+
+    let { data, error } = await crear();
+    if (esCorreoRepetido(error) && (await this.repararCuentaSinPerfil(supabase, datos.correo))) {
+      ({ data, error } = await crear());
+    }
+    if (error || !data.user) {
+      throw this.errorDeCreacion(error);
+    }
+    return data.user;
+  }
+
+  /**
+   * Una cuenta sin perfil solo sale de un registro que falló a medias: no tiene datos ni rol.
+   * Se borra para que la persona pueda registrarse de nuevo. Devuelve `true` si la borró.
+   */
+  private async repararCuentaSinPerfil(supabase: SupabaseClient, correo: string): Promise<boolean> {
+    try {
+      const cuenta = await buscarCuentaPorCorreo(supabase, correo);
+      if (!cuenta) return false;
+      const { data, error } = await supabase
+        .from(TABLA_PERFILES)
+        .select("id")
+        .eq("id", cuenta.id)
+        .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_PERFIL_MS))
+        .maybeSingle();
+      if (error || data) return false;
+      const borrado = await supabase.auth.admin.deleteUser(cuenta.id);
+      if (borrado.error) return false;
+      this.logger.warn(`Se borró la cuenta sin perfil ${cuenta.id} para repetir su registro`);
+      return true;
+    } catch (e) {
+      this.logger.warn(`No se pudo revisar la cuenta de ${correo}: ${String(e)}`);
+      return false;
+    }
+  }
+
+  private async borrarCuentaSinPerfil(supabase: SupabaseClient, id: string): Promise<void> {
+    try {
+      const borrado = await supabase.auth.admin.deleteUser(id);
+      if (!borrado.error) return;
+      this.logger.error(`No se pudo borrar la cuenta sin perfil ${id}: ${borrado.error.message}`);
+    } catch (e) {
+      this.logger.error(`No se pudo borrar la cuenta sin perfil ${id}: ${String(e)}`);
+    }
+    // Queda sin perfil: el siguiente registro con ese correo la repara (`repararCuentaSinPerfil`).
+  }
+
   private errorDeCreacion(error: AuthError | null): Error {
     const codigo = error?.code;
-    if (codigo === "email_exists" || codigo === "user_already_exists") {
+    if (esCorreoRepetido(error)) {
       return new ConflictException({
         codigo: CODIGOS_IDENTIDAD.CORREO_YA_REGISTRADO,
         mensaje: "Ese correo ya tiene una cuenta. Inicia sesión.",
@@ -150,7 +201,7 @@ export class IdentidadService {
     if (codigo === "validation_failed") {
       return new BadRequestException("Los datos de la cuenta no son válidos");
     }
-    if (!error || isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500) {
+    if (!error || authNoDisponible(error) || codigo === "over_request_rate_limit") {
       this.logger.warn(`Auth no disponible al registrar: ${error?.message ?? "sin usuario"}`);
       return new ServiceUnavailableException({
         codigo: CODIGOS_IDENTIDAD.AUTH_NO_DISPONIBLE,
@@ -163,6 +214,10 @@ export class IdentidadService {
       mensaje: "No se pudo crear la cuenta",
     });
   }
+}
+
+function esCorreoRepetido(error: AuthError | null): boolean {
+  return error?.code === "email_exists" || error?.code === "user_already_exists";
 }
 
 function aPerfil(fila: FilaPerfil, correo: string): Perfil {

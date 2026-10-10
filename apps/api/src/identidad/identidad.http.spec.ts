@@ -116,6 +116,19 @@ class PruebaController {
   publico(@UsuarioActual() u: UsuarioAutenticado) {
     return { rol: u.perfil.rol };
   }
+
+  /** `@Roles()` sin argumentos: cualquier cuenta con perfil. */
+  @Get("cualquiera")
+  @Roles()
+  cualquiera(@UsuarioActual() u: UsuarioAutenticado) {
+    return { rol: u.perfil.rol };
+  }
+
+  /** Error de programación: `@UsuarioActual()` sin `@Roles()`. */
+  @Get("mal-protegida")
+  malProtegida(@UsuarioActual() u: UsuarioAutenticado) {
+    return { rol: u.perfil.rol };
+  }
 }
 
 @Module({
@@ -188,6 +201,27 @@ describe("RolesGuard por HTTP", () => {
   it("el rol sale del perfil, no del JWT (claim role=admin con perfil público → 403)", async () => {
     const { estado } = await llamar("/prueba/admin", { token: "token-publico" });
     expect(estado).toBe(403);
+  });
+
+  it.each(["admin", "organizador", "publico"])(
+    "@Roles() sin argumentos admite cualquier cuenta con perfil (%s)",
+    async (rol) => {
+      expect(await llamar("/prueba/cualquiera", { token: `token-${rol}` })).toEqual({
+        estado: 200,
+        cuerpo: { rol },
+      });
+    },
+  );
+
+  it("@Roles() sin argumentos sigue exigiendo token y perfil", async () => {
+    expect((await llamar("/prueba/cualquiera")).estado).toBe(401);
+    expect((await llamar("/prueba/cualquiera", { token: "token-sin-perfil" })).estado).toBe(403);
+  });
+
+  it("@UsuarioActual() sin @Roles() da un error explícito, no un fallo opaco", async () => {
+    const { estado, cuerpo } = await llamar("/prueba/mal-protegida", { token: "token-admin" });
+    expect(estado).toBe(500);
+    expect(cuerpo.error.mensaje).toContain("@UsuarioActual() sin @Roles()");
   });
 
   it("las rutas sin @Roles() siguen siendo públicas", async () => {

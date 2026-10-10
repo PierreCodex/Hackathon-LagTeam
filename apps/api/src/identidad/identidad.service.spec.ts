@@ -15,14 +15,30 @@ const ID = "11111111-1111-4111-8111-111111111111";
 type Resultado = { data: unknown; error: { message: string } | null };
 
 /** Cliente simulado con lo que usa el servicio: `auth.admin.*` y `from(tabla)`. */
+type ResultadoCrear = { data: { user: { id: string; email?: string } | null }; error: unknown };
+
 function clienteSimulado(opciones: {
-  crear?: { data: { user: { id: string; email?: string } | null }; error: unknown };
-  insertar?: Resultado;
+  /** Uno, o varios en orden (uno por llamada a `createUser`). */
+  crear?: ResultadoCrear | ResultadoCrear[];
+  insertar?: Resultado | (() => Promise<Resultado>);
   leer?: Resultado;
   cuenta?: { data: { user: { email?: string } | null }; error: { message: string } | null };
+  /** Cuentas que devuelve `listUsers`. */
+  cuentas?: { id: string; email: string }[];
+  borrar?: () => Promise<{ data: unknown; error: { message: string } | null }>;
 }) {
-  const createUser = vi.fn(async () => opciones.crear ?? { data: { user: null }, error: null });
-  const deleteUser = vi.fn(async () => ({ data: {}, error: null }));
+  const respuestasCrear = Array.isArray(opciones.crear) ? [...opciones.crear] : null;
+  const createUser = vi.fn<(datos: Record<string, unknown>) => Promise<ResultadoCrear>>(
+    async () =>
+      (respuestasCrear ? respuestasCrear.shift() : (opciones.crear as ResultadoCrear | undefined)) ?? {
+        data: { user: null },
+        error: null,
+      },
+  );
+  const deleteUser = vi.fn<(id: string) => Promise<{ data: unknown; error: { message: string } | null }>>(
+    async () => (opciones.borrar ? opciones.borrar() : { data: {}, error: null }),
+  );
+  const listUsers = vi.fn(async () => ({ data: { users: opciones.cuentas ?? [] }, error: null }));
   const getUserById = vi.fn(
     async () => opciones.cuenta ?? { data: { user: { email: "auth@ejemplo.pe" } }, error: null },
   );
@@ -37,16 +53,19 @@ function clienteSimulado(opciones: {
       select: () => consulta,
       eq: () => consulta,
       abortSignal: () => consulta,
-      single: async () => opciones.insertar ?? { data: null, error: null },
+      single: async () =>
+        typeof opciones.insertar === "function"
+          ? opciones.insertar()
+          : (opciones.insertar ?? { data: null, error: null }),
       maybeSingle: async () => opciones.leer ?? { data: null, error: null },
     };
     return consulta;
   });
   const cliente = {
-    auth: { admin: { createUser, deleteUser, getUserById } },
+    auth: { admin: { createUser, deleteUser, getUserById, listUsers } },
     from,
   } as unknown as ClienteSupabase;
-  return { cliente, createUser, deleteUser, getUserById, insert, from };
+  return { cliente, createUser, deleteUser, getUserById, listUsers, insert, from };
 }
 
 const registro = RegistroSchema.parse({
@@ -147,6 +166,95 @@ describe("IdentidadService.registrar", () => {
     });
   });
 
+  it("responde 503 AUTH_NO_DISPONIBLE si Auth limita las peticiones (429)", async () => {
+    const simulado = clienteSimulado({
+      crear: {
+        data: { user: null },
+        error: new AuthApiError("Request rate limit reached", 429, "over_request_rate_limit"),
+      },
+    });
+
+    await expect(new IdentidadService(simulado.cliente).registrar(registro)).rejects.toMatchObject({
+      response: { codigo: "AUTH_NO_DISPONIBLE" },
+    });
+  });
+
+  it("borra la cuenta si el insert del perfil lanza en vez de devolver error", async () => {
+    const simulado = clienteSimulado({
+      crear: { data: { user: { id: ID, email: "ana@ejemplo.pe" } }, error: null },
+      insertar: () => Promise.reject(new TypeError("fetch failed")),
+    });
+
+    await expect(new IdentidadService(simulado.cliente).registrar(registro)).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
+    expect(simulado.deleteUser).toHaveBeenCalledWith(ID);
+  });
+
+  it("si también falla el borrado, responde 500 igualmente (el próximo registro la repara)", async () => {
+    const simulado = clienteSimulado({
+      crear: { data: { user: { id: ID, email: "ana@ejemplo.pe" } }, error: null },
+      insertar: { data: null, error: { message: "violates check constraint" } },
+      borrar: () => Promise.reject(new TypeError("fetch failed")),
+    });
+
+    await expect(new IdentidadService(simulado.cliente).registrar(registro)).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
+  });
+
+  it("correo repetido de una cuenta sin perfil: la borra y repite el registro", async () => {
+    const huerfana = "22222222-2222-4222-8222-222222222222";
+    const simulado = clienteSimulado({
+      crear: [
+        {
+          data: { user: null },
+          error: new AuthApiError("already registered", 422, "email_exists"),
+        },
+        { data: { user: { id: ID, email: "ana@ejemplo.pe" } }, error: null },
+      ],
+      cuentas: [{ id: huerfana, email: "ana@ejemplo.pe" }],
+      leer: { data: null, error: null },
+      insertar: { data: fila, error: null },
+    });
+
+    const perfil = await new IdentidadService(simulado.cliente).registrar(registro);
+
+    expect(simulado.deleteUser).toHaveBeenCalledWith(huerfana);
+    expect(simulado.createUser).toHaveBeenCalledTimes(2);
+    expect(perfil.id).toBe(ID);
+  });
+
+  it("correo repetido de una cuenta con perfil: 409 y no borra nada", async () => {
+    const simulado = clienteSimulado({
+      crear: { data: { user: null }, error: new AuthApiError("already registered", 422, "email_exists") },
+      cuentas: [{ id: ID, email: "ana@ejemplo.pe" }],
+      leer: { data: { id: ID }, error: null },
+    });
+
+    await expect(new IdentidadService(simulado.cliente).registrar(registro)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(simulado.deleteUser).not.toHaveBeenCalled();
+    expect(simulado.createUser).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["  Piura  ", "Piura"],
+    ["", null],
+    [null, null],
+  ])("guarda la ciudad %j como %j", async (ciudad, guardada) => {
+    const simulado = clienteSimulado({
+      crear: { data: { user: { id: ID, email: "ana@ejemplo.pe" } }, error: null },
+      insertar: { data: { ...fila, ciudad: guardada }, error: null },
+    });
+    const datos = RegistroSchema.parse({ ...registro, contrasena: "secreta123", ciudad });
+
+    await new IdentidadService(simulado.cliente).registrar(datos);
+
+    expect(simulado.insert).toHaveBeenCalledWith(expect.objectContaining({ ciudad: guardada }));
+  });
+
   it("responde 503 si Supabase no está configurado", async () => {
     await expect(new IdentidadService(null).registrar(registro)).rejects.toBeInstanceOf(
       ServiceUnavailableException,
@@ -183,6 +291,15 @@ describe("IdentidadService.perfilDe", () => {
 
     await expect(promesa).rejects.toBeInstanceOf(ServiceUnavailableException);
     await expect(promesa).rejects.toMatchObject({ response: { codigo: "AUTH_NO_DISPONIBLE" } });
+  });
+
+  it("devuelve null si Auth ya no tiene la cuenta", async () => {
+    const simulado = clienteSimulado({
+      leer: { data: fila, error: null },
+      cuenta: { data: { user: null }, error: null },
+    });
+
+    expect(await new IdentidadService(simulado.cliente).perfilDe(ID)).toBeNull();
   });
 
   it("devuelve null si la cuenta no tiene perfil", async () => {

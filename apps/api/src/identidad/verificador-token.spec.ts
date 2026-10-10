@@ -1,4 +1,4 @@
-import { AuthInvalidJwtError, AuthRetryableFetchError } from "@supabase/supabase-js";
+import { AuthApiError, AuthInvalidJwtError, AuthRetryableFetchError } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ClienteSupabase } from "../supabase/supabase.module.js";
 import { TIEMPO_LIMITE_AUTH_MS, VerificadorToken } from "./verificador-token.js";
@@ -66,6 +66,29 @@ describe("VerificadorToken", () => {
     expect(await new VerificadorToken(cliente).verificar("jwt")).toEqual({
       estado: "no_disponible",
     });
+  });
+
+  it.each([
+    ["un 5xx de Auth", new AuthApiError("Internal Server Error", 500, "unexpected_failure")],
+    ["un 429 de Auth", new AuthApiError("Too many requests", 429, "over_request_rate_limit")],
+  ])("devuelve no_disponible (no cierra la sesión) con %s", async (_caso, error) => {
+    const { cliente } = clienteSimulado(Promise.resolve({ data: null, error }));
+
+    expect(await new VerificadorToken(cliente).verificar("jwt")).toEqual({ estado: "no_disponible" });
+  });
+
+  it("marca inválido un 4xx desconocido de Auth", async () => {
+    const { cliente } = clienteSimulado(
+      Promise.resolve({ data: null, error: new AuthApiError("Bad JWT", 403, "bad_jwt") }),
+    );
+
+    expect(await new VerificadorToken(cliente).verificar("jwt")).toEqual({ estado: "invalido" });
+  });
+
+  it("devuelve no_disponible si getClaims lanza un error de red (TypeError de fetch)", async () => {
+    const { cliente } = clienteSimulado(Promise.reject(new TypeError("fetch failed")));
+
+    expect(await new VerificadorToken(cliente).verificar("jwt")).toEqual({ estado: "no_disponible" });
   });
 
   it("devuelve no_disponible si Auth no responde en el tiempo límite", async () => {

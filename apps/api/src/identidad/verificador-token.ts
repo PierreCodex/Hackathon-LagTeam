@@ -39,7 +39,7 @@ export class VerificadorToken {
     try {
       const { data, error } = await Promise.race([this.supabase.auth.getClaims(jwt), limite]);
       if (error) {
-        if (isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500) {
+        if (authNoDisponible(error)) {
           this.logger.warn(`Auth no disponible al validar el token: ${error.message}`);
           return { estado: "no_disponible" };
         }
@@ -57,6 +57,11 @@ export class VerificadorToken {
         this.logger.warn(`Auth no respondió en ${TIEMPO_LIMITE_AUTH_MS} ms`);
         return { estado: "no_disponible" };
       }
+      if (authNoDisponible(e)) {
+        // Fallo de red al pedir las claves JWKS o al consultar Auth: no es culpa del token.
+        this.logger.warn(`Auth no disponible al validar el token: ${String(e)}`);
+        return { estado: "no_disponible" };
+      }
       // Errores que no son de red (algoritmo o clave extraños en un token falso): el token no vale.
       this.logger.warn(`Token rechazado: ${e instanceof Error ? e.message : String(e)}`);
       return { estado: "invalido" };
@@ -64,4 +69,14 @@ export class VerificadorToken {
       clearTimeout(temporizador);
     }
   }
+}
+
+/**
+ * Error de Auth que no dice nada del token: red caída (`TypeError` de `fetch`),
+ * límite de peticiones (429) o fallo del servidor (5xx). La web no debe cerrar la sesión por eso.
+ */
+export function authNoDisponible(error: unknown): boolean {
+  if (error instanceof TypeError || isAuthRetryableFetchError(error)) return true;
+  const estado = (error as { status?: unknown } | null)?.status;
+  return typeof estado === "number" && (estado === 429 || estado >= 500);
 }
