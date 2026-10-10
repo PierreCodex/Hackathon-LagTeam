@@ -4,11 +4,12 @@ Esta guía dice **qué hace cada persona, en qué orden y qué escribir** en su 
 
 | Rol | Persona |
 |---|---|
-| P1 · Producto, investigación y pitch | Jostin |
+| P1 · Producto, entrevistas, spec, aceptación y pitch | Sandro David |
 | P2 · Tech lead, integración, demo y responsable de BMad | Jean Pierre |
 | P3 · Frontend y experiencia | Manuel Alexis |
-| P4 · Backend, datos o IA | Sandro David |
-| P5 · CI, despliegue, QA y respaldo de BMad | Luis Armando |
+| P4 + P5 · Backend, IA, CI, despliegue, QA y respaldo de BMad | Luis Armando |
+
+> **Equipo de cuatro:** Jostin no pudo asistir. Sandro David pasa a P1 y Luis Armando une P4 y P5 (ver `EQUIPO.md`).
 
 ---
 
@@ -42,7 +43,7 @@ Todo lo que produce BMad (spec, arquitectura, tickets, planes de cada ticket) se
 
 ```text
 _bmad-output/initiative-<reto>/
-├── initiative-<reto>.md          ← la crea Jostin con /bmad (09:30)
+├── initiative-<reto>.md          ← la crea Sandro David con /bmad (09:30)
 │
 ├── insumos/                      ← material en bruto
 │   ├── reto-original.pdf         ← enunciado y rúbrica tal como los entregan
@@ -50,15 +51,15 @@ _bmad-output/initiative-<reto>/
 │   ├── apis.md                   ← enlaces y notas de APIs disponibles (sin claves)
 │   └── notas-entrevistas/        ← apuntes rápidos de cada entrevista
 │
-├── reto.md                       ← Jostin: criterios de la rúbrica → cómo los demostramos
-├── evidencia.md                  ← Jostin: hecho / interpretación / supuesto / fuente
-├── demo-estado.md                ← Jostin: qué es real, grabado o simulado
+├── reto.md                       ← Sandro David: criterios de la rúbrica → cómo los demostramos
+├── evidencia.md                  ← Sandro David: hecho / interpretación / supuesto / fuente
+├── demo-estado.md                ← Sandro David: qué es real, grabado o simulado
 ├── ASIGNACION.md                 ← Jean Pierre: quién hace qué historia
 │
 ├── research-<tema>/              ← Manuel Alexis con bmad-deep-recon (si hace falta)
 ├── brainstorm-<tema>/            ← bmad-brainstorming
 ├── forge-<idea>/                 ← bmad-forge-idea (decisión GO)
-├── spec-<producto>/              ← Jostin con bmad-spec
+├── spec-<producto>/              ← Sandro David con bmad-spec
 ├── architecture-<producto>/      ← Jean Pierre con bmad-architecture
 ├── ux-<producto>/                ← Manuel Alexis con bmad-ux (si aplica)
 └── <épica>/tickets.toml          ← Jean Pierre con bmad-ticket; aquí también quedan
@@ -81,14 +82,14 @@ cd Hackathon-LagTeam
 git pull
 ```
 
-**Jostin** crea la iniciativa (ver su sección). En cuanto la suba, **los demás**:
+**Sandro David** crea la iniciativa (ver su sección). En cuanto la suba, **los demás**:
 
 ```bash
 git pull
 ```
 
 ```text
-/bmad activa la iniciativa initiative-<nombre-que-diga-Jostin>
+/bmad activa la iniciativa initiative-<nombre-que-diga-Sandro David>
 ```
 
 ✅ Termina cuando: los cinco tienen activa **la misma** iniciativa (`/bmad` la muestra).
@@ -97,7 +98,7 @@ git pull
 
 ## 2. El ciclo de un ticket (Jean Pierre, Manuel Alexis, Sandro David, Luis Armando)
 
-Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket tiene una referencia como `1.3` (épica 1, historia 3) que aparece en `tickets.toml`. **Tus historias, y en qué orden hacerlas, están en `ASIGNACION.md`**, que publica Jean Pierre a las 17:00.
+Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket tiene una referencia como `1.3` (épica 1, historia 3) que aparece en `tickets.toml`. **Tus historias están en los `tickets.toml` de cada epic, en el campo `assignee`**; el orden de las tablas es el orden de construcción, y `after` dice de qué dependen. Las historias `API:` son del dueño del epic y las `UI:` de Manuel Alexis.
 
 | Paso | Dónde | Qué hacer |
 |---|---|---|
@@ -108,7 +109,7 @@ Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket ti
 | 5 | Chat | Deja que implemente, pruebe y revise. Al final hace un **commit local** (no sube nada) |
 | 6 | Terminal | `git push -u origin t/1.3-nombre-corto` |
 | 7 | Terminal | `gh pr create --fill` (o crear el PR desde la web de GitHub) |
-| 8 | Mensaje | Avisar a **Jean Pierre** (revisión del código) y a **Jostin** (aceptación funcional) |
+| 8 | Mensaje | Avisar a **Jean Pierre** (revisión del código) y a **Sandro David** (aceptación funcional) |
 | 9 | — | Cuando esté aprobado, merge del PR. **Jean Pierre** marca el ticket como hecho |
 
 **Importante:**
@@ -121,22 +122,24 @@ Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket ti
 
 ---
 
-## 3. P1 · Jostin (producto, investigación y pitch)
+## 3. P1 · Sandro David (producto, investigación y pitch)
 
-No programa. Su trabajo es que construyamos **lo correcto** y que el jurado lo crea.
+Su trabajo es que construyamos **lo correcto** y que el jurado lo crea. Además, para aliviar a Luis Armando, construye **una sola historia, la 3.6** (alerta de APDAYC con IA, con `bmad-build`), y hace **la parte manual de la 3.4** (crear la cuenta de Upload-Post o Zernio, conectar el Instagram y el Facebook del equipo y comprobar si el plan gratuito permite publicar). Sus PRs los acepta Jean Pierre: nadie acepta su propio PR.
 
 | Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
 |---|---|---|---|---|
 | 09:30 | Lee el reto y la rúbrica con todos y crea `reto.md`: cada criterio de la rúbrica y cómo lo demostraremos | — | El reto | Cada criterio tiene una forma de demostrarlo |
 | 09:45 | Crea la iniciativa | `/bmad crea una iniciativa nueva llamada <nombre-del-reto> y actívala` | Nombre corto del reto | Existe `_bmad-output/initiative-<nombre>/` |
-| 09:50 | Publica la iniciativa por PR | Terminal: `git switch -c plan/iniciativa` · `git add _bmad-output` · `git commit -m "chore: iniciativa"` · `git push -u origin plan/iniciativa` · `gh pr create --fill` | — | Jean Pierre hace merge; Jostin avisa al grupo del nombre |
-| 10:00–11:30 | Entrevistas con mentores (con Sandro David). Anota en `evidencia.md`: **hecho**, **interpretación**, **supuesto**, fuente | — | Preguntas preparadas (`plan`, sección 4) | ≥5 entrevistas o ≥3 fuentes con el mismo dolor |
+| 09:50 | Publica la iniciativa por PR | Terminal: `git switch -c plan/iniciativa` · `git add _bmad-output` · `git commit -m "chore: iniciativa"` · `git push -u origin plan/iniciativa` · `gh pr create --fill` | — | Jean Pierre hace merge; Sandro David avisa al grupo del nombre |
+| 10:00–11:30 | Entrevistas con mentores (con Manuel Alexis). Anota en `evidencia.md`: **hecho**, **interpretación**, **supuesto**, fuente | — | Preguntas preparadas (`plan`, sección 4) | ≥5 entrevistas o ≥3 fuentes con el mismo dolor |
 | 12:00 | Lluvia de ideas con todos | `/bmad-brainstorming sobre el reto, usando reto.md y evidencia.md` | `evidencia.md` | Quedan ≤3 propuestas |
 | 12:45 | Endurecer la favorita | `/bmad-forge-idea con la propuesta <X>, usando evidencia.md` | La propuesta elegida | Idea endurecida o descartada |
 | **13:30** | **Decisión GO** con Jean Pierre | — | Resultado de forge | GO, o pasar a la ruta comprimida |
 | 13:30–15:45 | Escribir la spec | `/bmad-spec crea la spec a partir de forge-<x>, evidencia.md y reto.md` | Forge, evidencia, rúbrica | Spec con lo que entra y lo que **no** entra |
 | 15:45 | Actualizar la spec con arquitectura y UX | `/bmad-spec actualiza la spec incorporando la arquitectura y la UX` | Arquitectura (y UX si la hay) | Jean Pierre la aprueba |
 | 16:15 | Prioridades de los tickets | — (revisa lo que propone Jean Pierre) | Spec | Tickets aprobados a las 17:00 |
+| Cuanto antes | Parte manual de la 3.4: cuenta de publicación y redes conectadas; avisa a Luis Armando de si el plan gratuito sirve | — | — | Cuenta lista o alternativa decidida |
+| Cuando estén la 3.1 y la 1.10 (antes de las 22:30) | Historia 3.6 con el ciclo de la sección 2 | `/bmad-build build story 3.6` | 3.1 y 1.10 mergeadas | PR aceptado por Jean Pierre |
 | 17:00–03:15 | **Aceptación** de cada PR: prueba la funcionalidad y dice sí o no | — | PR abierto | Cada PR aceptado o con cambios pedidos |
 | 19:00 | Prototipo ante un mentor o usuario (con Manuel Alexis). Lo anota en `evidencia.md` | — | Algo que enseñar | Nueva evidencia |
 | 22:30 | Aprueba el **flujo completo demostrable** | — | — | Recorre la demo sin ayuda |
@@ -154,14 +157,14 @@ No programa. Su trabajo es que construyamos **lo correcto** y que el jurado lo c
 | Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
 |---|---|---|---|---|
 | 09:30–12:00 | Inventario técnico del reto: APIs, datos, créditos. Preguntas técnicas a mentores | — | El reto | Lista de recursos y riesgos técnicos |
-| 12:00–13:30 | Brainstorming y forge con el equipo | — | — | **GO a las 13:30** con Jostin |
-| 13:30–15:45 | Arquitectura (con Sandro David y Luis Armando), incluido el **modo de presentación** (desplegado o local) | `/bmad-architecture crea la arquitectura a partir de la spec, vía rápida` | Borrador de la spec | Stack, contratos entre partes y modo de presentación decididos |
+| 12:00–13:30 | Brainstorming y forge con el equipo | — | — | **GO a las 13:30** con Sandro David |
+| 13:30–15:45 | Arquitectura (con Luis Armando), incluido el **modo de presentación** (desplegado o local) | `/bmad-architecture crea la arquitectura a partir de la spec, vía rápida` | Borrador de la spec | Stack, contratos entre partes y modo de presentación decididos |
 | 15:45 | Reglas para los agentes | `/bmad-project-context setup` | Stack decidido | `AGENTS.md` aprobado; en `CLAUDE.md` la línea `@AGENTS.md` |
 | 16:05 | Aprueba la spec | — | Spec actualizada | — |
 | 16:15 | Tickets | `/bmad-ticket incept the epic a partir de la spec` (indicando que el esqueleto ya lo hace Luis Armando) | Spec aprobada | Tickets ordenados, con dependencias |
 | 16:40 | **Reparto de historias** (ver abajo) | Petición de reparto en el chat | `tickets.toml` y `EQUIPO.md` | `ASIGNACION.md` revisado, mergeado por PR y avisado al grupo a las 17:00 |
 | 17:00–03:15 | **Revisa PRs**, integra en `main` (ventanas 18:30, 19:45, 22:30, 00:00, 03:00) y construye tickets cortos con el ciclo de la sección 2 | Para PRs del flujo de la demo: `/bmad-code-review revisa el PR #<n>` | PR abierto | PR aprobado y mergeado |
-| Tras cada merge | Marca el ticket como hecho, en una rama `plan/estados` (puede agrupar varios tickets por ventana de integración) | `/bmad-ticket mark story 1.3 done`; luego push y PR de `plan/estados` | PR del ticket mergeado y aceptado por Jostin | Estado actualizado en `main` por merge |
+| Tras cada merge | Marca el ticket como hecho, en una rama `plan/estados` (puede agrupar varios tickets por ventana de integración) | `/bmad-ticket mark story 1.3 done`; luego push y PR de `plan/estados` | PR del ticket mergeado y aceptado por Sandro David | Estado actualizado en `main` por merge |
 | Cuando haga falta | Ver cómo va todo | `/bmad-ticket what's ready?` | — | — |
 | **03:15** | **Congelamiento**: desde aquí solo correcciones | Terminal: `git tag freeze` · `git push --tags` | — | — |
 | 06:00 | Versión final con Luis Armando | Terminal: `git tag demo-v1` · `git push --tags` | Todo probado | Demo probada en ambos portátiles |
@@ -178,7 +181,7 @@ Lee tickets.toml de la iniciativa activa y EQUIPO.md. Asigna cada historia a una
 según su rol, respetando las dependencias: las historias que bloquean a otras primero.
 Que cada uno tenga trabajo desde las 17:00 sin depender de otro, y Jean Pierre solo
 tickets cortos. Crea ASIGNACION.md con: persona, historias en orden, de qué dependen
-y con quién coordinarse. No asignes nada a Jostin.
+y con quién coordinarse. Sandro David (P1) solo recibe la 3.6 y la parte manual de la 3.4.
 ```
 
 **2. Revisar el reparto antes de publicarlo.** Comprobar que:
@@ -211,7 +214,7 @@ y con quién coordinarse. No asignes nada a Jostin.
 | 13:30–15:45 | UX, **solo si la interfaz es importante para la demo** | `/bmad-ux crea el diseño de la experiencia a partir de la spec, con mockups de las pantallas clave` | Borrador de la spec | `DESIGN.md` y `EXPERIENCE.md`; flujo de la demo pantalla por pantalla |
 | 15:45–17:00 | Componentes base; ayuda a estimar tickets | — | — | — |
 | 17:00 en adelante | **Tickets de interfaz** con el ciclo de la sección 2 | `/bmad-build build story 1.N` | Ticket asignado | PR aceptado |
-| 19:00 | Prototipo ante un mentor o usuario (con Jostin) | — | Algo que enseñar (o el mock de la UX) | Nueva evidencia |
+| 19:00 | Prototipo ante un mentor o usuario (con Sandro David) | — | Algo que enseñar (o el mock de la UX) | Nueva evidencia |
 | 23:00–01:30 | **Descanso** | | | |
 | 03:15–06:00 | Solo correcciones (`fix/…`) | `/bmad-build corrige: <el fallo>` | Rama `fix/...` | PR aceptado |
 | 06:00 | Graba el video de respaldo de la demo | — | Versión final | Video guardado |
@@ -220,25 +223,15 @@ y con quién coordinarse. No asignes nada a Jostin.
 
 ---
 
-## 6. P4 · Sandro David (backend, datos o IA)
+## 6. P4 · Backend, datos o IA (lo asume Luis Armando)
 
-| Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
-|---|---|---|---|---|
-| 10:00–11:30 | Entrevistas con Jostin: pregunta por **datos, APIs y restricciones** | — | Preguntas preparadas | Evidencia anotada |
-| 11:30 | Ayuda a Jostin a consolidar `evidencia.md` | — | — | — |
-| 12:00–13:30 | Brainstorming y forge con el equipo | — | — | GO |
-| 13:30–15:45 | Con Jean Pierre en la arquitectura: contratos de datos e IA | — | — | Contratos definidos |
-| 15:45–17:00 | Stubs de los contratos (respuestas simuladas con la forma acordada) y datos de prueba | `/bmad-build crea los stubs de los contratos definidos en la arquitectura` | Arquitectura | Los demás pueden trabajar contra los stubs |
-| 17:00 en adelante | **Tickets de backend o IA** con el ciclo de la sección 2 | `/bmad-build build story 1.N` | Ticket asignado | PR aceptado |
-| 17:00–19:45 | Graba respuestas reales de las APIs para el **modo grabado** | — | Integración funcionando | Respuestas guardadas |
-| 01:30–04:00 | **Descanso** | | | |
-| 04:00–06:00 | Verifica los modos **grabado** y **simulado**, y el cambio de proveedor de IA (OpenAI ↔ Claude) | — | — | La demo funciona aunque falle una API |
+Con el equipo de cuatro, este rol lo lleva **Luis Armando** (sección 7): las historias `API:` de los epics 3 y 4 y el módulo `ia`. Sandro David ya no es P4: está en la sección 3.
 
-**Regla:** toda llamada a un servicio externo pasa por su adaptador, con modo `live`, `recorded` y `mock`.
+**Regla:** toda llamada a un servicio externo pasa por su adaptador, con tiempo límite y respuesta de respaldo (AD-11 de la arquitectura).
 
 ---
 
-## 7. P5 · Luis Armando (CI, despliegue, QA y respaldo de BMad)
+## 7. P4 + P5 · Luis Armando (backend, IA, CI, despliegue, QA y respaldo de BMad)
 
 | Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
 |---|---|---|---|---|
@@ -263,7 +256,7 @@ y con quién coordinarse. No asignes nada a Jostin.
 | Situación | Qué hacer |
 |---|---|
 | No sé qué hacer ahora | `/bmad ¿qué hago ahora?` |
-| Cambia un requisito y solo afecta a la spec | Jostin: `/bmad-spec actualiza la spec: <cambio>` |
+| Cambia un requisito y solo afecta a la spec | Sandro David: `/bmad-spec actualiza la spec: <cambio>` |
 | Cambia algo que afecta a arquitectura o UX | Jean Pierre: `/bmad-correct-course <cambio>` |
 | Un ticket bloquea a otros | Jean Pierre: `/bmad-ticket what's blocked?`; el dueño sube un stub |
 | `bmad-build` se detiene al empezar | `git status`: haz commit o guarda los cambios y comprueba que estás en la rama del ticket |
@@ -280,7 +273,7 @@ y con quién coordinarse. No asignes nada a Jostin.
 | Ver el estado de la instalación | `/bmad status` |
 | Ver la iniciativa activa | `/bmad` |
 | Ver los tickets listos | `/bmad-ticket what's ready?` |
-| Ver mis historias | Abrir `ASIGNACION.md` |
+| Ver mis historias | Buscar tu nombre en `assignee` de los `tickets.toml` de cada epic |
 | Construir un ticket | `/bmad-build build story 1.3` |
 | Revisar un PR | `/bmad-code-review revisa el PR #12` |
 | Preguntar por una skill | `/bmad ¿para qué sirve bmad-<nombre>?` |

@@ -77,7 +77,7 @@ hitl = true
 risk = "medium"
 assignee = "Luis Armando"
 unknown = "Si el plan gratuito de Upload-Post o Zernio permite publicar en Instagram y Facebook por API y cuánto tarda conectar la cuenta."
-notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo."]
+notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo.", "La parte manual (cuenta, conexión de redes y responder el unknown) es de Sandro David, cuanto antes; el código es de Luis Armando."]
 
 [[entry]]
 id = 5
@@ -101,7 +101,8 @@ covers = ["CAP-3"]
 after = [1, "1.5", "1.10"]
 hitl = false
 risk = "low"
-assignee = "Luis Armando"
+assignee = "Sandro David"
+notes = ["Sandro David la construye con bmad-build; Jean Pierre acepta su PR."]
 
 [[entry]]
 id = 7

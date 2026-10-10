@@ -54,3 +54,4 @@ Se corta por capacidad. Incluye los módulos `marketing` e `ia`, y las plantilla
 - Unknown: el modelo de Ollama, y si el plan gratuito de Upload-Post o Zernio permite publicar y programar. Hay que comprobarlo al empezar la publicación.
 - Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
 - Decision: la 3.4 no se parte; el botón "Publicar ahora" lo añade Luis Armando a la pantalla de la 3.9. La 3.6 tampoco: la alerta se muestra en el hueco de la 1.10 (10/10/2026).
+- Decision: Sandro David toma la 3.6 y la parte manual de la 3.4 (cuenta de publicación y redes) para aliviar a Luis Armando; sus PRs los acepta Jean Pierre. Sigue con su rol de P1 (usuario, 10/10/2026).
