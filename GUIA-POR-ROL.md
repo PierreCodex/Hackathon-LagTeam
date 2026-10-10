@@ -4,12 +4,12 @@ Esta guía dice **qué hace cada persona, en qué orden y qué escribir** en su 
 
 | Rol | Persona |
 |---|---|
-| P1 · Producto, entrevistas, spec, aceptación y pitch | Sandro David |
+| P1 · Producto, aceptación, validación y pitch | Manuel Alexis |
 | P2 · Tech lead, integración, demo y responsable de BMad | Jean Pierre |
-| P3 · Frontend y experiencia | Manuel Alexis |
+| P3 · Frontend (historias "UI:") | Sandro David |
 | P4 + P5 · Backend, IA, CI, despliegue, QA y respaldo de BMad | Luis Armando |
 
-> **Equipo de cuatro:** Jostin no pudo asistir. Sandro David pasa a P1 y Luis Armando une P4 y P5 (ver `EQUIPO.md`).
+> **Equipo de cuatro:** Jostin no pudo asistir. Sandro David pasa a P1 y Luis Armando une P4 y P5. Por la noche, **Sandro David y Manuel Alexis intercambian roles** porque Manuel no puede usar Claude Code: Sandro pasa a P3 y Manuel a P1 (ver `EQUIPO.md`).
 
 ---
 
@@ -53,7 +53,7 @@ _bmad-output/initiative-<reto>/
 │
 ├── reto.md                       ← Sandro David: criterios de la rúbrica → cómo los demostramos
 ├── evidencia.md                  ← Sandro David: hecho / interpretación / supuesto / fuente
-├── demo-estado.md                ← Sandro David: qué es real, grabado o simulado
+├── demo-estado.md                ← Manuel Alexis (P1): qué es real, grabado o simulado
 ├── ASIGNACION.md                 ← Jean Pierre: quién hace qué historia
 │
 ├── research-<tema>/              ← Manuel Alexis con bmad-deep-recon (si hace falta)
@@ -98,7 +98,7 @@ git pull
 
 ## 2. El ciclo de un ticket (Jean Pierre, Manuel Alexis, Sandro David, Luis Armando)
 
-Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket tiene una referencia como `1.3` (épica 1, historia 3) que aparece en `tickets.toml`. **Tus historias están en los `tickets.toml` de cada epic, en el campo `assignee`**; el orden de las tablas es el orden de construcción, y `after` dice de qué dependen. Las historias `API:` son del dueño del epic y las `UI:` de Manuel Alexis.
+Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket tiene una referencia como `1.3` (épica 1, historia 3) que aparece en `tickets.toml`. **Tus historias están en los `tickets.toml` de cada epic, en el campo `assignee`**; el orden de las tablas es el orden de construcción, y `after` dice de qué dependen. Las historias `API:` son del dueño del epic y las `UI:` de Sandro David.
 
 | Paso | Dónde | Qué hacer |
 |---|---|---|
@@ -109,7 +109,7 @@ Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket ti
 | 5 | Chat | Deja que implemente, pruebe y revise. Al final hace un **commit local** (no sube nada) |
 | 6 | Terminal | `git push -u origin t/1.3-nombre-corto` |
 | 7 | Terminal | `gh pr create --fill` (o crear el PR desde la web de GitHub) |
-| 8 | Mensaje | Avisar a **Jean Pierre** (revisión del código) y a **Sandro David** (aceptación funcional) |
+| 8 | Mensaje | Avisar a **Jean Pierre** (revisión del código) y a **Manuel Alexis** (aceptación funcional, en la vista previa de Vercel) |
 | 9 | — | Cuando esté aprobado, merge del PR. **Jean Pierre** marca el ticket como hecho |
 
 **Importante:**
@@ -122,9 +122,11 @@ Desde las 17:00 la mayor parte del trabajo es repetir este ciclo. Cada ticket ti
 
 ---
 
-## 3. P1 · Sandro David (producto, investigación y pitch)
+## 3. P1 · Manuel Alexis (producto, aceptación y pitch)
 
-Su trabajo es que construyamos **lo correcto** y que el jurado lo crea. Además, para aliviar a Luis Armando, construye **una sola historia, la 3.6** (alerta de APDAYC con IA, con `bmad-build`), y hace **la parte manual de la 3.4** (crear la cuenta de Upload-Post o Zernio, conectar el Instagram y el Facebook del equipo y comprobar si el plan gratuito permite publicar). Sus PRs los acepta Jean Pierre: nadie acepta su propio PR.
+No programa ni necesita Claude Code. Su trabajo es que construyamos **lo correcto** y que el jurado lo crea. Hasta la noche este rol lo llevó Sandro David (las filas hasta las 16:15 ya están hechas); desde el intercambio lo lleva Manuel Alexis. Además hace **la parte manual de la 3.4** (crear la cuenta de Upload-Post o Zernio, conectar el Instagram y el Facebook del equipo y comprobar si el plan gratuito permite publicar).
+
+**Cómo acepta un PR sin Claude Code:** abre el enlace de vista previa de Vercel que aparece en el PR, recorre en el móvil el `verify` de la historia y deja en GitHub su aprobación o lo que falla.
 
 | Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
 |---|---|---|---|---|
@@ -139,12 +141,11 @@ Su trabajo es que construyamos **lo correcto** y que el jurado lo crea. Además,
 | 15:45 | Actualizar la spec con arquitectura y UX | `/bmad-spec actualiza la spec incorporando la arquitectura y la UX` | Arquitectura (y UX si la hay) | Jean Pierre la aprueba |
 | 16:15 | Prioridades de los tickets | — (revisa lo que propone Jean Pierre) | Spec | Tickets aprobados a las 17:00 |
 | Cuanto antes | Parte manual de la 3.4: cuenta de publicación y redes conectadas; avisa a Luis Armando de si el plan gratuito sirve | — | — | Cuenta lista o alternativa decidida |
-| Cuando estén la 3.1 y la 1.10 (antes de las 22:30) | Historia 3.6 con el ciclo de la sección 2 | `/bmad-build build story 3.6` | 3.1 y 1.10 mergeadas | PR aceptado por Jean Pierre |
 | 17:00–03:15 | **Aceptación** de cada PR: prueba la funcionalidad y dice sí o no | — | PR abierto | Cada PR aceptado o con cambios pedidos |
-| 19:00 | Prototipo ante un mentor o usuario (con Manuel Alexis). Lo anota en `evidencia.md` | — | Algo que enseñar | Nueva evidencia |
+| 19:00 | Prototipo ante un mentor o usuario (con Sandro David). Lo anota en `evidencia.md` | — | Algo que enseñar | Nueva evidencia |
 | 22:30 | Aprueba el **flujo completo demostrable** | — | — | Recorre la demo sin ayuda |
 | 22:30–04:00 | Borrador del pitch y `demo-estado.md` (qué es real, grabado o simulado) | — | Evidencia | Borrador listo |
-| 06:30 | Revisar el guion del pitch | `/bmad-review revisa el guion del pitch` | Guion | Correcciones aplicadas |
+| 06:30 | Revisar el guion del pitch | `/bmad-review revisa el guion del pitch` (en Claude Desktop pegando el guion, o lo ejecuta otro) | Guion | Correcciones aplicadas |
 | 07:00 | Jurado simulado | `/bmad-party-mode hagan de jurado de la hackathon y háganme preguntas difíciles sobre el pitch` | Guion | Respuestas preparadas |
 | **08:30** | Entregables listos y enviados antes de las 09:00 | — | Lista de entregables | Enviado |
 
@@ -164,7 +165,7 @@ Su trabajo es que construyamos **lo correcto** y que el jurado lo crea. Además,
 | 16:15 | Tickets | `/bmad-ticket incept the epic a partir de la spec` (indicando que el esqueleto ya lo hace Luis Armando) | Spec aprobada | Tickets ordenados, con dependencias |
 | 16:40 | **Reparto de historias** (ver abajo) | Petición de reparto en el chat | `tickets.toml` y `EQUIPO.md` | `ASIGNACION.md` revisado, mergeado por PR y avisado al grupo a las 17:00 |
 | 17:00–03:15 | **Revisa PRs**, integra en `main` (ventanas 18:30, 19:45, 22:30, 00:00, 03:00) y construye tickets cortos con el ciclo de la sección 2 | Para PRs del flujo de la demo: `/bmad-code-review revisa el PR #<n>` | PR abierto | PR aprobado y mergeado |
-| Tras cada merge | Marca el ticket como hecho, en una rama `plan/estados` (puede agrupar varios tickets por ventana de integración) | `/bmad-ticket mark story 1.3 done`; luego push y PR de `plan/estados` | PR del ticket mergeado y aceptado por Sandro David | Estado actualizado en `main` por merge |
+| Tras cada merge | Marca el ticket como hecho, en una rama `plan/estados` (puede agrupar varios tickets por ventana de integración) | `/bmad-ticket mark story 1.3 done`; luego push y PR de `plan/estados` | PR del ticket mergeado y aceptado por Manuel Alexis | Estado actualizado en `main` por merge |
 | Cuando haga falta | Ver cómo va todo | `/bmad-ticket what's ready?` | — | — |
 | **03:15** | **Congelamiento**: desde aquí solo correcciones | Terminal: `git tag freeze` · `git push --tags` | — | — |
 | 06:00 | Versión final con Luis Armando | Terminal: `git tag demo-v1` · `git push --tags` | Todo probado | Demo probada en ambos portátiles |
@@ -181,7 +182,7 @@ Lee tickets.toml de la iniciativa activa y EQUIPO.md. Asigna cada historia a una
 según su rol, respetando las dependencias: las historias que bloquean a otras primero.
 Que cada uno tenga trabajo desde las 17:00 sin depender de otro, y Jean Pierre solo
 tickets cortos. Crea ASIGNACION.md con: persona, historias en orden, de qué dependen
-y con quién coordinarse. Sandro David (P1) solo recibe la 3.6 y la parte manual de la 3.4.
+y con quién coordinarse. Manuel Alexis (P1) solo recibe la parte manual de la 3.4.
 ```
 
 **2. Revisar el reparto antes de publicarlo.** Comprobar que:
@@ -203,7 +204,9 @@ y con quién coordinarse. Sandro David (P1) solo recibe la 3.6 y la parte manual
 
 ---
 
-## 5. P3 · Manuel Alexis (frontend y experiencia)
+## 5. P3 · Sandro David (frontend)
+
+Desde el intercambio, **Sandro David construye todas las historias `UI:` y la 3.6** con el ciclo de la sección 2, empezando por la 1.7. Parte del trabajo de UX que dejó Manuel Alexis en `ux-plataforma-eventos/` (`DESIGN.md`, `EXPERIENCE.md` y maquetas). Las filas de abajo hasta las 15:45 las hizo Manuel. Las reservas (1.11, 3.10, 4.5 y 4.6) las toma quien termine primero si va cargado.
 
 | Hora | Qué hace | Qué escribir | Necesita antes | Termina cuando |
 |---|---|---|---|---|
@@ -214,7 +217,7 @@ y con quién coordinarse. Sandro David (P1) solo recibe la 3.6 y la parte manual
 | 13:30–15:45 | UX, **solo si la interfaz es importante para la demo** | `/bmad-ux crea el diseño de la experiencia a partir de la spec, con mockups de las pantallas clave` | Borrador de la spec | `DESIGN.md` y `EXPERIENCE.md`; flujo de la demo pantalla por pantalla |
 | 15:45–17:00 | Componentes base; ayuda a estimar tickets | — | — | — |
 | 17:00 en adelante | **Tickets de interfaz** con el ciclo de la sección 2 | `/bmad-build build story 1.N` | Ticket asignado | PR aceptado |
-| 19:00 | Prototipo ante un mentor o usuario (con Sandro David) | — | Algo que enseñar (o el mock de la UX) | Nueva evidencia |
+| 19:00 | Prototipo ante un mentor o usuario (con Manuel Alexis) | — | Algo que enseñar (o el mock de la UX) | Nueva evidencia |
 | 23:00–01:30 | **Descanso** | | | |
 | 03:15–06:00 | Solo correcciones (`fix/…`) | `/bmad-build corrige: <el fallo>` | Rama `fix/...` | PR aceptado |
 | 06:00 | Graba el video de respaldo de la demo | — | Versión final | Video guardado |
@@ -225,7 +228,7 @@ y con quién coordinarse. Sandro David (P1) solo recibe la 3.6 y la parte manual
 
 ## 6. P4 · Backend, datos o IA (lo asume Luis Armando)
 
-Con el equipo de cuatro, este rol lo lleva **Luis Armando** (sección 7): las historias `API:` de los epics 3 y 4 y el módulo `ia`. Sandro David ya no es P4: está en la sección 3.
+Con el equipo de cuatro, este rol lo lleva **Luis Armando** (sección 7): las historias `API:` de los epics 3 y 4 y el módulo `ia`. Sandro David ya no es P4: está en la sección 5.
 
 **Regla:** toda llamada a un servicio externo pasa por su adaptador, con tiempo límite y respuesta de respaldo (AD-11 de la arquitectura).
 
@@ -256,7 +259,7 @@ Con el equipo de cuatro, este rol lo lleva **Luis Armando** (sección 7): las hi
 | Situación | Qué hacer |
 |---|---|
 | No sé qué hacer ahora | `/bmad ¿qué hago ahora?` |
-| Cambia un requisito y solo afecta a la spec | Sandro David: `/bmad-spec actualiza la spec: <cambio>` |
+| Cambia un requisito y solo afecta a la spec | Manuel Alexis avisa; Jean Pierre: `/bmad-spec actualiza la spec: <cambio>` |
 | Cambia algo que afecta a arquitectura o UX | Jean Pierre: `/bmad-correct-course <cambio>` |
 | Un ticket bloquea a otros | Jean Pierre: `/bmad-ticket what's blocked?`; el dueño sube un stub |
 | `bmad-build` se detiene al empezar | `git status`: haz commit o guarda los cambios y comprueba que estás en la rama del ticket |

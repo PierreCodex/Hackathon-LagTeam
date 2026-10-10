@@ -25,9 +25,9 @@ covers = []
 after = [1]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
-references = ["insumos/notas-entrevistas/entrevista-01.md"]
-notes = ["Paleta de la plataforma: Manuel Alexis la define; si el Club comparte su manual de marca, sale de ahí."]
+assignee = "Sandro David"
+references = ["ux-plataforma-eventos/DESIGN.md", "ux-plataforma-eventos/EXPERIENCE.md", "ux-plataforma-eventos/mockups/"]
+notes = ["La paleta y el estilo de la plataforma salen del DESIGN.md de Manuel Alexis (basado en el manual de marca del Club)."]
 
 [[entry]]
 id = 2
@@ -51,7 +51,7 @@ covers = ["CAP-1"]
 after = [2, 7]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 3
@@ -88,7 +88,7 @@ covers = ["CAP-2"]
 after = [4, 8]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 5
@@ -112,7 +112,7 @@ covers = ["CAP-3"]
 after = [5, 8]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 6
@@ -136,5 +136,5 @@ covers = ["CAP-4"]
 after = [6, 7]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
-notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]
+assignee = "Sandro David"
+notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]

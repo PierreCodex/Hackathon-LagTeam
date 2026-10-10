@@ -1,8 +1,10 @@
 # Equipo
 
-Responsable de este archivo: **P1 (Sandro David)**. Solo P1 lo modifica; los demás le piden los cambios.
+Responsable de este archivo: **P1 (Manuel Alexis)**. Solo P1 lo modifica; los demás le piden los cambios.
 
 > **Cambio en el evento:** Jostin no pudo asistir. Sandro David pasa a P1 y el equipo trabaja con **cuatro personas**. Luis Armando une P4 y P5.
+>
+> **Intercambio (10/10, noche):** Manuel Alexis no puede usar Claude Code, así que **Sandro David pasa a P3** (construye la interfaz con el `DESIGN.md` de Manuel) y **Manuel Alexis pasa a P1** (aceptación funcional, validación de las 19:00 y pitch, que no necesitan Claude Code).
 
 Los horarios y el resto del método vienen de `plan-hackathon-bmad-version-corregida.md` y `GUIA-POR-ROL.md`.
 
@@ -10,9 +12,9 @@ Los horarios y el resto del método vienen de `plan-hackathon-bmad-version-corre
 
 | Rol | Nombre | Usuario de GitHub | Herramienta de IA | Portátil | Turno de descanso |
 |---|---|---|---|---|---|
-| P1 · Producto, entrevistas, spec, aceptación funcional y guion del pitch (no programa) | **Sandro David** | @Saler123 | Claude Code + Codex | | 04:00–06:30 |
+| P1 · Producto, aceptación funcional, validación y guion del pitch (no programa) | **Manuel Alexis** | @Manuel-Silva-Hub | Claude Desktop (sin Claude Code) | | 23:00–01:30 |
 | P2 · Tech lead, arquitectura, integración, manejo de la demo y **responsable de BMad** | **Jean Pierre** | @PierreCodex | Claude Code (principal) y Codex (respaldo) | **Principal de la demo** | 00:00–02:30 |
-| P3 · Frontend y experiencia | **Manuel Alexis** | @Manuel-Silva-Hub | Claude Code | | 23:00–01:30 |
+| P3 · Frontend (historias "UI:" y 3.6) | **Sandro David** | @Saler123 | Claude Code + Codex | | 04:00–06:30 |
 | P4 + P5 · Backend/IA, CI, entorno de demo, QA y respaldo de BMad | **Luis Armando** | @ljuarezar14 | Codex + Claude Code | **Respaldo de la demo** | 02:30–05:00 |
 
 **Pitch:** quién presenta está por definir. Jean Pierre maneja la demo en su portátil mientras otra persona presenta.
@@ -36,16 +38,16 @@ Los horarios y el resto del método vienen de `plan-hackathon-bmad-version-corre
 | P3 | Manuel Alexis | Investigación del dominio con `bmad-deep-recon` (si hace falta). **Acompaña a Sandro David en las entrevistas del coffee break** (11:00–11:30) |
 | P4 + P5 | Luis Armando | Prueba técnica desechable de la integración más arriesgada; cuentas y entorno |
 
-Después: brainstorming 12:00, endurecer la idea 12:45 y **decisión GO a las 13:30** (Sandro David y Jean Pierre). A las 19:00, Sandro David y Manuel Alexis validan el prototipo con un mentor o usuario.
+Después: brainstorming 12:00, endurecer la idea 12:45 y **decisión GO a las 13:30** (Sandro David y Jean Pierre). A las 19:00, Manuel Alexis (con Sandro David) valida el prototipo con un mentor o usuario.
 
 ## Qué ejecuta y qué lleva cada rol
 
 | Rol | Persona | Skills que ejecuta | Documentos de los que es responsable | Aprueba |
 |---|---|---|---|---|
-| P1 | Sandro David | `bmad` (crear la iniciativa), `bmad-brainstorming`, `bmad-forge-idea`, `bmad-spec`, `bmad-review` y `bmad-party-mode` (pitch) | `reto.md`, `evidencia.md`, spec, `demo-estado.md`, guion del pitch, este archivo | GO, aceptación funcional de cada PR, entregables |
+| P1 | Manuel Alexis (antes, Sandro David) | `bmad-review` y `bmad-party-mode` para el pitch, desde Claude Desktop pegando el guion o con ayuda de otro | `evidencia.md`, `demo-estado.md`, guion del pitch, este archivo; si cambia la spec, avisa y Jean Pierre la actualiza con `bmad-spec` | Aceptación funcional de cada PR (en la vista previa de Vercel, desde el móvil), entregables |
 | P2 | Jean Pierre | `bmad-architecture`, `bmad-project-context`, `bmad-ticket`, `bmad-code-review`, `bmad status`, `bmad-build` (historias cortas) | Arquitectura (o `contratos.md`), `AGENTS.md`, `tickets.toml`, `ASIGNACION.md`, `README.md`, instalación de BMad | GO, PRs del flujo de la demo, congelamiento, cambios en BMad |
-| P3 | Manuel Alexis | `bmad-deep-recon` (si aplica), `bmad-ux` (si aplica), `bmad-build` | `research-<tema>.md`, `ux-<slug>/` | Revisión cruzada de los PRs de Luis Armando |
-| P4 + P5 | Luis Armando | `bmad-build` (esqueleto, backend/IA, CI), `bmad-qa-generate-e2e-tests` (si hay tiempo) | CI, entorno de demo, contratos de datos e IA; respaldo de la instalación de BMad | Revisión cruzada de los PRs de Manuel Alexis; PRs y dudas de BMad mientras Jean Pierre descansa (00:00–02:30) |
+| P3 | Sandro David (antes, Manuel Alexis) | `bmad-build` | Historias "UI:" y 3.6, a partir de `ux-plataforma-eventos/` de Manuel | Revisión cruzada de los PRs de Luis Armando |
+| P4 + P5 | Luis Armando | `bmad-build` (esqueleto, backend/IA, CI), `bmad-qa-generate-e2e-tests` (si hay tiempo) | CI, entorno de demo, contratos de datos e IA; respaldo de la instalación de BMad | Revisión cruzada de los PRs de Sandro David; PRs y dudas de BMad mientras Jean Pierre descansa (00:00–02:30) |
 
 Cada dev es responsable del plan de los tickets que construye. Ese plan lo genera `bmad-build`.
 

@@ -23,7 +23,7 @@ covers = ["CAP-5", "CAP-6", "CAP-7"]
 after = [1, "1.8"]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 2
@@ -62,7 +62,7 @@ covers = ["CAP-15"]
 after = [3, "1.7"]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 references = ["spec-reto18-plataforma-eventos/mapa-asientos.md"]
 
 [[entry]]
@@ -87,7 +87,7 @@ covers = ["CAP-15"]
 after = [4, 9]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 5
@@ -123,7 +123,7 @@ covers = ["CAP-15", "CAP-5"]
 after = [6, 8, 10]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 7
@@ -147,4 +147,4 @@ covers = ["CAP-7"]
 after = [7, 8]
 hitl = false
 risk = "high"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"

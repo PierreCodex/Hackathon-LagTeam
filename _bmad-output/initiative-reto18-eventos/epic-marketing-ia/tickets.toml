@@ -25,7 +25,7 @@ covers = ["CAP-8"]
 after = [1, "1.7"]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
 [[entry]]
 id = 2
@@ -62,7 +62,7 @@ covers = ["CAP-8", "CAP-9", "CAP-10"]
 after = [3, 8, "2.8"]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 references = ["spec-reto18-plataforma-eventos/piezas-marketing.md"]
 
 [[entry]]
@@ -77,7 +77,7 @@ hitl = true
 risk = "medium"
 assignee = "Luis Armando"
 unknown = "Si el plan gratuito de Upload-Post o Zernio permite publicar en Instagram y Facebook por API y cuánto tarda conectar la cuenta."
-notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo.", "La parte manual (cuenta, conexión de redes y responder el unknown) es de Sandro David, cuanto antes; el código es de Luis Armando."]
+notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo.", "La parte manual (cuenta, conexión de redes y responder el unknown) es de Manuel Alexis, cuanto antes; el código es de Luis Armando."]
 
 [[entry]]
 id = 5
@@ -102,7 +102,7 @@ after = [1, "1.5", "1.10"]
 hitl = false
 risk = "low"
 assignee = "Sandro David"
-notes = ["Sandro David la construye con bmad-build; Jean Pierre acepta su PR."]
+notes = ["Sandro David la construye con bmad-build."]
 
 [[entry]]
 id = 7
@@ -126,5 +126,5 @@ covers = ["CAP-14"]
 after = [7, 9, 4]
 hitl = false
 risk = "medium"
-assignee = "Manuel Alexis"
-notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]
+assignee = "Sandro David"
+notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]
