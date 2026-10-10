@@ -1,0 +1,32 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Marketing y flyer 4:5</title><style>
+/* Gobierna: DESIGN.md (tokens) y EXPERIENCE.md (Component Patterns). La espina manda sobre esta maqueta. */
+:root{--base:#000;--raised:#141414;--overlay:#1E1F20;--line:#2E2F31;--ink:#fff;--ink2:#BDBFC1;--muted:#727376;--accent:#ED3237;--sold:#3A3B3D;--p1:#ED3237;--p2:#F2A900;--p3:#2BB5A0;--p4:#7C8CFF;--ok:#3DBE7A}
+*{box-sizing:border-box;margin:0}
+body{background:#1a1a1a;font-family:Inter,Arial,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:24px 12px}
+.phone{width:360px;min-height:700px;background:var(--base);border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.logo{font-weight:900;font-size:13px;letter-spacing:.02em;line-height:1}.logo i{color:var(--accent);font-style:normal}
+.main{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
+h1{font-size:28px;font-weight:900;line-height:1.1}h2{font-size:20px;font-weight:800}
+.meta{font-size:13px;font-weight:500;color:var(--ink2)}
+.btn{display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;font-size:16px}
+.btn.sec{background:transparent;border:1px solid var(--muted)}
+.card{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:16px}
+.chips{display:flex;gap:8px;overflow:hidden}.chip{height:32px;padding:0 12px;border-radius:9999px;background:var(--overlay);color:var(--ink2);font-size:13px;font-weight:500;display:flex;align-items:center;white-space:nowrap}
+.chip.on{border:1px solid #fff;color:#fff}.chip.on:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px}
+.nav{display:flex;border-top:1px solid var(--line);margin-top:auto}.nav span{flex:1;text-align:center;padding:10px 0 12px;font-size:12px;color:var(--ink2);position:relative}
+.nav span.on{color:#fff}.nav span.on:before{content:"";position:absolute;top:0;left:30%;right:30%;height:2px;background:var(--accent)}
+.price{color:var(--accent);font-weight:800}
+.img{border-radius:12px;background:linear-gradient(135deg,#2a0a0c,#000 55%,#1d1d1e);aspect-ratio:4/5;position:relative;display:flex;align-items:flex-end;padding:12px}
+.note{position:absolute;top:8px;right:12px;font-size:11px}
+
+
+</style></head><body><div class="phone">
+<div class="top"><span>←</span><div class="logo">CLUB DE ARTE <i>&amp;</i> CULTURA</div><span></span></div>
+<div class="main"><h2>Tu campaña está lista</h2><p class="meta">Los datos salen de tu evento. Revisa antes de publicar.</p>
+<div class="img" style="background:linear-gradient(160deg,#ED3237 0%,#5a0a0d 45%,#000 100%);flex-direction:column;justify-content:flex-end;align-items:flex-start"><span class="note" style="color:#fff;opacity:.6">Vista previa 4:5</span>
+<p class="meta" style="color:#fff">SÁB 17 OCT · 8:00 PM</p><h1 style="font-size:30px">Muestra de Arte Piurano</h1><p class="meta" style="color:#fff;margin:6px 0">Teatro Municipal · Desde S/ 25</p><div style="border:1px solid #fff;border-radius:6px;padding:4px 10px;font-weight:800;font-size:13px">COMPRA TU ENTRADA</div></div>
+<div class="chips"><span class="chip on">Instagram</span><span class="chip on">Facebook</span><span class="chip">TikTok</span><span class="chip">X</span></div>
+<div class="card"><p class="meta">Texto para Instagram</p><p style="margin-top:4px;font-size:14px">Esta semana, el arte toma Piura 🎭 Muestra de Arte Piurano, sábado 17 a las 8 pm. #PiuraCultural</p></div>
+<div style="display:flex;gap:8px"><div class="btn sec" style="flex:1;font-size:14px">Descargar</div><div class="btn sec" style="flex:1;font-size:14px">Copiar</div></div><div class="btn">Publicar ahora</div></div>
+</div></body></html>
