@@ -28,3 +28,9 @@ jobs:
 
       - name: Pruebas
         run: pnpm test
+
+      - name: Levantar la BD de prueba (Supabase local)
+        run: pnpm db:start
+
+      - name: Pruebas de integración
+        run: pnpm test:int

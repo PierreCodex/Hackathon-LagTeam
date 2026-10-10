@@ -11,7 +11,8 @@
     "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env dist/main.js",
     "start": "node dist/main.js",
     "lint": "eslint .",
-    "test": "tsc -p tsconfig.json && vitest run"
+    "test": "tsc -p tsconfig.json && vitest run",
+    "test:int": "vitest run --config vitest.integracion.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "12.1.2",
@@ -23,8 +24,11 @@
     "rxjs": "7.8.2"
   },
   "devDependencies": {
+    "@nestjs/testing": "12.1.2",
     "@types/express": "5.0.6",
     "@types/node": "22.20.5",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.1",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
   }
