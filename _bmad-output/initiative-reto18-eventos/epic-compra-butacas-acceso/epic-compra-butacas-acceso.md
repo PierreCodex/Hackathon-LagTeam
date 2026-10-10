@@ -1,0 +1,54 @@
+---
+type: epic
+title: "Compra, butacas y acceso"
+parent: initiative-reto18-eventos
+covers: [CAP-5, CAP-6, CAP-7, CAP-15]
+after: []
+assignee: "Jean Pierre"
+risk: high
+---
+
+# Compra, butacas y acceso
+
+## Description
+
+El organizador arma el mapa de su local en la pizarra. El público se registra con su WhatsApp, elige butaca o compra entradas de zona general, y paga con el pago simulado. Recibe el QR por WhatsApp, y en la puerta el QR se valida una sola vez, también sin conexión. Es la parte de la demo con más riesgo técnico, por el bloqueo de butacas y el escaneo sin conexión.
+
+## Outcome
+
+El jurado compra una butaca desde su móvil, recibe el QR por WhatsApp y entra. Al segundo intento, el QR se rechaza. Corresponde a los pasos 5 a 7 de `demo-flow.md`.
+
+## Requirements
+
+Los de la spec, por su id: CAP-5, CAP-6, CAP-7 y CAP-15. La pizarra edita el mapa de la sede del módulo `eventos` (AD-4). El inventario, las órdenes, el pago, las entradas, la configuración de comisión, el acceso y las notificaciones son de este epic.
+
+## Done when
+
+1. En producción, desde los croquis de ejemplo, el organizador arma el mapa en la pizarra con sus filas, bloques, numeración y precios por rango.
+2. Dos compradores eligen la misma butaca a la vez y solo uno consigue bloquearla. Si el bloqueo vence sin pago, la butaca se libera. Nunca se vende por encima del aforo, y la venta se cierra a la hora de inicio (AD-5).
+3. Tras el pago simulado, la orden queda pagada con su comisión congelada (AD-6, AD-10). El QR llega por WhatsApp desde Evolution API y aparece en "Mis entradas".
+4. El escaneo en la puerta acepta el QR la primera vez y lo rechaza la segunda. Sin conexión, valida contra el manifiesto local y sincroniza al volver la conexión (AD-7).
+5. Si se corta Evolution API, la compra sigue y el QR está en "Mis entradas" (AD-9).
+
+## Boundaries
+
+Se corta por capacidad. Incluye los módulos `ventas`, `acceso` y `notificaciones`, y la pizarra dentro de `eventos`. La lectura del croquis con IA es del epic 5. Los paneles de ventas son del epic 4. Lo que queda fuera está en los non-goals de la spec.
+
+## References
+
+- parent — _bmad-output/initiative-reto18-eventos/initiative-reto18-eventos.md
+- spec — _bmad-output/initiative-reto18-eventos/spec-reto18-plataforma-eventos/spec-reto18-plataforma-eventos.md, CAP-5, CAP-6, CAP-7 y CAP-15
+- spine — _bmad-output/initiative-reto18-eventos/architecture-reto18-plataforma-eventos/architecture-reto18-plataforma-eventos.md, AD-4 a AD-10
+- mapa — _bmad-output/initiative-reto18-eventos/spec-reto18-plataforma-eventos/mapa-asientos.md
+- croquis — _bmad-output/initiative-reto18-eventos/insumos/ (las dos imágenes de WhatsApp)
+
+## Notes
+
+- Waits on epic-base-roles-eventos because: necesita el monorepo desplegado, la autenticación con roles, el modelo de sede y mapa, y eventos aprobados con categorías de precio.
+- Decision: el pago es simulado, sin API de pasarela, detrás de la interfaz `PasarelaPago` (usuario, 10/10/2026).
+- Decision: la configuración de comisión vive en `ventas`, con un valor por defecto de comisión por entrada; el epic 4 la edita (AD-10).
+- Decision: sin la historia de cierre "Repaso final de limpieza", por el tiempo de la hackathon (usuario, 10/10/2026).
+- Decision: el primer recorrido es una compra de zona general con QR y puerta en línea. La pizarra (historias 3 y 4) avanza en paralelo. La historia 1 crea `notificaciones.encolar()` como esqueleto para que la 2 no choque con la confirmación del pago (10/10/2026).
+- Decision: los precios por asiento son un dato del evento en el módulo `eventos`, y `ventas` los copia al inventario (AD-4) (10/10/2026).
+- Open question: ¿acepta el jurado el pago simulado para el criterio 3?
+- Unknown: si Evolution API envía la imagen del QR de forma estable con un número de prueba. Hay que comprobarlo al empezar el envío por WhatsApp.
