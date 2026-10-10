@@ -1,51 +1,81 @@
 # Historias del epic 3 (Marketing con IA), en orden de construcción. tickets.py lee este archivo.
 # Cada función de IA vive en su propio archivo (apps/api/src/ia/funciones/<nombre>.ts) para que historias en paralelo no choquen.
+# `assignee` es una clave propia del equipo (tickets.py la ignora): dice quién construye cada historia.
 
 [[entry]]
 id = 1
 type = "story"
-title = "Primera pieza con IA"
-description = "Crea el módulo ia con el adaptador de Ollama, tiempo límite y respuesta de respaldo (AD-11), la función textosYCampaña (textos, paleta y campaña con público objetivo, presupuesto en soles y calendario), la plantilla 4:5 renderizada a PNG con next/og (AD-12) y la pantalla 'Marketing' del organizador (CAP-8); el epic 5 añade su función leerCroquis sobre este módulo."
-verify = "Sobre un evento sembrado, el organizador pulsa 'Generar' y ve el flyer 4:5 y la campaña con fecha, sede y precio exactos; con Ollama apagado se muestra la respuesta de respaldo."
+title = "API: módulo ia y primera campaña"
+description = "Crea el módulo ia con el adaptador de Ollama, tiempo límite y respuesta de respaldo (AD-11), la función textosYCampaña (textos, paleta y campaña con público objetivo, presupuesto en soles y calendario), y el endpoint del organizador que genera y guarda la pieza de un evento con sus datos para la plantilla (CAP-8); el epic 5 añade su función leerCroquis sobre este módulo."
+verify = "Pruebas de integración sobre un evento sembrado: el endpoint devuelve textos y campaña con fecha, sede y precio exactos; con Ollama apagado devuelve la respuesta de respaldo."
 covers = ["CAP-8"]
 after = ["1.2", "1.3"]
 hitl = true
 risk = "high"
+assignee = "Luis Armando"
 notes = ["Persona: Jean Pierre levanta Ollama y el túnel en su PC, elige el modelo y carga OLLAMA_URL en Railway."]
+
+[[entry]]
+id = 8
+type = "story"
+title = "UI: pantalla Marketing y flyer 4:5"
+description = "Entrega la plantilla 4:5 renderizada a PNG con next/og en apps/web/app/piezas/[pieza]/[formato]/route.tsx (AD-12) y la pantalla 'Marketing' del organizador con el botón 'Generar', el flyer y la campaña, y el aviso cuando llega la respuesta de respaldo (CAP-8)."
+verify = "Sobre un evento sembrado, el organizador pulsa 'Generar' en el móvil y ve el flyer 4:5 y la campaña con fecha, sede y precio exactos; con Ollama apagado se muestra la respuesta de respaldo."
+covers = ["CAP-8"]
+after = [1, "1.7"]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 2
 type = "story"
 title = "Enlaces rastreables y ventas por pieza"
-description = "Añade marketing_enlaces con código base62 de 8, la ruta /r/:codigo en la web, el registro de clics, la redirección con ?ref= que la compra guarda (2.1) y, por pieza, clics y ventas leídos del servicio de ventas (CAP-10, AD-8); el epic 4 lee estos enlaces y clics."
-verify = "Abrir el enlace de una pieza y comprar deja en esa pieza 1 clic y 1 venta."
+description = "Añade marketing_enlaces con código base62 de 8, la ruta /r/:codigo en la web, el registro de clics, la redirección con ?ref= que la compra de la web (2.8) envía y la orden guarda (2.1) y el endpoint de clics y ventas por pieza leídos del servicio de ventas (CAP-10, AD-8); el epic 4 lee estos enlaces y clics."
+verify = "Abrir el enlace de una pieza y comprar deja en esa pieza 1 clic y 1 venta en el endpoint."
 covers = ["CAP-10"]
 after = [1, "2.1"]
 hitl = false
 risk = "medium"
+assignee = "Luis Armando"
 
 [[entry]]
 id = 3
 type = "story"
-title = "Redes, formatos y textos por red"
-description = "Permite al organizador marcar sus redes y genera las plantillas 9:16, 16:9 y A4 (con el QR de su enlace rastreable) y un texto por red en una sola llamada a ia, con botones para descargar el PNG, copiar el texto y compartir por WhatsApp con wa.me (CAP-8, CAP-9)."
-verify = "Al marcar Instagram, TikTok y X aparecen sus formatos y textos; el A4 lleva un QR que abre el enlace de la pieza."
+title = "API: redes y textos por red"
+description = "Añade la selección de redes del organizador y genera un texto por red en una sola llamada a ia, con el enlace rastreable de cada pieza y los datos que necesitan las plantillas 9:16, 16:9 y A4 (CAP-8, CAP-9)."
+verify = "Pruebas de integración: al pedir Instagram, TikTok y X el endpoint devuelve un texto por red y un enlace rastreable por pieza en una sola llamada a ia."
 covers = ["CAP-8", "CAP-9"]
 after = [1, 2]
 hitl = false
 risk = "medium"
+assignee = "Luis Armando"
+references = ["spec-reto18-plataforma-eventos/piezas-marketing.md"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "UI: formatos por red, compartir y resultados por pieza"
+description = "Entrega las plantillas 9:16, 16:9 y A4 (con el QR de su enlace rastreable), las casillas de redes, los botones de descargar el PNG, copiar el texto y compartir por WhatsApp con wa.me, y los clics y ventas de cada pieza (CAP-8, CAP-9, CAP-10)."
+verify = "Al marcar Instagram, TikTok y X aparecen sus formatos y textos; el A4 lleva un QR que abre el enlace de la pieza; tras comprar desde ese enlace la pieza muestra 1 clic y 1 venta."
+covers = ["CAP-8", "CAP-9", "CAP-10"]
+after = [3, 8, "2.8"]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
 references = ["spec-reto18-plataforma-eventos/piezas-marketing.md"]
 
 [[entry]]
 id = 4
 type = "story"
 title = "Publicar en Instagram y Facebook"
-description = "Integra Upload-Post o Zernio para 'Publicar ahora' en Instagram y Facebook con la URL del PNG; TikTok y X quedan en exportación y, si la publicación falla, se ofrecen descargar y copiar (CAP-9)."
+description = "Integra Upload-Post o Zernio para 'Publicar ahora' en Instagram y Facebook con la URL del PNG, y añade ese botón a la pantalla de la historia 9; TikTok y X quedan en exportación y, si la publicación falla, se ofrecen descargar y copiar (CAP-9)."
 verify = "Una pieza aparece en el Instagram del equipo con un solo botón; con la API caída se ofrecen descarga y copia."
 covers = ["CAP-9"]
-after = [3]
+after = [3, 9]
 hitl = true
 risk = "medium"
+assignee = "Luis Armando"
 unknown = "Si el plan gratuito de Upload-Post o Zernio permite publicar en Instagram y Facebook por API y cuánto tarda conectar la cuenta."
 notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo."]
 
@@ -59,25 +89,41 @@ covers = ["CAP-9"]
 after = [3, "2.2"]
 hitl = false
 risk = "low"
+assignee = "Luis Armando"
 
 [[entry]]
 id = 6
 type = "story"
 title = "Alerta de APDAYC con IA"
-description = "Añade la función alertaApdayc (Ollama) que lee título y descripción del evento y rellena el hueco de alerta de la pantalla de aprobación de la historia 1.5 (CAP-3)."
+description = "Añade la función alertaApdayc (Ollama) que lee título y descripción del evento y rellena alerta_apdayc en la respuesta de aprobación (1.5), que la pantalla de la historia 1.10 ya muestra (CAP-3)."
 verify = "Un evento de 'Muestra de arte' que menciona un DJ en vivo muestra la alerta en la aprobación y uno sin música no la muestra."
 covers = ["CAP-3"]
-after = [1, "1.5"]
+after = [1, "1.5", "1.10"]
 hitl = false
 risk = "low"
+assignee = "Luis Armando"
 
 [[entry]]
 id = 7
 type = "story"
-title = "Piura Cultural Weekend"
-description = "Entrega 'Generar Weekend' al administrador: agrupa los eventos aprobados de viernes a domingo, la función weekend crea nombre, ruta y mensaje, una plantilla de afiche colectivo, aprobación con un clic y, para cada organizador, su pieza 'Parte del Weekend' con enlace rastreable y botón de compartir por WhatsApp (CAP-14)."
-verify = "El evento aprobado minutos antes aparece en el afiche colectivo y su organizador ve su pieza 'Parte del Weekend' con su enlace."
+title = "API: Piura Cultural Weekend"
+description = "Añade al administrador 'Generar Weekend': agrupa los eventos aprobados de viernes a domingo, la función weekend crea nombre, ruta y mensaje, la aprobación con un clic crea para cada organizador su pieza 'Parte del Weekend' con enlace rastreable (CAP-14)."
+verify = "Pruebas de integración: con un evento aprobado minutos antes, generar y aprobar el Weekend lo incluye y crea la pieza 'Parte del Weekend' de su organizador con su enlace."
 covers = ["CAP-14"]
 after = [3]
 hitl = false
 risk = "medium"
+assignee = "Luis Armando"
+
+[[entry]]
+id = 10
+type = "story"
+title = "UI: Weekend, afiche colectivo y pieza del organizador"
+description = "Entrega la pantalla 'Generar Weekend' del administrador con su aprobación de un clic, la plantilla del afiche colectivo y, para cada organizador, su pieza 'Parte del Weekend' con botón de compartir por WhatsApp (CAP-14)."
+verify = "El evento aprobado minutos antes aparece en el afiche colectivo y su organizador ve su pieza 'Parte del Weekend' con su enlace."
+covers = ["CAP-14"]
+after = [7, 9, 4]
+hitl = false
+risk = "medium"
+assignee = "Manuel Alexis"
+notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]

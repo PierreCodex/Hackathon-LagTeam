@@ -47,3 +47,5 @@ Se corta por capacidad. Incluye los módulos `identidad` y `eventos` (sin la piz
 - Decision: sin la historia de cierre "Repaso final de limpieza", por el tiempo de la hackathon (usuario, 10/10/2026).
 - Decision: la historia 3 enlaza al organizador con auth.users, para poder construirse en paralelo con la 2; la 6 no depende de la 2, porque el catálogo es público (10/10/2026).
 - Open question: ¿quién verifica los eventos en el Club y con qué criterios? Para la demo basta con la revisión manual.
+- Decision: cada historia con pantalla se parte en una historia API (conserva su id y su responsable) y una historia "UI:" con id nuevo para Manuel Alexis; todas las UI esperan a la 1.7, sistema de diseño y layout móvil con la paleta de la plataforma (usuario, 10/10/2026).
+- Decision: la 1.3 deja montadas las pruebas de integración de la API, que usan las demás historias API (10/10/2026).

@@ -1,34 +1,76 @@
 # Historias del epic 4 (Paneles y negocio), en orden de construcción. tickets.py lee este archivo.
+# `assignee` es una clave propia del equipo (tickets.py la ignora): dice quién construye cada historia.
 
 [[entry]]
 id = 1
 type = "story"
-title = "Panel de ventas del organizador"
-description = "Crea el módulo negocio y el panel del organizador con sus ventas por evento, por categoría de precio y por pieza, leyendo de ventas y marketing solo a través de sus servicios (CAP-11, AD-2, AD-8)."
-verify = "La compra de la demo hecha desde el enlace de una pieza aparece en el panel del organizador, asignada a esa pieza, segundos después."
+title = "API: ventas del organizador"
+description = "Crea el módulo negocio y el endpoint de ventas del organizador por evento, por categoría de precio y por pieza, leyendo de ventas y marketing solo a través de sus servicios (CAP-11, AD-2, AD-8)."
+verify = "Pruebas de integración: la compra hecha desde el enlace de una pieza aparece en el endpoint del organizador, asignada a esa pieza."
 covers = ["CAP-11"]
 after = ["2.1", "3.2"]
 hitl = false
 risk = "low"
+assignee = "Luis Armando"
+
+[[entry]]
+id = 4
+type = "story"
+title = "UI: panel de ventas del organizador"
+description = "Entrega el panel del organizador con sus ventas por evento, por categoría de precio y por pieza, que se actualiza al volver a la pantalla (CAP-11)."
+verify = "La compra de la demo hecha desde el enlace de una pieza aparece en el panel del organizador, asignada a esa pieza, segundos después."
+covers = ["CAP-11"]
+after = [1, "1.7", "2.8"]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 2
 type = "story"
-title = "Comisión configurable y liquidación"
-description = "Entrega al administrador la configuración del modelo de ingresos (comisión por entrada en porcentaje o importe fijo, o tarifa por evento), guardada a través del servicio de ventas en ventas_config_comision, y la liquidación por organizador: ventas brutas menos comisión congelada (CAP-12, AD-10). Con tarifa por evento, la orden congela modelo y tarifa con importe 0 y la liquidación descuenta la tarifa una sola vez por evento con el valor congelado de su primera orden pagada."
-verify = "Al cambiar la comisión, las ventas nuevas usan la nueva y las ya pagadas conservan la suya, y la liquidación de un organizador cuadra con un cálculo hecho a mano."
+title = "API: comisión configurable y liquidación"
+description = "Añade los endpoints del administrador para configurar el modelo de ingresos (comisión por entrada en porcentaje o importe fijo, o tarifa por evento), guardado a través del servicio de ventas en ventas_config_comision, y la liquidación por organizador: ventas brutas menos comisión congelada (CAP-12, AD-10). Con tarifa por evento, la orden congela modelo y tarifa con importe 0 y la liquidación descuenta la tarifa una sola vez por evento con el valor congelado de su primera orden pagada."
+verify = "Pruebas de integración: al cambiar la comisión, las ventas nuevas usan la nueva y las ya pagadas conservan la suya, y la liquidación de un organizador cuadra con un cálculo hecho a mano."
 covers = ["CAP-12"]
 after = [1]
 hitl = false
 risk = "medium"
+assignee = "Luis Armando"
+
+[[entry]]
+id = 5
+type = "story"
+title = "UI: comisión y liquidación"
+description = "Entrega al administrador la pantalla para elegir el modelo de ingresos y su valor, y la tabla de liquidación por organizador (CAP-12)."
+verify = "Desde el móvil, el administrador cambia la comisión, hace una compra nueva y la liquidación del organizador refleja la nueva comisión solo en esa venta."
+covers = ["CAP-12"]
+after = [2, "1.7"]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
+notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]
 
 [[entry]]
 id = 3
 type = "story"
-title = "Tablero del administrador y Excel"
-description = "Entrega el tablero del administrador con ventas, asistencia (entradas usadas sobre vendidas), categorías y perfil del público (ciudad o distrito desde identidad y franja de compra), con filtro de fechas y exportación a Excel, y añade a la semilla ventas y asistencia de ejemplo (CAP-13)."
-verify = "El tablero muestra los datos de ejemplo y los de la demo, y el Excel descargado se abre con las mismas cifras."
+title = "API: datos del tablero y Excel"
+description = "Añade los endpoints del tablero del administrador con ventas, asistencia (entradas usadas sobre vendidas), categorías y perfil del público (ciudad o distrito desde identidad y franja de compra), con filtro de fechas y exportación a Excel, y añade a la semilla ventas y asistencia de ejemplo (CAP-13)."
+verify = "Pruebas de integración sobre la semilla: los endpoints devuelven las cifras esperadas y el Excel generado tiene las mismas."
 covers = ["CAP-13"]
 after = [1]
 hitl = false
 risk = "low"
+assignee = "Luis Armando"
+
+[[entry]]
+id = 6
+type = "story"
+title = "UI: tablero del administrador"
+description = "Entrega el tablero del administrador con gráficos de ventas, asistencia, categorías y perfil del público, el filtro de fechas y el botón de descargar Excel (CAP-13)."
+verify = "El tablero muestra los datos de ejemplo y los de la demo, y el Excel descargado se abre con las mismas cifras."
+covers = ["CAP-13"]
+after = [3, "1.7"]
+hitl = false
+risk = "low"
+assignee = "Manuel Alexis"
+notes = ["Reserva: si Manuel Alexis va cargado, la toma quien termine primero."]
