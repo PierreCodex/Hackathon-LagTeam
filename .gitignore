@@ -17,3 +17,13 @@ node_modules/
 __pycache__/
 .DS_Store
 Thumbs.db
+
+# BMad: workflows renderizados (se generan al ejecutar los skills)
+_bmad/render/
+
+# Compilados y despliegue
+dist/
+.next/
+*.tsbuildinfo
+.vercel/
+next-env.d.ts

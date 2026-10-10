@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+.env
+.env.*
+.git
+_bmad
+_bmad-output
+.agents
+.claude
+*.pdf
