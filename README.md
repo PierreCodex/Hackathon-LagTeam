@@ -30,6 +30,18 @@ curl localhost:3001/api/v1/salud
 # 200 {"api":"ok","bd":"ok","hora_bd":"…"}; si la BD falla: 503 {"api":"ok","bd":"error","error":{…}}
 ```
 
+### Identidad y roles
+
+- `POST /api/v1/identidad/registro` (público): crea la cuenta de Supabase Auth ya confirmada y su perfil. Cuerpo: `correo`, `contrasena` (≥ 8), `rol` (`organizador` o `publico`), `whatsapp` (`987 654 321` se guarda como `+51987654321`), `ciudad` opcional y `acepta_avisos`. El admin no se registra por API: lo crea `sembrar:admin`.
+- La web inicia sesión directamente con Supabase (`signInWithPassword`) y envía el JWT como `Authorization: Bearer <token>`.
+- `GET /api/v1/identidad/perfil`: perfil de quien llama (id, correo, rol, WhatsApp, ciudad, consentimiento).
+- Para proteger un endpoint: `@Roles("admin")` (o varios roles) y `@UsuarioActual()` para leer la cuenta. El rol siempre sale de `identidad_perfiles`. Sin `@Roles()` la ruta es pública. Errores: 401 `NO_AUTENTICADO`, 403 `SIN_PERMISO` / `SIN_PERFIL`, 503 `AUTH_NO_DISPONIBLE`.
+
+```bash
+curl -X POST localhost:3001/api/v1/identidad/registro -H 'content-type: application/json'   -d '{"correo":"ana@ejemplo.pe","contrasena":"una-clave-8","rol":"organizador","whatsapp":"987 654 321","acepta_avisos":true}'
+curl localhost:3001/api/v1/identidad/perfil -H "Authorization: Bearer $TOKEN"
+```
+
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
 ```bash
@@ -95,8 +107,9 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar la migración `supabase/migrations/20261010000000_salud.sql`: pegarla en **SQL Editor** y ejecutarla, o con la CLI `supabase link` + `supabase db push`.
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`.
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
+4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 
 ### 2. Railway (API)
 
