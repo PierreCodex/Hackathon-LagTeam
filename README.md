@@ -34,7 +34,59 @@ Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
 ```bash
 pnpm build && pnpm lint && pnpm test
+pnpm test:int            # con la BD de prueba levantada (ver abajo)
 ```
+
+## Pruebas de integración
+
+`pnpm test:int` levanta la app NestJS real (la misma configuración que `main.ts`) contra una
+**BD de prueba local**: Supabase en Docker con la CLI (devDependency de la raíz). Nunca usa la BD
+de desarrollo del `.env`: lee la URL y las claves de `supabase status` y se niega a ejecutar si la
+URL no es `localhost`/`127.0.0.1`. `pnpm test` (unitarias) sigue sin necesitar ninguna BD.
+
+```bash
+# Requisito: Docker Desktop en marcha
+pnpm db:start            # la primera vez descarga las imágenes (varios minutos); aplica supabase/migrations
+pnpm test:int            # pruebas de integración (en serie)
+pnpm db:stop             # apaga la BD de prueba cuando acabes
+```
+
+Si la BD no está levantada, `pnpm test:int` falla al inicio, sin ejecutar ninguna prueba, y dice
+que ejecutes `pnpm db:start`. Tras añadir una migración nueva, aplícala con `pnpm exec supabase db reset`.
+
+### Escribir una prueba de integración
+
+Crea `apps/api/test/integracion/<algo>.int.spec.ts` y usa las ayudas de `test/integracion/ayudas/`:
+
+| Ayuda | Qué hace |
+|---|---|
+| `crearAppDePrueba()` | La app real en memoria, conectada a la BD de prueba. Ciérrala con `app.close()` |
+| `tokenPorRol(rol)` | Crea un usuario de Supabase Auth con `app_metadata.rol` (`admin`, `organizador` o `publico`) y devuelve `{ id, token }`. Los usuarios se borran solos al terminar cada archivo |
+| `api(app, token?)` | `get`, `post`, `put`, `patch`, `delete` con `supertest` y `Authorization: Bearer <token>` |
+
+```ts
+import type { INestApplication } from "@nestjs/common";
+import { afterAll, beforeAll, expect, it } from "vitest";
+import { crearAppDePrueba } from "./ayudas/app.js";
+import { api } from "./ayudas/http.js";
+import { tokenPorRol } from "./ayudas/tokens.js";
+
+let app: INestApplication;
+beforeAll(async () => {
+  app = await crearAppDePrueba();
+});
+afterAll(async () => {
+  await app.close();
+});
+
+it("un organizador puede consultar la salud", async () => {
+  const { token } = await tokenPorRol("organizador");
+  const respuesta = await api(app, token).get("/api/v1/salud");
+  expect(respuesta.status).toBe(200);
+});
+```
+
+La CI ejecuta también `pnpm db:start` y `pnpm test:int` en cada PR.
 
 ## Despliegue (pasos de Jean Pierre)
 
