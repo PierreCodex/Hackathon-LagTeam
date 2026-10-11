@@ -75,6 +75,32 @@ const COLUMNAS_PIEZA =
   "id, organizador_id, estado, titulo, descripcion, categoria, inicio, distrito, foto_url, " +
   "sede:eventos_sedes(nombre, direccion), categorias:eventos_categorias_precio(precio_centimos)";
 
+/**
+ * Lo que `ventas` necesita de un evento para vender y validar entradas (AD-2: lo lee solo por aquí).
+ * `capacidad_zona`: capacidad de la zona general de la categoría; `null` si la categoría no tiene zona general.
+ */
+export interface EventoParaVenta {
+  id: string;
+  organizador_id: string;
+  estado: EstadoEvento;
+  publicado: boolean;
+  inicio: string;
+  aforo: number;
+  titulo: string;
+  sede: { nombre: string; direccion: string };
+  categorias: {
+    id: string;
+    nombre: string;
+    precio_centimos: number;
+    seccion_id: string | null;
+    capacidad_zona: number | null;
+  }[];
+}
+
+const COLUMNAS_VENTA =
+  "id, organizador_id, estado, publicado, inicio, aforo, titulo, sede:eventos_sedes(nombre, direccion), " +
+  "categorias:eventos_categorias_precio(id, nombre, precio_centimos, seccion_id, seccion:eventos_secciones(tipo, capacidad))";
+
 const COLUMNAS_PUBLICO =
   "id, titulo, descripcion, categoria, distrito, inicio, destacado, foto_url, aforo, " +
   "sede:eventos_sedes(id, nombre, direccion, distrito), categorias:eventos_categorias_precio(id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id)";
@@ -450,6 +476,55 @@ export class EventosService {
       foto_url: fila.foto_url,
       sede: { nombre: sede?.nombre ?? "", direccion: sede?.direccion ?? "" },
       precio_minimo_centimos: precioMinimo(precios),
+    };
+  }
+
+  /**
+   * Evento con su sede y sus categorías (con la capacidad de su zona general), para `ventas`.
+   * `null` si no existe (o el id no es un UUID). No filtra por estado ni dueño: lo decide quien llama.
+   */
+  async datosParaVenta(eventoId: string): Promise<EventoParaVenta | null> {
+    if (!UUID.test(eventoId)) return null;
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select(COLUMNAS_VENTA)
+      .eq("id", eventoId)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS))
+      .maybeSingle();
+    if (error) {
+      this.logger.warn(`No se pudo leer el evento ${eventoId} para la venta: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer el evento. Inténtalo de nuevo.");
+    }
+    if (!data) return null;
+    type Seccion = { tipo: string; capacidad: number | null };
+    const fila = data as unknown as Omit<EventoParaVenta, "sede" | "categorias"> & {
+      sede: EventoParaVenta["sede"] | EventoParaVenta["sede"][] | null;
+      categorias: {
+        id: string; nombre: string; precio_centimos: number; seccion_id: string | null;
+        seccion: Seccion | Seccion[] | null;
+      }[] | null;
+    };
+    const sede = Array.isArray(fila.sede) ? fila.sede[0] : fila.sede;
+    return {
+      id: fila.id,
+      organizador_id: fila.organizador_id,
+      estado: fila.estado,
+      publicado: fila.publicado === true,
+      inicio: fila.inicio,
+      aforo: Number(fila.aforo),
+      titulo: fila.titulo,
+      sede: { nombre: sede?.nombre ?? "", direccion: sede?.direccion ?? "" },
+      categorias: (fila.categorias ?? []).map((c) => {
+        const seccion = Array.isArray(c.seccion) ? c.seccion[0] : c.seccion;
+        const general = seccion?.tipo === "general" && seccion.capacidad !== null;
+        return {
+          id: c.id,
+          nombre: c.nombre,
+          precio_centimos: Number(c.precio_centimos),
+          seccion_id: c.seccion_id,
+          capacidad_zona: general ? Number(seccion.capacidad) : null,
+        };
+      }),
     };
   }
 

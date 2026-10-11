@@ -22,8 +22,12 @@ const CODIGOS: Record<number, string> = {
 /** Lee `{ codigo, mensaje }` del cuerpo de la excepción si quien la lanzó lo indicó. */
 function errorDeRespuesta(respuesta: unknown): Partial<ErrorApi> {
   if (typeof respuesta !== "object" || respuesta === null) return {};
-  const { codigo, mensaje, message } = respuesta as Record<string, unknown>;
+  const { codigo, mensaje, message, detalles } = respuesta as Record<string, unknown>;
   return {
+    detalles:
+      typeof detalles === "object" && detalles !== null && !Array.isArray(detalles)
+        ? (detalles as Record<string, unknown>)
+        : undefined,
     codigo: typeof codigo === "string" ? codigo : undefined,
     mensaje:
       typeof mensaje === "string"
@@ -50,6 +54,7 @@ export class FiltroErrores implements ExceptionFilter {
       error = {
         codigo: propio.codigo ?? CODIGOS[estado] ?? `HTTP_${estado}`,
         mensaje: propio.mensaje ?? excepcion.message,
+        ...(propio.detalles ? { detalles: propio.detalles } : {}),
       };
       if (estado === HttpStatus.SERVICE_UNAVAILABLE) {
         // Dependencia caída y ya diagnosticada (Auth, BD): una línea basta, sin traza.

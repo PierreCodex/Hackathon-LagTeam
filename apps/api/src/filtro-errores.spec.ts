@@ -1,6 +1,7 @@
 import {
   type ArgumentsHost,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
@@ -33,6 +34,13 @@ describe("FiltroErrores", () => {
     const r = filtrar(new ForbiddenException({ codigo: "SIN_PERFIL", mensaje: "Sin perfil" }));
     expect(r.estado).toBe(403);
     expect(r.cuerpo).toEqual({ error: { codigo: "SIN_PERFIL", mensaje: "Sin perfil" } });
+  });
+
+  it("conserva `detalles` si la excepción los trae como objeto, y nunca otra cosa", () => {
+    const con = filtrar(new ConflictException({ codigo: "ENTRADA_YA_USADA", mensaje: "Ya usada", detalles: { usada_en: "x" } }));
+    expect(con.cuerpo).toEqual({ error: { codigo: "ENTRADA_YA_USADA", mensaje: "Ya usada", detalles: { usada_en: "x" } } });
+    const lista = filtrar(new ConflictException({ codigo: "C", mensaje: "M", detalles: ["x"] }));
+    expect(lista.cuerpo).toEqual({ error: { codigo: "C", mensaje: "M" } });
   });
 
   it("sin código propio, usa el del estado HTTP", () => {
