@@ -24,6 +24,8 @@ export const COLUMNAS_PERFIL = "id, rol, whatsapp, ciudad, acepta_avisos";
 
 /** Tiempo límite de la lectura del perfil (se hace en cada petición protegida). */
 export const TIEMPO_LIMITE_PERFIL_MS = 3000;
+/** Tiempo límite de las lecturas de varios perfiles (paneles del administrador). */
+export const TIEMPO_LIMITE_LISTA_MS = 10_000;
 
 export interface FilaPerfil {
   id: string;
@@ -117,6 +119,35 @@ export class IdentidadService {
       correoFinal = usuario.data.user.email ?? "";
     }
     return aPerfil(data as FilaPerfil, correoFinal);
+  }
+
+  /** Ciudad de cada cuenta (perfil del público en el tablero, epic 4). Sin perfil, no aparece. */
+  async ciudadesDe(ids: string[]): Promise<Map<string, string | null>> {
+    const unicos = [...new Set(ids)];
+    if (unicos.length === 0) return new Map();
+    const { data, error } = await this.cliente()
+      .from(TABLA_PERFILES)
+      .select("id, ciudad")
+      .in("id", unicos)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_LISTA_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer las ciudades: ${error.message}`);
+      throw new ServiceUnavailableException({ codigo: CODIGO_BD_NO_DISPONIBLE, mensaje: "No se pudieron leer los perfiles." });
+    }
+    return new Map(((data ?? []) as { id: string; ciudad: string | null }[]).map((f) => [f.id, f.ciudad]));
+  }
+
+  /** Correo de cada cuenta (liquidación por organizador, epic 4). Si Auth falla, queda vacío. */
+  async correosDe(ids: string[]): Promise<Map<string, string>> {
+    const supabase = this.cliente();
+    const pares = await Promise.all(
+      [...new Set(ids)].map(async (id) => {
+        const { data, error } = await supabase.auth.admin.getUserById(id);
+        if (error) this.logger.warn(`No se pudo leer la cuenta ${id}: ${error.message}`);
+        return [id, data?.user?.email ?? ""] as const;
+      }),
+    );
+    return new Map(pares);
   }
 
   private cliente(): NonNullable<ClienteSupabase> {

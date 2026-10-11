@@ -83,6 +83,16 @@ const COLUMNAS_PIEZA =
  * Lo que `ventas` necesita de un evento para vender y validar entradas (AD-2: lo lee solo por aquí).
  * `capacidad_zona`: capacidad de la zona general de la categoría; `null` si la categoría no tiene zona general.
  */
+export interface EventoParaNegocio {
+  id: string;
+  organizador_id: string;
+  titulo: string;
+  categoria: CategoriaEvento;
+  distrito: string;
+  inicio: string;
+  aforo: number;
+}
+
 export interface EventoParaVenta {
   id: string;
   organizador_id: string;
@@ -590,6 +600,22 @@ export class EventosService {
         };
       }),
     };
+  }
+
+  /** Datos de varios eventos para los paneles de `negocio` (epic 4), en cualquier estado. */
+  async resumenesParaNegocio(ids: string[]): Promise<EventoParaNegocio[]> {
+    const validos = [...new Set(ids)].filter((id) => UUID.test(id));
+    if (validos.length === 0) return [];
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select("id, organizador_id, titulo, categoria, distrito, inicio, aforo")
+      .in("id", validos)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer los eventos para el tablero: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer los eventos. Inténtalo de nuevo.");
+    }
+    return ((data ?? []) as EventoParaNegocio[]).map((e) => ({ ...e, aforo: Number(e.aforo) }));
   }
 
   private async leerCreado(id: string, datos: AltaEvento): Promise<EventoCreado> {
