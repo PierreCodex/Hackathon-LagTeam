@@ -278,6 +278,72 @@ export type MapaSedeEntrada = z.output<typeof MapaSedeEntradaSchema>;
 export const DuplicarSedeSchema = z.object({ nombre: textoHasta(150) });
 export type DuplicarSede = z.infer<typeof DuplicarSedeSchema>;
 
+/** Máximo de rangos de precio por evento. */
+export const MAXIMO_RANGOS_PRECIO = 2000;
+
+const numeroAsiento = z.number().int().positive().max(LIMITES_MAPA.numeroAsiento);
+
+/**
+ * Rango de precio: los asientos `desde`–`hasta` (ambos incluidos) de una fila de una sección numerada tienen
+ * la categoría `categoria_id`. Se nombran la sección y la fila (no sus ids): el rango sobrevive a un reemplazo
+ * del mapa. Puede haber huecos de numeración dentro del rango.
+ */
+export const RangoPrecioEntradaSchema = z.object({
+  categoria_id: z.uuid(),
+  seccion: textoHasta(60),
+  fila: textoHasta(20),
+  desde: numeroAsiento,
+  hasta: numeroAsiento,
+}).superRefine((rango, ctx) => {
+  if (rango.desde > rango.hasta) ctx.addIssue({ code: "custom", message: "hasta debe ser igual o mayor que desde", path: ["hasta"] });
+});
+export type RangoPrecioEntrada = z.infer<typeof RangoPrecioEntradaSchema>;
+
+/** Cuerpo de `PUT /api/v1/eventos/:id/precios`: la lista entera de rangos; guardar la reemplaza. */
+export const PreciosEntradaSchema = z.object({
+  rangos: z.array(RangoPrecioEntradaSchema).max(MAXIMO_RANGOS_PRECIO),
+}).superRefine((precios, ctx) => {
+  const porFila = new Map<string, { desde: number; hasta: number; i: number }[]>();
+  precios.rangos.forEach((rango, i) => {
+    const clave = JSON.stringify([rango.seccion, rango.fila]);
+    const lista = porFila.get(clave) ?? [];
+    lista.push({ desde: rango.desde, hasta: rango.hasta, i });
+    porFila.set(clave, lista);
+  });
+  for (const lista of porFila.values()) {
+    lista.sort((a, b) => a.desde - b.desde || a.i - b.i);
+    // `alcance`: el rango ya visto que llega más lejos; cualquier solape lo es con él.
+    let alcance = lista[0]!;
+    for (const actual of lista.slice(1)) {
+      if (actual.desde <= alcance.hasta) {
+        const [primero, segundo] = alcance.i < actual.i ? [alcance, actual] : [actual, alcance];
+        ctx.addIssue({ code: "custom", message: `Se solapa con el rango ${primero.i} de la misma fila`, path: ["rangos", segundo.i] });
+      }
+      if (actual.hasta > alcance.hasta) alcance = actual;
+    }
+  }
+});
+export type PreciosEntrada = z.infer<typeof PreciosEntradaSchema>;
+
+/** Rango guardado (respuesta). */
+export const RangoPrecioSchema = z.object({
+  id: z.uuid(), categoria_id: z.uuid(), seccion: texto, fila: texto, desde: enteroPositivo, hasta: enteroPositivo,
+});
+export type RangoPrecio = z.infer<typeof RangoPrecioSchema>;
+
+/** Asiento numerado del mapa vigente con la categoría que le da su rango (`null` si ninguno lo cubre). */
+export const PrecioAsientoSchema = z.object({
+  asiento_id: z.uuid(), seccion: texto, fila: texto, numero: enteroPositivo, categoria_id: z.uuid().nullable(),
+});
+export type PrecioAsiento = z.infer<typeof PrecioAsientoSchema>;
+
+/** Respuesta de `GET` y `PUT /api/v1/eventos/:id/precios`: los rangos y cada asiento con su categoría resuelta. */
+export const PreciosEventoSchema = z.object({
+  rangos: z.array(RangoPrecioSchema),
+  asientos: z.array(PrecioAsientoSchema),
+});
+export type PreciosEvento = z.infer<typeof PreciosEventoSchema>;
+
 /** Respuesta 201 de `POST /api/v1/eventos`. */
 export const EventoCreadoSchema = z.object({
   evento: EventoSchema,
@@ -303,6 +369,14 @@ export const CODIGOS_EVENTOS = {
   SECCION_EN_USO: "SECCION_EN_USO",
   EVENTO_AJENO: "EVENTO_AJENO",
   EVENTO_NO_APROBADO: "EVENTO_NO_APROBADO",
+  /** El evento ya está publicado: sus rangos de precio no cambian (`ventas` los copió al inventario). */
+  EVENTO_PUBLICADO: "EVENTO_PUBLICADO",
+  /** Un rango nombra una sección numerada o una fila que no está en el mapa vigente de la sede. */
+  RANGO_FUERA_DEL_MAPA: "RANGO_FUERA_DEL_MAPA",
+  /** La categoría no es del evento, no existe o es de una zona general. */
+  CATEGORIA_NO_VALIDA: "CATEGORIA_NO_VALIDA",
+  /** Al publicar, algún asiento numerado de la sede no tiene categoría de precio. */
+  ASIENTOS_SIN_PRECIO: "ASIENTOS_SIN_PRECIO",
   /** Mismo valor que `CODIGO_BD_NO_DISPONIBLE`. */
   BD_NO_DISPONIBLE: "BD_NO_DISPONIBLE",
 } as const;

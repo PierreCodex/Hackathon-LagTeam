@@ -26,8 +26,12 @@ import {
   type MapaSede,
   type MapaSedeEntrada,
   MapaSedeSchema,
+  type PreciosEntrada,
+  type PreciosEvento,
+  PreciosEventoSchema,
   type SedeResumen,
 } from "@reto18/shared";
+import type { UsuarioAutenticado } from "../identidad/roles.js";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
 import {
   type ArchivoEntrada,
@@ -424,6 +428,66 @@ export class EventosService {
     return data as unknown as Evento;
   }
 
+  /**
+   * Rangos de precio del evento y cada asiento numerado del mapa vigente con su categoría resuelta.
+   * Lo leen el organizador dueño y `admin`.
+   */
+  async leerPrecios(usuario: Pick<UsuarioAutenticado, "id" | "perfil">, eventoId: string): Promise<PreciosEvento> {
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select("id, organizador_id")
+      .eq("id", eventoId)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS))
+      .maybeSingle();
+    if (error) {
+      this.logger.warn(`No se pudo leer el evento ${eventoId}: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer los precios. Inténtalo de nuevo.");
+    }
+    if (!data) throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
+    const evento = data as { id: string; organizador_id: string };
+    if (usuario.perfil.rol !== "admin" && evento.organizador_id !== usuario.id) {
+      throw new ForbiddenException({ codigo: CODIGOS_EVENTOS.EVENTO_AJENO, mensaje: "El evento es de otro organizador" });
+    }
+    return this.preciosDe(eventoId);
+  }
+
+  /** Reemplaza todos los rangos de precio de un evento propio sin publicar, en una transacción (RPC). */
+  async guardarPrecios(organizadorId: string, eventoId: string, entrada: PreciosEntrada): Promise<PreciosEvento> {
+    await this.llamarRpc(
+      "eventos_guardar_precios",
+      { p_organizador: organizadorId, p_evento_id: eventoId, p_rangos: entrada.rangos },
+      "guardar los precios",
+    );
+    try {
+      return await this.preciosDe(eventoId);
+    } catch (e) {
+      if (e instanceof ServiceUnavailableException) {
+        throw bdNoDisponible("Los precios se guardaron, pero no se pudieron leer. Recarga la página.");
+      }
+      throw e;
+    }
+  }
+
+  /** Rangos (en el orden del mapa: sección, fila, desde; los que no casan, al final) y asientos con su categoría. */
+  private async preciosDe(eventoId: string): Promise<PreciosEvento> {
+    const { data, error } = await this.cliente()
+      .rpc("eventos_leer_precios", { p_evento_id: eventoId })
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer los precios del evento ${eventoId}: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer los precios. Inténtalo de nuevo.");
+    }
+    if (data === null || data === undefined) {
+      throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
+    }
+    const precios = PreciosEventoSchema.safeParse(data);
+    if (!precios.success) {
+      this.logger.error(`Los precios del evento ${eventoId} no cumplen PreciosEventoSchema: ${precios.error.message}`);
+      throw new InternalServerErrorException({ codigo: "ERROR_INTERNO", mensaje: "No se pudieron leer los precios" });
+    }
+    return precios.data;
+  }
+
   /** Llama a una RPC que devuelve un id y traduce sus errores `P0001` a los códigos del módulo. */
   private async llamarRpc(nombre: string, args: Record<string, unknown>, accion: string): Promise<string> {
     const { data, error, status } = await this.cliente()
@@ -616,7 +680,7 @@ class ResultadoIncierto extends Error {
   }
 }
 
-/** Excepción HTTP de cada código `P0001` de las RPC del mapa y de la publicación. */
+/** Excepción HTTP de cada código `P0001` de las RPC del mapa, de los precios y de la publicación. */
 const ERRORES_RPC: Record<string, (mensaje: string) => HttpException> = {
   [CODIGOS_EVENTOS.SEDE_NO_EXISTE]: (m) => new NotFoundException({ codigo: CODIGOS_EVENTOS.SEDE_NO_EXISTE, mensaje: m }),
   [CODIGOS_EVENTOS.SEDE_AJENA]: (m) => new ForbiddenException({ codigo: CODIGOS_EVENTOS.SEDE_AJENA, mensaje: m }),
@@ -629,6 +693,15 @@ const ERRORES_RPC: Record<string, (mensaje: string) => HttpException> = {
   // Al publicar choca con el mapa vigente: 409 (en el alta es un dato inválido: 400).
   [CODIGOS_EVENTOS.AFORO_SUPERA_SEDE]: (m) =>
     new ConflictException({ codigo: CODIGOS_EVENTOS.AFORO_SUPERA_SEDE, mensaje: `aforo: ${m}` }),
+  [CODIGOS_EVENTOS.ASIENTOS_SIN_PRECIO]: (m) =>
+    new ConflictException({ codigo: CODIGOS_EVENTOS.ASIENTOS_SIN_PRECIO, mensaje: m }),
+  [CODIGOS_EVENTOS.EVENTO_PUBLICADO]: (m) => new ConflictException({ codigo: CODIGOS_EVENTOS.EVENTO_PUBLICADO, mensaje: m }),
+  [CODIGOS_EVENTOS.RANGO_FUERA_DEL_MAPA]: (m) =>
+    new BadRequestException({ codigo: CODIGOS_EVENTOS.RANGO_FUERA_DEL_MAPA, mensaje: m }),
+  [CODIGOS_EVENTOS.CATEGORIA_NO_VALIDA]: (m) =>
+    new BadRequestException({ codigo: CODIGOS_EVENTOS.CATEGORIA_NO_VALIDA, mensaje: m }),
+  // Defensa de la RPC de precios (rango invertido o solapado); el esquema ya lo rechaza antes.
+  [CODIGOS_EVENTOS.DATOS_INVALIDOS]: (m) => new BadRequestException({ codigo: CODIGOS_EVENTOS.DATOS_INVALIDOS, mensaje: m }),
 };
 
 function bdNoDisponible(mensaje: string): ServiceUnavailableException {

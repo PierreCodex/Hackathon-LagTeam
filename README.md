@@ -94,10 +94,20 @@ Flujo: alta (`pendiente`) → aprobación (1.5) → mapa del local → **publica
 - `PUT /api/v1/eventos/sedes/:id/mapa` (rol `organizador`, solo el dueño de la sede): reemplaza el mapa entero en una transacción; responde 200 con el mapa nuevo. Los ids de filas, bloques y asientos cambian. Una zona general se conserva (con sus categorías de precio) si se envía con su `id`. Si cambia el `distrito`, cambia también el de los eventos de la sede.
 - `POST /api/v1/eventos/sedes/:id/duplicar` (rol `organizador`), `{ "nombre" }`: copia cualquier sede (propia, de otro organizador o sembrada) con ids nuevos, a nombre de quien la duplica y con el mapa abierto. Responde 201 con el `MapaSede` de la copia.
 - `POST /api/v1/eventos/:id/publicar` (rol `organizador`, solo el del evento): exige el evento `aprobado` y que la capacidad de la sede alcance el `aforo`. Marca `publicado` y **cierra el mapa** de la sede: desde entonces nadie lo reemplaza; quien necesite otro mapa duplica la sede. Responde 200 con el evento; repetirlo no cambia nada.
-- Errores: 400 `DATOS_INVALIDOS` (el mensaje nombra la ruta del campo, p. ej. `secciones.0.filas.2.bloques.0.asientos.3.numero`); 403 `SEDE_AJENA` (la sede es de otro organizador o de la semilla), `EVENTO_AJENO`; 404 `SEDE_NO_EXISTE`, `EVENTO_NO_EXISTE`; 409 `MAPA_CERRADO`, `SECCION_EN_USO` (el reemplazo quita una zona general con categorías de precio), `EVENTO_NO_APROBADO`, `AFORO_SUPERA_SEDE`; 503 `BD_NO_DISPONIBLE`.
+- Errores: 400 `DATOS_INVALIDOS` (el mensaje nombra la ruta del campo, p. ej. `secciones.0.filas.2.bloques.0.asientos.3.numero`); 403 `SEDE_AJENA` (la sede es de otro organizador o de la semilla), `EVENTO_AJENO`; 404 `SEDE_NO_EXISTE`, `EVENTO_NO_EXISTE`; 409 `MAPA_CERRADO`, `SECCION_EN_USO` (el reemplazo quita una zona general con categorías de precio), `EVENTO_NO_APROBADO`, `AFORO_SUPERA_SEDE`, `ASIENTOS_SIN_PRECIO` (al publicar en una sede numerada, algún asiento no tiene categoría); 503 `BD_NO_DISPONIBLE`.
 - `GET /api/v1/eventos` (público, sin sesión): catálogo de eventos `aprobado` y `publicado`. Acepta `q`, `desde`/`hasta` (`AAAA-MM-DD`), `categoria`, `distrito`, `precio_minimo_centimos` y `precio_maximo_centimos`; los filtros se combinan y los destacados aparecen primero.
 - `GET /api/v1/eventos/calendario?mes=AAAA-MM` (público): devuelve los eventos publicados del mes calendario en Lima. `GET /api/v1/eventos/:id` devuelve la ficha pública y oculta eventos pendientes, rechazados o aprobados aún sin publicar.
 - Las sedes sembradas no tienen dueño y tienen el mapa cerrado (sus eventos aprobados están publicados).
+
+### Precios por rango de asientos (organizador)
+
+En una sede numerada, cada asiento recibe su categoría de precio (de las del alta) por rangos: "sección, fila, desde–hasta → categoría". Los rangos se guardan por **nombre** de sección y fila y por número de asiento, así que sobreviven a un reemplazo del mapa antes de publicar; un asiento fuera de todo rango queda sin categoría. Migración `20261015000000_eventos_precios.sql`.
+
+- `PUT /api/v1/eventos/:id/precios` (rol `organizador`, solo el del evento), JSON de `PreciosEntradaSchema`: `{ "rangos": [{ "categoria_id", "seccion", "fila", "desde", "hasta" }] }` (máx. 2000; `desde ≤ hasta`; sin solapes dentro de una fila; puede haber huecos de numeración). Reemplaza todos los rangos del evento en una transacción (`[]` los borra) y responde 200 con `PreciosEventoSchema`. Solo mientras el evento **no está publicado**.
+- `GET /api/v1/eventos/:id/precios` (roles `organizador`, solo el del evento, y `admin`): `{ rangos, asientos }`; `rangos` en el orden del mapa y `asientos` con cada asiento numerado del mapa vigente (`asiento_id`, `seccion`, `fila`, `numero`, `categoria_id` o `null`), en el orden del mapa (sección y fila según su `orden`) y, dentro de la fila, por número.
+- Publicar exige que todos los asientos numerados de la sede tengan categoría (409 `ASIENTOS_SIN_PRECIO`); las sedes solo de zona general no cambian.
+- Errores: 400 `DATOS_INVALIDOS` (con la ruta, p. ej. `rangos.1`), `RANGO_FUERA_DEL_MAPA` (sección numerada o fila que no está en el mapa, o una zona general), `CATEGORIA_NO_VALIDA` (de otro evento, inexistente o de zona general); 403 `EVENTO_AJENO`; 404 `EVENTO_NO_EXISTE`; 409 `EVENTO_PUBLICADO`; 503 `BD_NO_DISPONIBLE`.
+- La semilla asigna a los eventos 1, 2, 5 y 7 del teatro cada sección entera con su categoría homónima: sus 643 asientos tienen precio.
 
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
@@ -134,7 +144,7 @@ eventos de octubre–noviembre de 2026. El 16, 17 y 18 de octubre tienen eventos
 Weekend. Hay precios en céntimos de PEN con IGV, una muestra de arte gratuita y eventos pendiente y rechazado.
 
 En la nube, aplica primero todas las migraciones de `supabase/migrations` en orden, incluidas
-`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql`, `20261011020000_eventos_mapa.sql` y `20261012000000_eventos_aprobacion.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
+`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql`, `20261011020000_eventos_mapa.sql`, `20261012000000_eventos_aprobacion.sql`, `20261013000000_ventas.sql`, `20261014000000_marketing_enlaces.sql` y `20261015000000_eventos_precios.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
 `supabase/seed.sql` y ejecútalo. Puedes ejecutarlo otra vez: conserva los identificadores de la demo
 y no duplica filas. No requiere variables ni herramientas de la CLI dentro del SQL Editor.
 
@@ -190,7 +200,7 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql`, `20261011020000_eventos_mapa.sql` y `20261012000000_eventos_aprobacion.sql`; la de alta crea los buckets de Storage `eventos-fotos` y `eventos-constancias`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql`, `20261011020000_eventos_mapa.sql`, `20261012000000_eventos_aprobacion.sql`, `20261013000000_ventas.sql`, `20261014000000_marketing_enlaces.sql` y `20261015000000_eventos_precios.sql`; la de alta crea los buckets de Storage `eventos-fotos` y `eventos-constancias`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
 4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 

@@ -31,6 +31,9 @@ import {
   type MapaSede,
   type MapaSedeEntrada,
   MapaSedeEntradaSchema,
+  type PreciosEntrada,
+  PreciosEntradaSchema,
+  type PreciosEvento,
   type SedeResumen,
   TAMANO_MAXIMO_ARCHIVO_EVENTO,
   EventoIdSchema,
@@ -65,6 +68,7 @@ class ValidarCon<T> implements PipeTransform<unknown, T> {
 
 const ID_VALIDO = new ValidarCon(IdSchema, "id");
 const MAPA_VALIDO = new ValidarCon(MapaSedeEntradaSchema, "mapa");
+const PRECIOS_VALIDOS = new ValidarCon(PreciosEntradaSchema, "precios");
 
 const MultipartAlta = FileFieldsInterceptor(
   [
@@ -238,6 +242,30 @@ export class EventosController {
   @HttpCode(HttpStatus.OK)
   publicar(@UsuarioActual() usuario: UsuarioAutenticado, @Param("id", ID_VALIDO) id: string): Promise<Evento> {
     return this.eventos.publicarEvento(usuario.id, id);
+  }
+
+  /**
+   * `GET /api/v1/eventos/:id/precios` (organizador dueño o admin): rangos de precio del evento y cada
+   * asiento numerado del mapa vigente con su categoría (`categoria_id` nulo si ningún rango lo cubre).
+   */
+  @Get(":id/precios")
+  @Roles("organizador", "admin")
+  leerPrecios(@UsuarioActual() usuario: UsuarioAutenticado, @Param("id", ID_VALIDO) id: string): Promise<PreciosEvento> {
+    return this.eventos.leerPrecios(usuario, id);
+  }
+
+  /**
+   * `PUT /api/v1/eventos/:id/precios` (organizador dueño): reemplaza todos los rangos del evento sin publicar.
+   * 409 `EVENTO_PUBLICADO`; 400 `RANGO_FUERA_DEL_MAPA` o `CATEGORIA_NO_VALIDA`.
+   */
+  @Put(":id/precios")
+  @Roles("organizador")
+  guardarPrecios(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param("id", ID_VALIDO) id: string,
+    @Body(PRECIOS_VALIDOS) precios: PreciosEntrada,
+  ): Promise<PreciosEvento> {
+    return this.eventos.guardarPrecios(usuario.id, id, precios);
   }
 
   @Get(":id")
