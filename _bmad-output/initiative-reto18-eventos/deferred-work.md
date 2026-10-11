@@ -50,3 +50,7 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
   summary: Limpieza y pruebas de la 3.1: `organizador_id` de `marketing_piezas` sin `on delete` ni vínculo con el dueño del evento; UUID, tiempo límite y `bdNoDisponible` duplicados entre módulos; pruebas que verifiquen que el GET lee los datos actuales del evento y las líneas de días del prompt; márgenes de tiempo de las pruebas.
   evidence: Revisión completa de la 3.1 (verification-gap y adversarial); sin impacto en la demo.
+
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-compra-butacas-acceso/story-ui-pizarra-del-mapa-de-la-sede-plan.md`
+  summary: Configurar un locale en español para los mensajes por defecto de zod (`z.config`/`setErrorMap`), o dar mensaje propio a cada `textoHasta`/chequeo base en `packages/shared`, para que un campo vacío no muestre un error en inglés (p. ej. "Too small: expected string to have >=1 characters").
+  evidence: Revisión quick de la 2.9, pasada 1 (10/10/2026): `validarMapa` (pizarra) expone el `problema.message` crudo de zod, igual que `validarAlta` en `alta-evento.ts` (1.9, ya en producción) — no es un problema nuevo de esta historia, es el patrón compartido de "red de seguridad" zod sin mensajes propios para los chequeos de tipo base.
