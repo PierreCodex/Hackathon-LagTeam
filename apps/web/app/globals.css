@@ -1,72 +1,115 @@
-:root {
-  --fondo: #f7f7f5;
-  --texto: #1d1d1b;
-  --suave: #5f5f5a;
-  --ok: #1f7a3a;
-  --error: #b42318;
-  --tarjeta: #ffffff;
-  --borde: #e2e2dd;
+@import "tailwindcss";
+
+/*
+ * Tokens del DESIGN.md (ux-plataforma-eventos/DESIGN.md). Valores exactos: no se inventan colores.
+ * Tema oscuro único: no hay modo claro.
+ * Se vacían las paletas y sombras por defecto de Tailwind para que solo existan estos tokens.
+ */
+@theme {
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  /* Colores */
+  --color-surface-base: #000000;
+  --color-surface-raised: #141414;
+  --color-surface-overlay: #1e1f20;
+  --color-border-hairline: #2e2f31;
+  --color-ink-primary: #ffffff;
+  --color-ink-secondary: #bdbfc1;
+  --color-ink-muted: #727376; /* Solo bordes, iconos inactivos y deshabilitado: nunca texto que haya que leer. */
+  --color-accent: #ed3237;
+  --color-accent-pressed: #c4262b;
+  --color-on-accent: #ffffff;
+  --color-state-success: #3dbe7a;
+  --color-state-warning: #f2a900;
+  --color-state-error: #ff6b6f;
+  /* Solo dentro del mapa de butacas */
+  --color-seat-sold: #3a3b3d;
+  --color-seat-held: #727376;
+  --color-seat-selected: #ffffff;
+  --color-price-1: #ed3237;
+  --color-price-2: #f2a900;
+  --color-price-3: #2bb5a0;
+  --color-price-4: #7c8cff;
+
+  /* Tipografía: text-display, text-title, text-body, text-meta, text-button */
+  --text-display: 28px;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 900;
+  --text-title: 20px;
+  --text-title--line-height: 1.2;
+  --text-title--font-weight: 800;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-body--font-weight: 400;
+  --text-meta: 13px;
+  --text-meta--line-height: 1.4;
+  --text-meta--font-weight: 500;
+  --text-button: 16px;
+  --text-button--line-height: 1;
+  --text-button--font-weight: 700;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-full: 9999px;
+
+  /*
+   * Espaciado: múltiplo de 4 px de Tailwind. La escala del DESIGN.md
+   * 4/8/12/16/24/32 px corresponde a Tailwind 1/2/3/4/6/8 (p.ej. p-6 = 24 px, p-8 = 32 px).
+   * h-12 = 48 px, el objetivo táctil.
+   */
+  --spacing: 4px;
+  --spacing-margin-mobile: 16px;
+
+  /* Ancho máximo del contenido a partir de 768 px (md) */
+  --container-contenido: 480px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fondo: #151514;
-    --texto: #f1f1ee;
-    --suave: #a8a8a2;
-    --ok: #5fd185;
-    --error: #ff8a7a;
-    --tarjeta: #1f1f1d;
-    --borde: #34342f;
+/* Inter llega de next/font como variable en <html>; Arial si aún no cargó. */
+@theme inline {
+  --font-sans: var(--font-inter), Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-surface-base);
+    color: var(--color-ink-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco visible en blanco para todo control navegable con teclado. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink-primary);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-ink-primary);
+    color: var(--color-surface-base);
   }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100dvh;
-  background: var(--fondo);
-  color: var(--texto);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
-}
-
-main {
-  max-width: 32rem;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-h1 {
-  font-size: 1.5rem;
-  margin: 0 0 1.5rem;
-}
-
-.tarjeta {
-  background: var(--tarjeta);
-  border: 1px solid var(--borde);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-}
-
-.estado {
-  font-size: 1.375rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-}
-
-.ok {
-  color: var(--ok);
-}
-
-.error {
-  color: var(--error);
-}
-
-.detalle {
-  color: var(--suave);
-  margin: 0;
-  overflow-wrap: anywhere;
+/* Reducir movimiento: sin animaciones decorativas, las transiciones son cortes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
 }
