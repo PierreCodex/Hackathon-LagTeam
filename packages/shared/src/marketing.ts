@@ -125,12 +125,70 @@ export const PiezaSchema = z.object({
 });
 export type Pieza = z.infer<typeof PiezaSchema>;
 
+/** Longitud del código del enlace rastreable (AD-8). */
+export const LONGITUD_CODIGO_ENLACE = 8;
+/** Código del enlace rastreable: base62 de 8 caracteres (AD-8). */
+export const PATRON_CODIGO_ENLACE = /^[0-9A-Za-z]{8}$/;
+export const CodigoEnlaceSchema = z.string().regex(PATRON_CODIGO_ENLACE);
+
+/** Cuerpo de `POST /api/v1/marketing/piezas/:id/enlaces`. Sin cuerpo equivale a `{}`. */
+export const CrearEnlaceSchema = z
+  .object({
+    red: RedCampanaSchema.optional(),
+    /** Zona o barrio al que apunta el enlace (p. ej. «Castilla»). */
+    zona: textoHasta(60).optional(),
+  })
+  .default({});
+export type CrearEnlace = z.infer<typeof CrearEnlaceSchema>;
+
+/** Enlace rastreable. Respuesta de `POST /api/v1/marketing/piezas/:id/enlaces` (201). */
+export const EnlaceSchema = z.object({
+  codigo: CodigoEnlaceSchema,
+  evento_id: z.uuid(),
+  /** `null` en los enlaces de campañas sin pieza (Weekend, 3.7). */
+  pieza_id: z.uuid().nullable(),
+  red: RedCampanaSchema.nullable(),
+  zona: z.string().nullable(),
+  creado_en: fechaHora,
+});
+export type Enlace = z.infer<typeof EnlaceSchema>;
+
+/** Respuesta de `POST /api/v1/marketing/enlaces/:codigo/clics` (201): adónde redirigir. */
+export const ClicRegistradoSchema = z.object({
+  codigo: CodigoEnlaceSchema,
+  evento_id: z.uuid(),
+});
+export type ClicRegistrado = z.infer<typeof ClicRegistradoSchema>;
+
+/** Clics y ventas pagadas (AD-8). Importe en céntimos (AD-10). */
+const metricasEnlace = {
+  clics: z.number().int().min(0),
+  ordenes: z.number().int().min(0),
+  entradas: z.number().int().min(0),
+  importe_centimos: z.number().int().min(0),
+};
+export const MetricasEnlaceSchema = z.object(metricasEnlace);
+export type MetricasEnlace = z.infer<typeof MetricasEnlaceSchema>;
+
+export const ResultadoEnlaceSchema = EnlaceSchema.extend(metricasEnlace);
+export type ResultadoEnlace = z.infer<typeof ResultadoEnlaceSchema>;
+
+/** Respuesta de `GET /api/v1/marketing/piezas/:id/resultados` (200): total de la pieza y una fila por enlace. */
+export const ResultadosPiezaSchema = z.object({
+  pieza_id: z.uuid(),
+  evento_id: z.uuid(),
+  total: MetricasEnlaceSchema,
+  enlaces: z.array(ResultadoEnlaceSchema),
+});
+export type ResultadosPieza = z.infer<typeof ResultadosPiezaSchema>;
+
 /** Códigos de error del módulo `marketing`. */
 export const CODIGOS_MARKETING = {
   EVENTO_NO_ENCONTRADO: "EVENTO_NO_ENCONTRADO",
   EVENTO_NO_APROBADO: "EVENTO_NO_APROBADO",
   EVENTO_FINALIZADO: "EVENTO_FINALIZADO",
   PIEZA_NO_ENCONTRADA: "PIEZA_NO_ENCONTRADA",
+  ENLACE_NO_ENCONTRADO: "ENLACE_NO_ENCONTRADO",
   /** Mismo valor que `CODIGO_BD_NO_DISPONIBLE`. */
   BD_NO_DISPONIBLE: "BD_NO_DISPONIBLE",
 } as const;
