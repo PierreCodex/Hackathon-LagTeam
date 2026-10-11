@@ -66,3 +66,47 @@ export const TableroSchema = z.object({
   liquidacion: z.array(LiquidacionSchema),
 });
 export type Tablero = z.infer<typeof TableroSchema>;
+
+const metricasVenta = { ordenes: conteo, entradas: conteo, importe_centimos: centimos };
+
+/** Enlace rastreable de una pieza con sus clics y ventas pagadas (AD-8). */
+export const VentaEnlaceSchema = z.object({
+  codigo: z.string(),
+  red: z.string().nullable(),
+  zona: z.string().nullable(),
+  clics: conteo,
+  ...metricasVenta,
+});
+export type VentaEnlace = z.infer<typeof VentaEnlaceSchema>;
+
+/** Ventas de una pieza de marketing: la suma de sus enlaces. */
+export const VentaPiezaSchema = z.object({
+  pieza_id: z.uuid(),
+  evento_id: z.uuid(),
+  titulo_evento: z.string(),
+  clics: conteo,
+  ...metricasVenta,
+  enlaces: z.array(VentaEnlaceSchema),
+});
+export type VentaPieza = z.infer<typeof VentaPiezaSchema>;
+
+export const VentaEventoSchema = z.object({
+  evento_id: z.uuid(),
+  titulo: z.string(),
+  inicio: z.string(),
+  aforo: conteo,
+  asistentes: conteo,
+  ...metricasVenta,
+  por_categoria: z.array(FilaTableroSchema),
+});
+export type VentaEvento = z.infer<typeof VentaEventoSchema>;
+
+/** `GET /api/v1/negocio/mis-ventas` (organizador): sus ventas por evento, por categoría de precio y por pieza. */
+export const VentasOrganizadorSchema = z.object({
+  resumen: z.object({ ...metricasVenta, clics: conteo, comision_centimos: centimos, neto_centimos: z.number().int() }),
+  eventos: z.array(VentaEventoSchema),
+  piezas: z.array(VentaPiezaSchema),
+  /** Ventas que no llegaron por un enlace rastreable (catálogo, enlace directo). */
+  sin_enlace: z.object(metricasVenta),
+});
+export type VentasOrganizador = z.infer<typeof VentasOrganizadorSchema>;

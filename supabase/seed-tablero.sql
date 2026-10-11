@@ -58,6 +58,31 @@ values
    '13100000-0000-4000-8000-000000000002', 'General', '#059669', 2000, '13200000-0000-4000-8000-000000000004')
 on conflict (id) do nothing;
 
+-- Pieza de marketing del Festival de marinera con dos enlaces rastreables y sus clics (panel de ventas, 4.1).
+insert into public.marketing_piezas (id, evento_id, organizador_id, origen, textos, paleta, campana, creado_en)
+values ('13a00000-0000-4000-8000-000000000001', '13600000-0000-4000-8000-000000000009',
+  '13000000-0000-4000-8000-000000000002', 'respaldo',
+  '{"titular":"Festival de marinera norteña","subtitulo":"Las mejores parejas de Piura en una sola noche","llamado":"Compra tu entrada","descripcion":"Concurso de parejas de marinera con música en vivo en el patio cultural de Castilla."}',
+  '{"fondo":"#272424","texto":"#FFFFFF","acento":"#ED3237"}',
+  '{"publico":"Familias y amantes de la marinera de Piura y Castilla","reparto":[{"red":"instagram","soles":40},{"red":"facebook","soles":30}],"resumen":"Dos semanas de publicaciones en Instagram y Facebook, con más fuerza el fin de semana previo.","presupuesto_total_soles":70,"calendario":[{"dias_antes":10,"hora":"19:00","accion":"Anuncio del festival","fecha":"2026-09-30"},{"dias_antes":3,"hora":"19:00","accion":"Recordatorio con las parejas","fecha":"2026-10-07"}]}',
+  '2026-09-28 10:00:00-05')
+on conflict (id) do nothing;
+
+insert into public.marketing_enlaces (id, codigo, evento_id, pieza_id, red, zona, organizador_id, creado_en) values
+  ('13b00000-0000-4000-8000-000000000001', 'MarIns01', '13600000-0000-4000-8000-000000000009',
+   '13a00000-0000-4000-8000-000000000001', 'instagram', null, '13000000-0000-4000-8000-000000000002', '2026-09-28 10:05:00-05'),
+  ('13b00000-0000-4000-8000-000000000002', 'MarFbk01', '13600000-0000-4000-8000-000000000009',
+   '13a00000-0000-4000-8000-000000000001', 'facebook', 'Sullana', '13000000-0000-4000-8000-000000000002', '2026-09-28 10:06:00-05')
+on conflict (id) do nothing;
+
+insert into public.marketing_clics (id, enlace_id, creado_en)
+select md5('seed-tablero-clic-' || e.n || '-' || k)::uuid,
+  ('13b00000-0000-4000-8000-00000000000' || e.n)::uuid,
+  '2026-10-01 12:00:00-05'::timestamptz + make_interval(hours => k)
+from (values (1, 64), (2, 23)) as e(n, clics)
+cross join lateral generate_series(1, e.clics) k
+on conflict (id) do nothing;
+
 -- Cupos de la zona general de los eventos con ventas (se recalculan al final).
 insert into public.ventas_evento_cupos (evento_id, seccion_id, capacidad)
 select ('13600000-0000-4000-8000-' || lpad(e::text, 12, '0'))::uuid, '13200000-0000-4000-8000-000000000004', 120
@@ -85,7 +110,10 @@ insert into public.ventas_ordenes (id, usuario_id, evento_id, categoria_id, secc
   comision_modelo, comision_valor, comision_importe, pagada_en, creado_en)
 select id, usuario_id, ('13600000-0000-4000-8000-' || lpad(evento::text, 12, '0'))::uuid, categoria_id,
   '13200000-0000-4000-8000-000000000004', cantidad, precio_centimos, precio_centimos * cantidad, 'pagada',
-  pagada_en + interval '10 minutes', null, (array['yape', 'plin', 'tarjeta'])[1 + n % 3], 'semilla-' || n,
+  pagada_en + interval '10 minutes',
+  -- Las ventas del festival llegan por los enlaces de su pieza (dos de cada tres), el resto por el catálogo.
+  case when evento = 9 and n % 3 = 0 then 'MarIns01' when evento = 9 and n % 3 = 1 then 'MarFbk01' end,
+  (array['yape', 'plin', 'tarjeta'])[1 + n % 3], 'semilla-' || n,
   'porcentaje', 500, public.ventas_calcular_comision('porcentaje', 500, precio_centimos * cantidad, cantidad),
   pagada_en, pagada_en - interval '2 minutes'
 from con_precio

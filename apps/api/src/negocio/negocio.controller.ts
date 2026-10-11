@@ -1,12 +1,19 @@
 import { Body, Controller, Get, Header, Inject, Put, StreamableFile } from "@nestjs/common";
-import { type Comision, ComisionSchema, type Tablero } from "@reto18/shared";
-import { Roles } from "../identidad/roles.js";
+import { type Comision, ComisionSchema, type Tablero, type VentasOrganizador } from "@reto18/shared";
+import { Roles, UsuarioActual, type UsuarioAutenticado } from "../identidad/roles.js";
 import { tableroAExcel } from "./excel.js";
 import { NegocioService } from "./negocio.service.js";
 
 @Controller("negocio")
 export class NegocioController {
   constructor(@Inject(NegocioService) private readonly negocio: NegocioService) {}
+
+  /** `GET /api/v1/negocio/mis-ventas` (organizador): sus ventas por evento, categoría de precio y pieza. */
+  @Get("mis-ventas")
+  @Roles("organizador")
+  misVentas(@UsuarioActual() usuario: UsuarioAutenticado): Promise<VentasOrganizador> {
+    return this.negocio.ventasDe(usuario.id);
+  }
 
   /** `GET /api/v1/negocio/tablero` (administrador): ventas, asistencia, categorías, público, liquidación y comisión. */
   @Get("tablero")
