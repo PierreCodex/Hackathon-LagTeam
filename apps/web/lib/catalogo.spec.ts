@@ -8,6 +8,7 @@ import {
   leerFiltros,
   rangoFecha,
   rutaCatalogo,
+  rutaComprar,
   soles,
   textoPrecio,
 } from "./catalogo";
@@ -98,6 +99,12 @@ describe("textos de la tarjeta", () => {
   it("rutaCatalogo", () => {
     expect(rutaCatalogo()).toBe("eventos");
     expect(rutaCatalogo({ categoria: "cine", q: "río" })).toBe("eventos?categoria=cine&q=r%C3%ADo");
+  });
+  it("rutaComprar conserva el ref del enlace rastreable", () => {
+    expect(rutaComprar("e1")).toBe("/eventos/e1/comprar");
+    expect(rutaComprar("e1", "ab12")).toBe("/eventos/e1/comprar?ref=ab12");
+    expect(rutaComprar("e1", ["x y", "z"])).toBe("/eventos/e1/comprar?ref=x%20y");
+    expect(rutaComprar("e1", "  ")).toBe("/eventos/e1/comprar");
   });
   it("soles", () => {
     expect(soles(2500)).toBe("S/ 25");

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { BotonEnlace } from "@/components/ui";
 import { clases } from "@/lib/clases";
-import { etiquetaCategoria, textoPrecio } from "@/lib/catalogo";
+import { categoriasDeZonaGeneral } from "@/lib/compra";
+import { etiquetaCategoria, rutaComprar, textoPrecio } from "@/lib/catalogo";
 import { fechaPieza } from "@/lib/pieza";
 import { ImagenEvento } from "./tarjeta-evento";
 
@@ -41,7 +42,11 @@ export function Heroe({ eventos }: { eventos: EventoPublico[] }) {
           {fechaPieza(evento.inicio)} · {evento.sede.nombre}, {evento.distrito}
         </p>
         <div className="flex flex-wrap items-center gap-4 pt-2">
-          <BotonEnlace href={`/eventos/${evento.id}`}>Comprar entradas</BotonEnlace>
+          {categoriasDeZonaGeneral(evento.categorias).length > 0 ? (
+            <BotonEnlace href={rutaComprar(evento.id)}>Comprar entradas</BotonEnlace>
+          ) : (
+            <BotonEnlace href={`/eventos/${evento.id}`}>Ver evento</BotonEnlace>
+          )}
           {precio && <p className="text-meta">{precio}</p>}
         </div>
         {varios && (

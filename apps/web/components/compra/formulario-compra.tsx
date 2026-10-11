@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Aviso, Boton, Campo, Selector } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
-import { OPCIONES_METODO_PAGO, opcionesCantidad, opcionesCategoria, totalCompra, validarSeleccionCompra } from "@/lib/compra";
+import {
+  categoriasDeZonaGeneral,
+  OPCIONES_METODO_PAGO,
+  opcionesCantidad,
+  opcionesCategoria,
+  totalCompra,
+  validarSeleccionCompra,
+} from "@/lib/compra";
 import { rutaIngresar } from "@/lib/sesion";
 import { tokenDelNavegador } from "@/lib/supabase/navegador";
 
@@ -30,7 +37,9 @@ type Fase = "idle" | "creando" | "pagando";
  */
 export function FormularioCompra({ apiUrl, evento, refCampana, whatsappInicial, ruta }: FormularioCompraProps) {
   const router = useRouter();
-  const [categoriaId, setCategoriaId] = useState(evento.categorias[0]?.id ?? "");
+  // Solo zona general: las butacas numeradas se compran en el mapa (2.11).
+  const categorias = categoriasDeZonaGeneral(evento.categorias);
+  const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [cantidad, setCantidad] = useState(1);
   const [metodo, setMetodo] = useState<MetodoPago>("tarjeta");
   const [whatsapp, setWhatsapp] = useState(whatsappInicial ?? "");
@@ -39,10 +48,10 @@ export function FormularioCompra({ apiUrl, evento, refCampana, whatsappInicial, 
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const [error, setError] = useState<ErrorApi | null>(null);
 
-  const sinCategorias = evento.categorias.length === 0;
+  const sinCategorias = categorias.length === 0;
   const ocupado = fase !== "idle";
   const pendientePago = ordenId !== null;
-  const total = totalCompra(evento.categorias, categoriaId, cantidad);
+  const total = totalCompra(categorias, categoriaId, cantidad);
 
   async function pagar(id: string, token: string) {
     setFase("pagando");
@@ -106,7 +115,7 @@ export function FormularioCompra({ apiUrl, evento, refCampana, whatsappInicial, 
       <Selector
         id="categoria"
         etiqueta="Categoría"
-        opciones={opcionesCategoria(evento.categorias)}
+        opciones={opcionesCategoria(categorias)}
         textoVacio={sinCategorias ? "Sin zona general en venta" : undefined}
         value={categoriaId}
         onChange={(e) => setCategoriaId(e.target.value)}

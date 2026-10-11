@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   OPCIONES_METODO_PAGO,
   opcionesCantidad,
+  categoriasDeZonaGeneral,
   opcionesCategoria,
   totalCompra,
   validarSeleccionCompra,
@@ -76,5 +77,14 @@ describe("validarSeleccionCompra (antes de POST ventas/ordenes)", () => {
   it("categoría y cantidad válidas", () => {
     expect(validarSeleccionCompra("a", 1)).toEqual({ ok: true });
     expect(validarSeleccionCompra("a", MAXIMO_ENTRADAS_POR_ORDEN)).toEqual({ ok: true });
+  });
+});
+
+describe("categoriasDeZonaGeneral", () => {
+  it("deja solo las de zona general: las numeradas se compran eligiendo butaca", () => {
+    const general = categoria({ id: "g", seccion_id: "13200000-0000-4000-8000-000000000001" });
+    const numerada = categoria({ id: "n", seccion_id: null });
+    expect(categoriasDeZonaGeneral([numerada, general])).toEqual([general]);
+    expect(categoriasDeZonaGeneral([numerada])).toEqual([]);
   });
 });
