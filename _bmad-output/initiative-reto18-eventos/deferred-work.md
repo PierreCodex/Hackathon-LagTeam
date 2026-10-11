@@ -54,3 +54,7 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/epic-compra-butacas-acceso/story-ui-pizarra-del-mapa-de-la-sede-plan.md`
   summary: Configurar un locale en español para los mensajes por defecto de zod (`z.config`/`setErrorMap`), o dar mensaje propio a cada `textoHasta`/chequeo base en `packages/shared`, para que un campo vacío no muestre un error en inglés (p. ej. "Too small: expected string to have >=1 characters").
   evidence: Revisión quick de la 2.9, pasada 1 (10/10/2026): `validarMapa` (pizarra) expone el `problema.message` crudo de zod, igual que `validarAlta` en `alta-evento.ts` (1.9, ya en producción) — no es un problema nuevo de esta historia, es el patrón compartido de "red de seguridad" zod sin mensajes propios para los chequeos de tipo base.
+
+- source_plan: `_bmad-output/initiative-reto18-eventos/recorte-final.md`
+  summary: Historias cortadas por el recorte final (11/10/2026): 2.2 QR por WhatsApp, 2.13 mapa automático tipo cine, 2.14 y 2.15 Google Places, 3.4 publicar en Instagram y Facebook, 3.5 avisos de campaña por WhatsApp, 3.6 alerta de APDAYC, 3.7 y 3.10 Piura Cultural Weekend, y el epic 5 completo (croquis con IA). Si no llegan, también 2.7 y 2.12 (puerta sin conexión).
+  evidence: Quedan 5 horas para la demo. Se prioriza el criterio 8 y la versión mínima de los criterios 6 y 7; cada corte tiene su respaldo en `demo-flow.md`.
