@@ -5,6 +5,7 @@ import { DESTINOS_POR_ROL } from "./navegacion";
 import {
   decidirProxy,
   destinoTrasIngreso,
+  guardaDeCuenta,
   guardaDeRol,
   portadaDeRol,
   resolverSesion,
@@ -164,6 +165,39 @@ describe("guardas de rol", () => {
   it("perfil sin leer → error, sin datos del rol", () => {
     const error = { codigo: CODIGO_SIN_CONEXION, mensaje: "Sin conexión" };
     expect(guardaDeRol({ tipo: "error", error }, "admin")).toEqual({ tipo: "error", error });
+  });
+});
+
+describe("guardaDeCuenta (historia 8: Mis entradas y el escáner)", () => {
+  it("sin sesión → ingresar", () => {
+    expect(guardaDeCuenta({ tipo: "anonima" })).toEqual({ tipo: "ingresar" });
+  });
+
+  it("sin lista de roles, cualquier cuenta vale (Mis entradas)", () => {
+    expect(guardaDeCuenta(cuenta("publico"))).toMatchObject({ tipo: "permitido" });
+    expect(guardaDeCuenta(cuenta("organizador"))).toMatchObject({ tipo: "permitido" });
+    expect(guardaDeCuenta(cuenta("admin"))).toMatchObject({ tipo: "permitido" });
+  });
+
+  it("con lista, el rol permitido pasa (el escáner: organizador o admin)", () => {
+    expect(guardaDeCuenta(cuenta("organizador"), ["organizador", "admin"])).toEqual({
+      tipo: "permitido",
+      perfil: perfil("organizador"),
+    });
+    expect(guardaDeCuenta(cuenta("admin"), ["organizador", "admin"])).toMatchObject({ tipo: "permitido" });
+  });
+
+  it("con lista, el rol fuera de ella → sin permiso, con la vuelta a su propia portada", () => {
+    expect(guardaDeCuenta(cuenta("publico"), ["organizador", "admin"])).toEqual({
+      tipo: "sin-permiso",
+      rolRequerido: "organizador",
+      portada: "/",
+    });
+  });
+
+  it("perfil sin leer → error, sin decidir nada por rol", () => {
+    const error = { codigo: CODIGO_SIN_CONEXION, mensaje: "Sin conexión" };
+    expect(guardaDeCuenta({ tipo: "error", error }, ["admin"])).toEqual({ tipo: "error", error });
   });
 });
 
