@@ -6,6 +6,7 @@ import { IaModule } from "./ia/ia.module.js";
 import { IdentidadModule } from "./identidad/identidad.module.js";
 import { RolesGuard } from "./identidad/roles.js";
 import { MarketingModule } from "./marketing/marketing.module.js";
+import { NegocioModule } from "./negocio/negocio.module.js";
 import { NotificacionesModule } from "./notificaciones/notificaciones.module.js";
 import { SaludModule } from "./salud/salud.module.js";
 import { SupabaseModule } from "./supabase/supabase.module.js";
@@ -22,6 +23,7 @@ import { VentasModule } from "./ventas/ventas.module.js";
     NotificacionesModule,
     VentasModule,
     AccesoModule,
+    NegocioModule,
   ],
   // Guard global de roles (AD-3): solo actúa en las rutas con `@Roles()`.
   providers: [{ provide: APP_GUARD, useClass: RolesGuard }],

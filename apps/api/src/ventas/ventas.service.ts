@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import {
   CODIGOS_VENTAS,
+  type Comision,
   type CrearOrden,
   type Entrada,
   type MetodoPago,
@@ -58,6 +59,19 @@ export type ResultadoConsumo =
   | { estado: "ya_usada"; usada_en: string }
   | { estado: "otro_evento" }
   | { estado: "no_existe" };
+
+/** Orden pagada tal como la leen los paneles de `negocio` (epic 4). */
+export interface OrdenParaNegocio {
+  id: string;
+  usuario_id: string;
+  evento_id: string;
+  cantidad: number;
+  total_centimos: number;
+  comision_modelo: ModeloComision;
+  comision_valor: number;
+  comision_importe: number;
+  pagada_en: string;
+}
 
 /** Quién paga: el teléfono sale del perfil del usuario autenticado (AD-9). */
 export interface Comprador {
@@ -259,6 +273,72 @@ export class VentasService {
       total.importe_centimos += Number(fila.total_centimos);
     }
     return [...totales.values()];
+  }
+
+  /** Comisión vigente (AD-10). */
+  async comisionVigente(): Promise<Comision> {
+    const { data, error } = await this.cliente()
+      .from("ventas_config_comision")
+      .select("modelo, valor")
+      .eq("vigente", true)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS))
+      .maybeSingle();
+    if (error) {
+      this.logger.warn(`No se pudo leer la comisión: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer la comisión. Inténtalo de nuevo.");
+    }
+    if (!data) throw new ServiceUnavailableException({ codigo: CODIGOS_VENTAS.COMISION_NO_CONFIGURADA, mensaje: "No hay comisión vigente" });
+    const fila = data as { modelo: ModeloComision; valor: number };
+    return { modelo: fila.modelo, valor: Number(fila.valor) };
+  }
+
+  /** Cambia la comisión vigente. Las órdenes ya pagadas conservan la suya (AD-10). */
+  async cambiarComision(comision: Comision): Promise<Comision> {
+    const fila = await this.rpc<{ modelo: ModeloComision; valor: number }>(
+      "ventas_cambiar_comision",
+      { p_modelo: comision.modelo, p_valor: comision.valor },
+      "cambiar la comisión",
+    );
+    return { modelo: fila.modelo, valor: Number(fila.valor) };
+  }
+
+  /** Órdenes pagadas con su comisión congelada, para los paneles de `negocio`. */
+  async ordenesPagadas(): Promise<OrdenParaNegocio[]> {
+    const { data, error } = await this.cliente()
+      .from("ventas_ordenes")
+      .select("id, usuario_id, evento_id, cantidad, total_centimos, comision_modelo, comision_valor, comision_importe, pagada_en")
+      .eq("estado", "pagada")
+      .order("pagada_en")
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer las órdenes pagadas: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer las ventas. Inténtalo de nuevo.");
+    }
+    return ((data ?? []) as OrdenParaNegocio[]).map((o) => ({
+      ...o,
+      cantidad: Number(o.cantidad),
+      total_centimos: Number(o.total_centimos),
+      comision_valor: Number(o.comision_valor),
+      comision_importe: Number(o.comision_importe),
+    }));
+  }
+
+  /** Entradas usadas en la puerta por evento (asistencia). */
+  async asistenciaPorEvento(): Promise<Map<string, number>> {
+    const { data, error } = await this.cliente()
+      .from("ventas_entradas")
+      .select("evento_id")
+      .not("usada_en", "is", null)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudo leer la asistencia: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer la asistencia. Inténtalo de nuevo.");
+    }
+    const asistencia = new Map<string, number>();
+    for (const { evento_id } of (data ?? []) as { evento_id: string }[]) {
+      asistencia.set(evento_id, (asistencia.get(evento_id) ?? 0) + 1);
+    }
+    return asistencia;
   }
 
   /** Organizador dueño de un evento, para que `acceso` decida quién valida en la puerta. `null` si no existe. */
