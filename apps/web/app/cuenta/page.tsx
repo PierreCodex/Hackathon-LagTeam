@@ -26,7 +26,13 @@ export default async function Cuenta() {
   }
 
   return (
-    <PantallaSesion sesion={sesion} rutaActual="/cuenta" titulo="Tu cuenta" destinoActivo="cuenta">
+    <PantallaSesion
+      sesion={sesion}
+      rutaActual="/cuenta"
+      titulo="Tu cuenta"
+      destinoActivo="cuenta"
+      ancho="formulario"
+    >
       {sesion.tipo === "cuenta" && (
         <Tarjeta como="section" aria-label="Tus datos">
           <dl className="flex flex-col gap-4">

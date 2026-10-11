@@ -37,7 +37,7 @@ export async function GuardaRol({ rol, ruta, titulo, destinoActivo, children }: 
 
   if (guarda.tipo === "sin-permiso") {
     return (
-      <PantallaSesion sesion={sesion} rutaActual={ruta}>
+      <PantallaSesion sesion={sesion} rutaActual={ruta} ancho="formulario">
         <Tarjeta como="section" aria-labelledby="titulo-sin-permiso" className="flex flex-col gap-4">
           <h1 id="titulo-sin-permiso" className="text-title">
             Esta sección es para {NOMBRE_PLURAL_ROL[guarda.rolRequerido]}

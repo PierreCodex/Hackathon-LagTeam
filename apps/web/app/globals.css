@@ -2,7 +2,7 @@
 
 /*
  * Tokens del DESIGN.md (ux-plataforma-eventos/DESIGN.md). Valores exactos: no se inventan colores.
- * Tema oscuro único: no hay modo claro.
+ * Tema claro del manual de marca con estructura carbón (surface-inverse).
  * Se vacían las paletas y sombras por defecto de Tailwind para que solo existan estos tokens.
  */
 @theme {
@@ -13,19 +13,26 @@
   --text-shadow-*: initial;
 
   /* Colores */
-  --color-surface-base: #000000;
-  --color-surface-raised: #141414;
-  --color-surface-overlay: #1e1f20;
-  --color-border-hairline: #2e2f31;
-  --color-ink-primary: #ffffff;
-  --color-ink-secondary: #bdbfc1;
+  --color-surface-base: #f1f1f2;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #ffffff;
+  /* Estructura carbón: cabecera, pie, barra inferior, panel de acceso. */
+  --color-surface-inverse: #272424;
+  --color-surface-inverse-raised: #373435;
+  --color-border-hairline: #dcdcde;
+  --color-border-inverse: #3f3c3c;
+  --color-ink-primary: #373435;
+  --color-ink-secondary: #6d6e71;
   --color-ink-muted: #727376; /* Solo bordes, iconos inactivos y deshabilitado: nunca texto que haya que leer. */
+  --color-ink-on-inverse: #ffffff;
+  --color-ink-on-inverse-secondary: #bdbfc1;
+  /* Acento: botón principal, destino activo (3 px) y enlaces de acento. Nunca fondos ni precios. */
   --color-accent: #ed3237;
   --color-accent-pressed: #c4262b;
   --color-on-accent: #ffffff;
-  --color-state-success: #3dbe7a;
-  --color-state-warning: #f2a900;
-  --color-state-error: #ff6b6f;
+  --color-state-success: #2e8b57;
+  --color-state-warning: #b07a00;
+  --color-state-error: #c4262b;
   /* Solo dentro del mapa de butacas */
   --color-seat-sold: #3a3b3d;
   --color-seat-held: #727376;
@@ -64,9 +71,11 @@
    */
   --spacing: 4px;
   --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 32px;
 
-  /* Ancho máximo del contenido a partir de 768 px (md) */
-  --container-contenido: 480px;
+  /* Anchos: contenedor de la página (max-w-pagina) y columna de formularios (max-w-formulario). */
+  --container-pagina: 1280px;
+  --container-formulario: 480px;
 }
 
 /* Inter llega de next/font como variable en <html>; Arial si aún no cargó. */
@@ -76,7 +85,7 @@
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -90,15 +99,20 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Foco visible en blanco para todo control navegable con teclado. */
+  /* Foco visible en tinta sobre claro para todo control navegable con teclado. */
   :focus-visible {
     outline: 2px solid var(--color-ink-primary);
     outline-offset: 2px;
   }
 
+  /* Sobre superficies carbón (marcadas con .superficie-inversa), el foco va en blanco. */
+  .superficie-inversa :focus-visible {
+    outline-color: var(--color-ink-on-inverse);
+  }
+
   ::selection {
     background-color: var(--color-ink-primary);
-    color: var(--color-surface-base);
+    color: var(--color-ink-on-inverse);
   }
 }
 
