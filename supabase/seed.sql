@@ -81,14 +81,15 @@ end $$;
 -- Viernes, sábado y domingo (16–18 de octubre) para la selección Weekend.
 -- Los aprobados están publicados (salen al público); el pendiente y el rechazado, no.
 insert into public.eventos_eventos (id, organizador_id, sede_id, titulo, descripcion, categoria,
-  distrito, inicio, estado, motivo_rechazo, destacado, hay_musica, aforo, publicado, publicado_en)
+  distrito, inicio, estado, motivo_rechazo, destacado, hay_musica, aforo, publicado, publicado_en, alerta_apdayc)
 select ('13600000-0000-4000-8000-' || lpad(e.numero::text, 12, '0'))::uuid,
   '13000000-0000-4000-8000-000000000001'::uuid,
   ('13100000-0000-4000-8000-' || lpad(e.sede::text, 12, '0'))::uuid,
   e.titulo, e.descripcion, e.categoria, case when e.sede = 1 then 'Piura' else 'Castilla' end,
   e.inicio::timestamptz, e.estado, case when e.estado = 'rechazado' then 'Completar la descripción del programa.' end,
   e.numero = 1, e.categoria in ('musica', 'danza'), case when e.sede = 1 then 643 else 120 end,
-  e.estado = 'aprobado', case when e.estado = 'aprobado' then '2026-10-01 09:00:00-05'::timestamptz end
+  e.estado = 'aprobado', case when e.estado = 'aprobado' then '2026-10-01 09:00:00-05'::timestamptz end,
+  case when e.numero = 7 then 'La descripción menciona DJ, pero el organizador no declaró música. Revisar APDAYC.' end
 from (values
   (1, 1, 'Noche de música piurana', 'Concierto ficticio de artistas locales.', 'musica', '2026-10-16 20:00:00-05', 'aprobado'),
   (2, 1, 'Historias del río Piura', 'Teatro ficticio para compartir en familia.', 'teatro', '2026-10-17 19:00:00-05', 'aprobado'),
@@ -96,14 +97,14 @@ from (values
   (4, 2, 'Muestra de arte: colores del norte', 'Exposición ficticia de arte visual.', 'artes_visuales', '2026-10-24 16:00:00-05', 'aprobado'),
   (5, 1, 'Cine bajo el cielo de Piura', 'Proyección ficticia y conversación con el público.', 'cine', '2026-10-31 18:30:00-05', 'aprobado'),
   (6, 2, 'Voces y versos de Castilla', 'Lecturas ficticias de literatura regional.', 'literatura', '2026-11-07 17:00:00-05', 'aprobado'),
-  (7, 1, 'Encuentro cultural de noviembre', 'Evento ficticio pendiente de revisión.', 'otro', '2026-11-14 19:00:00-05', 'pendiente'),
+  (7, 1, 'Encuentro cultural de noviembre', 'Evento ficticio con DJ invitado, pendiente de revisión.', 'otro', '2026-11-14 19:00:00-05', 'pendiente'),
   (8, 2, 'Taller de relatos del norte', 'Propuesta ficticia para corregir antes de publicar.', 'literatura', '2026-11-21 16:00:00-05', 'rechazado')
 ) as e(numero, sede, titulo, descripcion, categoria, inicio, estado)
 on conflict (id) do update set titulo = excluded.titulo, descripcion = excluded.descripcion,
   categoria = excluded.categoria, distrito = excluded.distrito, inicio = excluded.inicio,
   estado = excluded.estado, motivo_rechazo = excluded.motivo_rechazo, destacado = excluded.destacado,
   hay_musica = excluded.hay_musica, aforo = excluded.aforo, publicado = excluded.publicado,
-  publicado_en = excluded.publicado_en;
+  publicado_en = excluded.publicado_en, alerta_apdayc = excluded.alerta_apdayc;
 
 insert into public.eventos_categorias_precio (id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id)
 select ('13700000-0000-4000-8000-' || lpad((e.numero * 10 + p.orden)::text, 12, '0'))::uuid,
