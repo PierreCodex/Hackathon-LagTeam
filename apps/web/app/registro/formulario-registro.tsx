@@ -3,7 +3,7 @@
 import { CODIGOS_IDENTIDAD, type RolRegistro } from "@reto18/shared";
 import Link from "next/link";
 import { startTransition, useActionState, useState, type FormEvent } from "react";
-import { Aviso, Boton, BotonEnlace, Campo } from "@/components/ui";
+import { Aviso, Boton, BotonEnlace, Campo, CampoContrasena } from "@/components/ui";
 import { clases } from "@/lib/clases";
 import { primerCampoConError, validarRegistro, type ErroresRegistro } from "@/lib/formularios";
 import { registrar, type EstadoRegistro } from "./acciones";
@@ -98,10 +98,9 @@ export function FormularioRegistro({ siguiente }: { siguiente: string | null }) 
         onChange={(e) => setCorreo(e.target.value)}
         error={errores.correo}
       />
-      <Campo
+      <CampoContrasena
         id="contrasena"
         etiqueta="Contraseña"
-        type="password"
         autoComplete="new-password"
         ayuda="Al menos 8 caracteres."
         value={contrasena}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { PantallaSesion } from "@/components/layout/pantalla-sesion";
+import { PantallaAcceso } from "@/components/layout/pantalla-acceso";
 import { destinoTrasIngreso, rutaInternaSegura } from "@/lib/sesion";
 import { obtenerSesion } from "@/lib/sesion-servidor";
 import { FormularioIngreso } from "./formulario-ingreso";
@@ -22,8 +22,18 @@ export default async function Ingresar({
   }
 
   return (
-    <PantallaSesion sesion={sesion} rutaActual="/ingresar" titulo="Ingresar">
+    <PantallaAcceso
+      sesion={sesion}
+      rutaActual="/ingresar"
+      titulo="¡Bienvenido!"
+      subtitulo="Ingresa a tu cuenta."
+      enlaceInverso={{
+        pregunta: "¿No tienes cuenta?",
+        texto: "Regístrate",
+        href: siguiente ? `/registro?siguiente=${encodeURIComponent(siguiente)}` : "/registro",
+      }}
+    >
       <FormularioIngreso siguiente={siguiente} />
-    </PantallaSesion>
+    </PantallaAcceso>
   );
 }

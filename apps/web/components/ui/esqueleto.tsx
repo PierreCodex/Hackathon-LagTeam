@@ -13,7 +13,7 @@ export type EsqueletoProps = {
  */
 export function Esqueleto({ className }: EsqueletoProps) {
   return (
-    <div aria-hidden="true" className={clases("rounded-sm bg-surface-overlay motion-safe:animate-pulse", className)} />
+    <div aria-hidden="true" className={clases("rounded-sm bg-border-hairline motion-safe:animate-pulse", className)} />
   );
 }
 

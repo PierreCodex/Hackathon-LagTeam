@@ -12,18 +12,19 @@ export type BarraInferiorProps = {
   fija?: boolean;
 };
 
-/** Barra inferior por rol, sin menú hamburguesa (DESIGN.md · Barra inferior). */
+/** Barra inferior carbón por rol, sin menú hamburguesa; solo por debajo de 1024 px (DESIGN.md · Barra inferior). */
 export function BarraInferior({ rol, activo, fija = true }: BarraInferiorProps) {
   const destinos = DESTINOS_POR_ROL[rol];
   return (
     <nav
       aria-label={`Navegación de ${NOMBRE_ROL[rol].toLowerCase()}`}
       className={clases(
-        "border-t border-border-hairline bg-surface-base",
-        fija && "fixed inset-x-0 bottom-0 z-10 pb-[env(safe-area-inset-bottom)]",
+        "superficie-inversa border-t border-border-inverse bg-surface-inverse",
+        // Solo por debajo de 1024 px: en escritorio navega la cabecera.
+        fija && "fixed inset-x-0 bottom-0 z-10 pb-[env(safe-area-inset-bottom)] lg:hidden",
       )}
     >
-      <ul className="mx-auto flex w-full md:max-w-contenido">
+      <ul className="mx-auto flex w-full max-w-pagina">
         {destinos.map((destino) => {
           const esActivo = destino.id === activo;
           return (
@@ -34,8 +35,8 @@ export function BarraInferior({ rol, activo, fija = true }: BarraInferiorProps) 
                 className={clases(
                   "relative flex h-16 flex-col items-center justify-center gap-1 px-1 text-center text-meta no-underline focus-visible:-outline-offset-2",
                   esActivo
-                    ? "text-ink-primary before:absolute before:inset-x-[30%] before:top-0 before:h-0.5 before:bg-accent before:content-['']"
-                    : "text-ink-secondary",
+                    ? "text-ink-on-inverse before:absolute before:inset-x-[30%] before:top-0 before:h-[3px] before:bg-accent before:content-['']"
+                    : "text-ink-on-inverse-secondary",
                 )}
               >
                 <IconoDestinoSvg icono={destino.id} />
