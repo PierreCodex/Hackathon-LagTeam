@@ -265,3 +265,77 @@ describe("EventosService.listarSedes", () => {
     });
   });
 });
+
+describe("EventosService.datosParaPieza", () => {
+  function conRespuesta(respuesta: { data: unknown; error: { message: string } | null }) {
+    const llamadas: { tabla?: string; columnas?: string; eq?: [string, string] } = {};
+    const consulta = {
+      select: (columnas: string) => ((llamadas.columnas = columnas), consulta),
+      eq: (campo: string, valor: string) => ((llamadas.eq = [campo, valor]), consulta),
+      abortSignal: () => consulta,
+      maybeSingle: async () => respuesta,
+    };
+    const cliente = { from: (tabla: string) => ((llamadas.tabla = tabla), consulta) } as unknown as ClienteSupabase;
+    return { servicio: new EventosService(cliente, {} as ArchivosEventos), llamadas };
+  }
+
+  const FILA = {
+    id: EVENTO,
+    organizador_id: ORGANIZADOR,
+    estado: "aprobado",
+    titulo: "Noche de música piurana",
+    descripcion: "Concierto.",
+    categoria: "musica",
+    inicio: "2026-10-17T01:00:00+00:00",
+    distrito: "Piura",
+    foto_url: null,
+    sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
+    categorias: [{ precio_centimos: 6000 }, { precio_centimos: 4000 }, { precio_centimos: 5000 }],
+  };
+
+  it("devuelve el evento con su sede y el precio mínimo de sus categorías", async () => {
+    const { servicio, llamadas } = conRespuesta({ data: FILA, error: null });
+    expect(await servicio.datosParaPieza(EVENTO)).toEqual({
+      id: EVENTO,
+      organizador_id: ORGANIZADOR,
+      estado: "aprobado",
+      titulo: "Noche de música piurana",
+      descripcion: "Concierto.",
+      categoria: "musica",
+      inicio: "2026-10-17T01:00:00+00:00",
+      distrito: "Piura",
+      foto_url: null,
+      sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
+      precio_minimo_centimos: 4000,
+    });
+    expect(llamadas.tabla).toBe("eventos_eventos");
+    expect(llamadas.eq).toEqual(["id", EVENTO]);
+    expect(llamadas.columnas).toContain("eventos_sedes(nombre, direccion)");
+  });
+
+  it("gratuito (todas a 0): 0; con cortesía a 0 y de pago: mínimo de pago; sin categorías: null", async () => {
+    const gratis = conRespuesta({ data: { ...FILA, categorias: [{ precio_centimos: 0 }] }, error: null });
+    expect((await gratis.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBe(0);
+    const mixto = conRespuesta({
+      data: { ...FILA, categorias: [{ precio_centimos: 0 }, { precio_centimos: 5000 }, { precio_centimos: 4000 }] },
+      error: null,
+    });
+    expect((await mixto.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBe(4000);
+    const sin = conRespuesta({ data: { ...FILA, categorias: [] }, error: null });
+    expect((await sin.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBeNull();
+  });
+
+  it("null si no existe o el id no es un UUID (sin consultar)", async () => {
+    const { servicio, llamadas } = conRespuesta({ data: null, error: null });
+    expect(await servicio.datosParaPieza(EVENTO)).toBeNull();
+    const otro = conRespuesta({ data: FILA, error: null });
+    expect(await otro.servicio.datosParaPieza("no-es-un-uuid")).toBeNull();
+    expect(otro.llamadas.tabla).toBeUndefined();
+    expect(llamadas.tabla).toBe("eventos_eventos");
+  });
+
+  it("si la BD falla: 503 BD_NO_DISPONIBLE", async () => {
+    const { servicio } = conRespuesta({ data: null, error: { message: "caída" } });
+    await expect(servicio.datosParaPieza(EVENTO)).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+});
