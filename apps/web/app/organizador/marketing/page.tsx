@@ -1,25 +1,19 @@
-import type { EstadoEvento, EventoRevision } from "@reto18/shared";
+import type { EventoRevision } from "@reto18/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuardaRol } from "@/components/layout/guarda-rol";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { clases } from "@/lib/clases";
 import { fechaPieza, rutaMarketingEvento } from "@/lib/pieza";
+import { ESTADO_EVENTO } from "@/lib/revision";
 import { cargarMisEventos } from "../datos-organizador";
 
 export const metadata: Metadata = { title: "Marketing · Reto 18" };
 
 const RUTA = "/organizador/marketing";
 
-/** Estado con símbolo y texto, nunca solo color (DESIGN.md). */
-const ESTADO: Record<EstadoEvento, { simbolo: string; texto: string; color: string }> = {
-  aprobado: { simbolo: "✓", texto: "Aprobado", color: "text-state-success" },
-  pendiente: { simbolo: "…", texto: "Pendiente de aprobación", color: "text-state-warning" },
-  rechazado: { simbolo: "✕", texto: "Rechazado", color: "text-state-error" },
-};
-
 function FilaEvento({ evento }: { evento: EventoRevision }) {
-  const estado = ESTADO[evento.estado];
+  const estado = ESTADO_EVENTO[evento.estado];
   const aprobado = evento.estado === "aprobado";
   return (
     <li>

@@ -1,24 +1,22 @@
 import type { Metadata } from "next";
 import { GuardaRol } from "@/components/layout/guarda-rol";
-import { BotonEnlace, Tarjeta } from "@/components/ui";
+import { cargarMisEventos } from "./datos-organizador";
+import { ContenidoMisEventos } from "./fila-mis-eventos";
 
-export const metadata: Metadata = { title: "Organizador · Reto 18" };
+export const metadata: Metadata = { title: "Mis eventos · Reto 18" };
 
-/** Portada mínima del organizador (1.8) con "Nuevo evento" (1.9). La lista de Mis eventos llega cuando haya endpoint. */
+const RUTA = "/organizador";
+
+async function ListaMisEventos() {
+  const { eventos, error } = await cargarMisEventos();
+  return <ContenidoMisEventos eventos={eventos} error={error} rutaActual={RUTA} />;
+}
+
+/** Mis eventos del organizador (1.8, 1.10): "Nuevo evento" y la lista con estado y motivo del rechazo. */
 export default function PortadaOrganizador() {
   return (
-    <GuardaRol rol="organizador" ruta="/organizador" titulo="Tus eventos" destinoActivo="mis-eventos">
-      {(perfil) => (
-        <>
-          <BotonEnlace href="/organizador/eventos/nuevo" className="self-start max-sm:w-full">
-            Nuevo evento
-          </BotonEnlace>
-          <Tarjeta className="flex flex-col gap-2">
-            <p>Hola, {perfil.correo}.</p>
-            <p className="text-meta text-ink-secondary">Muy pronto verás aquí la lista de tus eventos.</p>
-          </Tarjeta>
-        </>
-      )}
+    <GuardaRol rol="organizador" ruta={RUTA} titulo="Tus eventos" destinoActivo="mis-eventos">
+      {() => <ListaMisEventos />}
     </GuardaRol>
   );
 }
