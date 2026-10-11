@@ -99,7 +99,7 @@ eventos de octubre–noviembre de 2026. El 16, 17 y 18 de octubre tienen eventos
 Weekend. Hay precios en céntimos de PEN con IGV, una muestra de arte gratuita y eventos pendiente y rechazado.
 
 En la nube, aplica primero todas las migraciones de `supabase/migrations` en orden, incluidas
-`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql` y `20261011010000_eventos_mapa.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
+`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql` y `20261011020000_eventos_mapa.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
 `supabase/seed.sql` y ejecútalo. Puedes ejecutarlo otra vez: conserva los identificadores de la demo
 y no duplica filas. No requiere variables ni herramientas de la CLI dentro del SQL Editor.
 
@@ -155,7 +155,7 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, que también crea los buckets de Storage `eventos-fotos` y `eventos-constancias`, y `20261011010000_eventos_mapa.sql`, del mapa de la sede y la publicación): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, que también crea los buckets de Storage `eventos-fotos` y `eventos-constancias`, `20261011010000_marketing.sql`, y `20261011020000_eventos_mapa.sql`, del mapa de la sede y la publicación): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
 4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 
