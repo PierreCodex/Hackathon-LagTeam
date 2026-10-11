@@ -39,6 +39,7 @@ hitl = false
 risk = "medium"
 assignee = "Luis Armando"
 
+# Recorte final: bloque D, reducida.
 [[entry]]
 id = 3
 type = "story"
@@ -49,9 +50,10 @@ covers = ["CAP-8", "CAP-9"]
 after = [1, 2]
 hitl = false
 risk = "medium"
-assignee = "Luis Armando"
+assignee = "Sandro David"
 references = ["spec-reto18-plataforma-eventos/piezas-marketing.md"]
 
+# Recorte final: bloque D, reducida (descargar pieza y copiar texto).
 [[entry]]
 id = 9
 type = "story"
@@ -65,6 +67,7 @@ risk = "medium"
 assignee = "Sandro David"
 references = ["spec-reto18-plataforma-eventos/piezas-marketing.md"]
 
+# Recorte final: CORTADA. Se exporta (criterio 6).
 [[entry]]
 id = 4
 type = "story"
@@ -79,6 +82,7 @@ assignee = "Luis Armando"
 unknown = "Si el plan gratuito de Upload-Post o Zernio permite publicar en Instagram y Facebook por API y cuánto tarda conectar la cuenta."
 notes = ["Persona: crear la cuenta del servicio y conectar el Instagram y el Facebook del equipo.", "La parte manual (cuenta, conexión de redes y responder el unknown) es de Manuel Alexis, cuanto antes; el código es de Luis Armando.", "Respuesta al unknown (Sandro David, 11/10/2026): Upload-Post, plan gratuito. Publica en Instagram y Facebook por API; límite de 10 llamadas al mes, 2 perfiles, sin TikTok. Cuenta hecha: clave TEATRO_MARKETING, perfil 'Por defecto' con el Instagram sandrd_djg y la página de Facebook Englobor. Probar poco y guardar llamadas para el ensayo y la demo; comprobar en la primera prueba si `user` acepta 'Por defecto'."]
 
+# Recorte final: CORTADA.
 [[entry]]
 id = 5
 type = "story"
@@ -91,6 +95,7 @@ hitl = false
 risk = "low"
 assignee = "Luis Armando"
 
+# Recorte final: CORTADA. Aprobación sin alerta.
 [[entry]]
 id = 6
 type = "story"
@@ -104,6 +109,7 @@ risk = "low"
 assignee = "Sandro David"
 notes = ["Sandro David la construye con bmad-build."]
 
+# Recorte final: CORTADA. Afiche pregenerado o solo pitch.
 [[entry]]
 id = 7
 type = "story"
@@ -116,6 +122,7 @@ hitl = false
 risk = "medium"
 assignee = "Luis Armando"
 
+# Recorte final: CORTADA. Afiche pregenerado o solo pitch.
 [[entry]]
 id = 10
 type = "story"

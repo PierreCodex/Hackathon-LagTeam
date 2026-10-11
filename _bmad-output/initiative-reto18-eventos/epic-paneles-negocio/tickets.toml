@@ -1,6 +1,7 @@
 # Historias del epic 4 (Paneles y negocio), en orden de construcción. tickets.py lee este archivo.
 # `assignee` es una clave propia del equipo (tickets.py la ignora): dice quién construye cada historia.
 
+# Recorte final: bloque B, sobre la consulta base de ventas que publica Luis Armando.
 [[entry]]
 id = 1
 type = "story"
@@ -11,8 +12,9 @@ covers = ["CAP-11"]
 after = ["2.1", "3.2"]
 hitl = false
 risk = "low"
-assignee = "Luis Armando"
+assignee = "Sandro David"
 
+# Recorte final: bloque B.
 [[entry]]
 id = 4
 type = "story"
@@ -23,8 +25,9 @@ covers = ["CAP-11"]
 after = [1, "1.12", "2.8"]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
+assignee = "Sandro David"
 
+# Recorte final: bloque C.
 [[entry]]
 id = 2
 type = "story"
@@ -37,6 +40,7 @@ hitl = false
 risk = "medium"
 assignee = "Luis Armando"
 
+# Recorte final: bloque C.
 [[entry]]
 id = 5
 type = "story"
@@ -47,9 +51,10 @@ covers = ["CAP-12"]
 after = [2, "1.12"]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
+assignee = "Luis Armando"
 notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]
 
+# Recorte final: bloque C, con datos sembrados.
 [[entry]]
 id = 3
 type = "story"
@@ -62,6 +67,7 @@ hitl = false
 risk = "low"
 assignee = "Luis Armando"
 
+# Recorte final: bloque C.
 [[entry]]
 id = 6
 type = "story"
@@ -72,5 +78,5 @@ covers = ["CAP-13"]
 after = [3, "1.12"]
 hitl = false
 risk = "low"
-assignee = "Manuel Alexis"
+assignee = "Luis Armando"
 notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]

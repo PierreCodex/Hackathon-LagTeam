@@ -25,6 +25,7 @@ hitl = false
 risk = "medium"
 assignee = "Manuel Alexis"
 
+# Recorte final: CORTADA. Respaldo: QR en Mis entradas.
 [[entry]]
 id = 2
 type = "story"
@@ -77,6 +78,7 @@ hitl = false
 risk = "medium"
 assignee = "Jean Pierre"
 
+# Recorte final: bloque A, reducida (precio del rango de 2.4, sin pintar en la pizarra).
 [[entry]]
 id = 10
 type = "story"
@@ -89,6 +91,7 @@ hitl = false
 risk = "medium"
 assignee = "Manuel Alexis"
 
+# Recorte final: bloque A (butaca), versión mínima.
 [[entry]]
 id = 5
 type = "story"
@@ -99,8 +102,9 @@ covers = ["CAP-5", "CAP-15"]
 after = [1, 4]
 hitl = false
 risk = "high"
-assignee = "Jean Pierre"
+assignee = "Manuel Alexis"
 
+# Recorte final: bloque A (butaca).
 [[entry]]
 id = 6
 type = "story"
@@ -111,8 +115,9 @@ covers = ["CAP-15", "CAP-5"]
 after = [5]
 hitl = false
 risk = "medium"
-assignee = "Jean Pierre"
+assignee = "Manuel Alexis"
 
+# Recorte final: bloque A (butaca).
 [[entry]]
 id = 11
 type = "story"
@@ -125,6 +130,7 @@ hitl = false
 risk = "medium"
 assignee = "Manuel Alexis"
 
+# Recorte final: bloque E, opcional; si no llega, vídeo grabado.
 [[entry]]
 id = 7
 type = "story"
@@ -135,8 +141,9 @@ covers = ["CAP-7"]
 after = [1]
 hitl = false
 risk = "high"
-assignee = "Jean Pierre"
+assignee = "Quien termine primero"
 
+# Recorte final: bloque E, opcional; si no llega, vídeo grabado.
 [[entry]]
 id = 12
 type = "story"
@@ -147,8 +154,9 @@ covers = ["CAP-7"]
 after = [7, 8, "1.12"]
 hitl = false
 risk = "high"
-assignee = "Manuel Alexis"
+assignee = "Quien termine primero"
 
+# Recorte final: CORTADA.
 [[entry]]
 id = 13
 type = "story"
@@ -162,6 +170,7 @@ risk = "low"
 assignee = "Jean Pierre"
 notes = ["Decisión del 10/10/2026 para avanzar sin depender de la pizarra ni de la IA: el mapa se genera a partir del número de butacas."]
 
+# Recorte final: CORTADA.
 [[entry]]
 id = 14
 type = "story"
@@ -175,6 +184,7 @@ risk = "low"
 assignee = "Jean Pierre"
 notes = ["Decisión del 10/10/2026: el local se identifica por su ubicación de Google Places para no repetir locales. La clave debe restringirse por dominio y API en Google Cloud."]
 
+# Recorte final: CORTADA.
 [[entry]]
 id = 15
 type = "story"
