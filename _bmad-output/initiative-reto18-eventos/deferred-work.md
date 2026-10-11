@@ -27,3 +27,7 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/change-layout-escritorio-estilo-joinnus/change-layout-escritorio-estilo-joinnus.md`
   summary: Favoritos y fila "Lo más vendido" con ranking en la portada.
   evidence: Requieren datos que la API del catálogo (1.6) no expone, como las ventas por evento. Se retoma si sobra tiempo tras el epic 4.
+
+- source_plan: `epic-base-roles-eventos/story-ui-formulario-de-alta-de-evento-plan.md`
+  summary: Hacer idempotente `POST /api/v1/eventos` (clave de idempotencia del formulario) para que "Reintentar" tras un tiempo límite no cree el evento dos veces.
+  evidence: `pedirApi` convierte un tiempo límite en `SIN_CONEXION` aunque la API haya creado el evento; el formulario ofrece "Reintentar" y la API no detecta el duplicado (revisión de la 1.9, 10/10/2026).
