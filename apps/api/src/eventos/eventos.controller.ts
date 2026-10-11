@@ -5,6 +5,7 @@ import {
   Controller,
   type ExecutionContext,
   Get,
+  Query,
   HttpCode,
   HttpStatus,
   Inject,
@@ -39,6 +40,11 @@ import {
   type DestacadoEvento,
   type EventoRevision,
   type ConstanciaEvento,
+  CatalogoPublicoQuerySchema,
+  MesCatalogoSchema,
+  type CatalogoPublicoQuery,
+  type MesCatalogo,
+  type EventoPublico,
 } from "@reto18/shared";
 import type { Observable } from "rxjs";
 import { Roles, UsuarioActual, type UsuarioAutenticado } from "../identidad/roles.js";
@@ -102,6 +108,17 @@ export class MultipartAltaInterceptor implements NestInterceptor {
 @Controller("eventos")
 export class EventosController {
   constructor(@Inject(EventosService) private readonly eventos: EventosService) {}
+
+  /** Catálogo público: no requiere sesión; solo muestra eventos aprobados y publicados. */
+  @Get()
+  catalogo(@Query({ schema: CatalogoPublicoQuerySchema }) filtros: CatalogoPublicoQuery): Promise<EventoPublico[]> {
+    return this.eventos.listarPublicos(filtros);
+  }
+
+  @Get("calendario")
+  calendario(@Query({ schema: MesCatalogoSchema }) datos: MesCatalogo): Promise<EventoPublico[]> {
+    return this.eventos.listarPublicosMes(datos.mes);
+  }
 
   @Get("pendientes")
   @Roles("admin")
@@ -221,5 +238,10 @@ export class EventosController {
   @HttpCode(HttpStatus.OK)
   publicar(@UsuarioActual() usuario: UsuarioAutenticado, @Param("id", ID_VALIDO) id: string): Promise<Evento> {
     return this.eventos.publicarEvento(usuario.id, id);
+  }
+
+  @Get(":id")
+  ficha(@Param("id", { schema: EventoIdSchema }) id: string): Promise<EventoPublico> {
+    return this.eventos.leerPublico(id);
   }
 }

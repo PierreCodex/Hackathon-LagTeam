@@ -21,6 +21,8 @@ import {
   type EventoCreado,
   type EventoRevision,
   type ConstanciaEvento,
+  type EventoPublico,
+  type CatalogoPublicoQuery,
   type MapaSede,
   type MapaSedeEntrada,
   MapaSedeSchema,
@@ -73,12 +75,23 @@ const COLUMNAS_PIEZA =
   "id, organizador_id, estado, titulo, descripcion, categoria, inicio, distrito, foto_url, " +
   "sede:eventos_sedes(nombre, direccion), categorias:eventos_categorias_precio(precio_centimos)";
 
+const COLUMNAS_PUBLICO =
+  "id, titulo, descripcion, categoria, distrito, inicio, destacado, foto_url, aforo, " +
+  "sede:eventos_sedes(id, nombre, direccion, distrito), categorias:eventos_categorias_precio(id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id)";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ErrorBd {
   code?: string;
   message: string;
   details?: string | null;
+}
+
+interface EventoPublicoFila {
+  id: string; titulo: string; descripcion: string; categoria: CategoriaEvento; distrito: string;
+  inicio: string; destacado: boolean; foto_url: string | null; aforo: number;
+  sede: { id: string; nombre: string; direccion: string; distrito: string } | { id: string; nombre: string; direccion: string; distrito: string }[] | null;
+  categorias: CategoriaPrecio[] | null;
 }
 
 /** Servicio del módulo `eventos`. Es la única puerta a las tablas `eventos_*` (AD-2). */
@@ -97,6 +110,69 @@ export class EventosService {
 
   listarPropios(organizadorId: string): Promise<EventoRevision[]> {
     return this.listarRevision("organizador_id", organizadorId);
+  }
+
+  /** Catálogo sin sesión: solo eventos aprobados y publicados. */
+  async listarPublicos(filtros: CatalogoPublicoQuery = {}): Promise<EventoPublico[]> {
+    const consulta = this.cliente().from("eventos_eventos")
+      .select(COLUMNAS_PUBLICO).eq("estado", "aprobado").eq("publicado", true)
+      .order("destacado", { ascending: false }).order("inicio").order("id")
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    const { data, error } = await consulta;
+    if (error) {
+      this.logger.warn(`No se pudo listar el catálogo: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer el catálogo. Inténtalo de nuevo.");
+    }
+    const filas = (data ?? []) as unknown as EventoPublicoFila[];
+    const eventos = filas.map((fila) => this.proyectarPublico(fila));
+    return eventos.filter((evento) => this.cumpleFiltros(evento, filtros));
+  }
+
+  async listarPublicosMes(mes: string): Promise<EventoPublico[]> {
+    const [anio, numero] = mes.split("-").map(Number);
+    const desde = new Date(Date.UTC(anio!, numero! - 1, 1, 5));
+    const hasta = new Date(Date.UTC(anio!, numero!, 1, 5));
+    const eventos = await this.listarPublicos();
+    return eventos.filter((evento) => {
+      const inicio = new Date(evento.inicio);
+      return inicio >= desde && inicio < hasta;
+    });
+  }
+
+  async leerPublico(id: string): Promise<EventoPublico> {
+    const { data, error } = await this.cliente().from("eventos_eventos")
+      .select(COLUMNAS_PUBLICO).eq("id", id).eq("estado", "aprobado").eq("publicado", true)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS)).maybeSingle();
+    if (error) {
+      this.logger.warn(`No se pudo leer el evento público ${id}: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer el evento. Inténtalo de nuevo.");
+    }
+    if (!data) throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
+    return this.proyectarPublico(data as unknown as EventoPublicoFila);
+  }
+
+  private proyectarPublico(fila: EventoPublicoFila): EventoPublico {
+    const sede = Array.isArray(fila.sede) ? fila.sede[0] : fila.sede;
+    const categorias = (fila.categorias ?? []) as CategoriaPrecio[];
+    return {
+      id: fila.id, titulo: fila.titulo, descripcion: fila.descripcion, categoria: fila.categoria,
+      distrito: fila.distrito, inicio: fila.inicio, destacado: fila.destacado, foto_url: fila.foto_url,
+      aforo: Number(fila.aforo), sede, categorias, precio_minimo_centimos: precioMinimo(categorias.map((c) => Number(c.precio_centimos))),
+    } as EventoPublico;
+  }
+
+  private cumpleFiltros(evento: EventoPublico, filtros: CatalogoPublicoQuery): boolean {
+    const termino = filtros.q?.toLocaleLowerCase("es");
+    if (termino && !`${evento.titulo} ${evento.descripcion}`.toLocaleLowerCase("es").includes(termino)) return false;
+    if (filtros.categoria && evento.categoria !== filtros.categoria) return false;
+    if (filtros.distrito && evento.distrito.toLocaleLowerCase("es") !== filtros.distrito.toLocaleLowerCase("es")) return false;
+    const fecha = evento.inicio.slice(0, 10);
+    if (filtros.desde && fecha < filtros.desde) return false;
+    if (filtros.hasta && fecha > filtros.hasta) return false;
+    const precio = evento.precio_minimo_centimos;
+    if (filtros.precio_minimo_centimos !== undefined && (precio === null || precio < filtros.precio_minimo_centimos)) return false;
+    if (filtros.precio_maximo_centimos !== undefined && (precio === null || precio > filtros.precio_maximo_centimos)) return false;
+    return true;
   }
 
   private async listarRevision(campo: "estado" | "organizador_id", valor: string): Promise<EventoRevision[]> {
