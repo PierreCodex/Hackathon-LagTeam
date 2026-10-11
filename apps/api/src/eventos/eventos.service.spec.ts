@@ -147,6 +147,7 @@ describe("EventosService.crear", () => {
 
   it.each([
     ["SEDE_NO_EXISTE", 404],
+    ["SEDE_AJENA", 403],
     ["AFORO_SUPERA_SEDE", 400],
   ])("la RPC rechaza con %s → %i y borra lo subido", async (codigo, estado) => {
     const s = simulado({ data: null, error: { code: "P0001", message: codigo, details: "detalle" } });
@@ -240,19 +241,28 @@ describe("EventosService.crear", () => {
 });
 
 describe("EventosService.listarSedes", () => {
-  it("devuelve las sedes con su capacidad como número", async () => {
+  it("pasa el organizador y devuelve las sedes con su capacidad como número y si son propias", async () => {
+    const llamada = vi.fn();
     const cliente = {
-      rpc: () => ({
-        abortSignal: async () => ({
-          data: [{ id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: "643" }],
-          error: null,
-        }),
-      }),
+      rpc: (nombre: string, args: unknown) => {
+        llamada(nombre, args);
+        return {
+          abortSignal: async () => ({
+            data: [
+              { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: "643", propia: false },
+              { id: "s2", nombre: "Patio", direccion: "Plaza", distrito: "Castilla", capacidad: 120, propia: true },
+            ],
+            error: null,
+          }),
+        };
+      },
     } as unknown as ClienteSupabase;
 
-    expect(await new EventosService(cliente, {} as ArchivosEventos).listarSedes()).toEqual([
-      { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: 643 },
+    expect(await new EventosService(cliente, {} as ArchivosEventos).listarSedes(ORGANIZADOR)).toEqual([
+      { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: 643, propia: false },
+      { id: "s2", nombre: "Patio", direccion: "Plaza", distrito: "Castilla", capacidad: 120, propia: true },
     ]);
+    expect(llamada).toHaveBeenCalledWith("eventos_listar_sedes", { p_organizador: ORGANIZADOR });
   });
 
   it("la BD falla → 503 BD_NO_DISPONIBLE", async () => {
@@ -260,8 +270,82 @@ describe("EventosService.listarSedes", () => {
       rpc: () => ({ abortSignal: async () => ({ data: null, error: { message: "timeout" } }) }),
     } as unknown as ClienteSupabase;
 
-    await expect(new EventosService(cliente, {} as ArchivosEventos).listarSedes()).rejects.toMatchObject({
+    await expect(new EventosService(cliente, {} as ArchivosEventos).listarSedes(ORGANIZADOR)).rejects.toMatchObject({
       response: { codigo: CODIGO_BD_NO_DISPONIBLE },
     });
+  });
+});
+
+describe("EventosService.datosParaPieza", () => {
+  function conRespuesta(respuesta: { data: unknown; error: { message: string } | null }) {
+    const llamadas: { tabla?: string; columnas?: string; eq?: [string, string] } = {};
+    const consulta = {
+      select: (columnas: string) => ((llamadas.columnas = columnas), consulta),
+      eq: (campo: string, valor: string) => ((llamadas.eq = [campo, valor]), consulta),
+      abortSignal: () => consulta,
+      maybeSingle: async () => respuesta,
+    };
+    const cliente = { from: (tabla: string) => ((llamadas.tabla = tabla), consulta) } as unknown as ClienteSupabase;
+    return { servicio: new EventosService(cliente, {} as ArchivosEventos), llamadas };
+  }
+
+  const FILA = {
+    id: EVENTO,
+    organizador_id: ORGANIZADOR,
+    estado: "aprobado",
+    titulo: "Noche de música piurana",
+    descripcion: "Concierto.",
+    categoria: "musica",
+    inicio: "2026-10-17T01:00:00+00:00",
+    distrito: "Piura",
+    foto_url: null,
+    sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
+    categorias: [{ precio_centimos: 6000 }, { precio_centimos: 4000 }, { precio_centimos: 5000 }],
+  };
+
+  it("devuelve el evento con su sede y el precio mínimo de sus categorías", async () => {
+    const { servicio, llamadas } = conRespuesta({ data: FILA, error: null });
+    expect(await servicio.datosParaPieza(EVENTO)).toEqual({
+      id: EVENTO,
+      organizador_id: ORGANIZADOR,
+      estado: "aprobado",
+      titulo: "Noche de música piurana",
+      descripcion: "Concierto.",
+      categoria: "musica",
+      inicio: "2026-10-17T01:00:00+00:00",
+      distrito: "Piura",
+      foto_url: null,
+      sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
+      precio_minimo_centimos: 4000,
+    });
+    expect(llamadas.tabla).toBe("eventos_eventos");
+    expect(llamadas.eq).toEqual(["id", EVENTO]);
+    expect(llamadas.columnas).toContain("eventos_sedes(nombre, direccion)");
+  });
+
+  it("gratuito (todas a 0): 0; con cortesía a 0 y de pago: mínimo de pago; sin categorías: null", async () => {
+    const gratis = conRespuesta({ data: { ...FILA, categorias: [{ precio_centimos: 0 }] }, error: null });
+    expect((await gratis.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBe(0);
+    const mixto = conRespuesta({
+      data: { ...FILA, categorias: [{ precio_centimos: 0 }, { precio_centimos: 5000 }, { precio_centimos: 4000 }] },
+      error: null,
+    });
+    expect((await mixto.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBe(4000);
+    const sin = conRespuesta({ data: { ...FILA, categorias: [] }, error: null });
+    expect((await sin.servicio.datosParaPieza(EVENTO))?.precio_minimo_centimos).toBeNull();
+  });
+
+  it("null si no existe o el id no es un UUID (sin consultar)", async () => {
+    const { servicio, llamadas } = conRespuesta({ data: null, error: null });
+    expect(await servicio.datosParaPieza(EVENTO)).toBeNull();
+    const otro = conRespuesta({ data: FILA, error: null });
+    expect(await otro.servicio.datosParaPieza("no-es-un-uuid")).toBeNull();
+    expect(otro.llamadas.tabla).toBeUndefined();
+    expect(llamadas.tabla).toBe("eventos_eventos");
+  });
+
+  it("si la BD falla: 503 BD_NO_DISPONIBLE", async () => {
+    const { servicio } = conRespuesta({ data: null, error: { message: "caída" } });
+    await expect(servicio.datosParaPieza(EVENTO)).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });

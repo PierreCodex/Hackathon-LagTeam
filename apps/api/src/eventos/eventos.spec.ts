@@ -48,9 +48,9 @@ describe("contratos compartidos de eventos", () => {
   });
 
   it("valida un evento y exige zona horaria, aforo positivo y estado conocido", () => {
-    const evento = { id: randomUUID(), organizador_id: randomUUID(), sede_id: randomUUID(), titulo: "Teatro", descripcion: "Función", categoria: "teatro", distrito: "Piura", inicio: "2026-10-17T19:00:00-05:00", estado: "aprobado", motivo_rechazo: null, destacado: false, hay_musica: false, constancia_apdayc_url: null, foto_url: null, aforo: 643 };
+    const evento = { id: randomUUID(), organizador_id: randomUUID(), sede_id: randomUUID(), titulo: "Teatro", descripcion: "Función", categoria: "teatro", distrito: "Piura", inicio: "2026-10-17T19:00:00-05:00", estado: "aprobado", motivo_rechazo: null, destacado: false, hay_musica: false, constancia_apdayc_url: null, foto_url: null, aforo: 643, publicado: true };
     expect(EventoSchema.safeParse(evento).success).toBe(true);
-    for (const cambio of [{ inicio: "2026-10-17T19:00:00" }, { aforo: 0 }, { estado: "publicado" }]) {
+    for (const cambio of [{ inicio: "2026-10-17T19:00:00" }, { aforo: 0 }, { estado: "publicado" }, { publicado: undefined }]) {
       expect(EventoSchema.safeParse({ ...evento, ...cambio }).success).toBe(false);
     }
   });

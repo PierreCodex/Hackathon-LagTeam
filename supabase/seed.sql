@@ -9,10 +9,12 @@ values ('13000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated'
   '{"nombre":"Organizador de demo"}', now(), now())
 on conflict (id) do nothing;
 
-insert into public.eventos_sedes (id, nombre, direccion, distrito) values
-  ('13100000-0000-4000-8000-000000000001', 'Teatro de ejemplo de Piura', 'Sede ficticia · centro de Piura', 'Piura'),
-  ('13100000-0000-4000-8000-000000000002', 'Patio cultural de Castilla', 'Sede ficticia · plaza de Castilla', 'Castilla')
-on conflict (id) do update set nombre = excluded.nombre, direccion = excluded.direccion, distrito = excluded.distrito;
+-- Sin dueño (`creado_por` nulo) y con el mapa cerrado: tienen eventos publicados (historia 2.3).
+insert into public.eventos_sedes (id, nombre, direccion, distrito, mapa_cerrado) values
+  ('13100000-0000-4000-8000-000000000001', 'Teatro de ejemplo de Piura', 'Sede ficticia · centro de Piura', 'Piura', true),
+  ('13100000-0000-4000-8000-000000000002', 'Patio cultural de Castilla', 'Sede ficticia · plaza de Castilla', 'Castilla', true)
+on conflict (id) do update set nombre = excluded.nombre, direccion = excluded.direccion, distrito = excluded.distrito,
+  mapa_cerrado = excluded.mapa_cerrado, creado_por = null;
 
 insert into public.eventos_secciones (id, sede_id, nombre, orden, tipo, capacidad) values
   ('13200000-0000-4000-8000-000000000001', '13100000-0000-4000-8000-000000000001', 'Platea baja', 1, 'numerada', null),
@@ -77,14 +79,16 @@ begin
 end $$;
 
 -- Viernes, sábado y domingo (16–18 de octubre) para la selección Weekend.
+-- Los aprobados están publicados (salen al público); el pendiente y el rechazado, no.
 insert into public.eventos_eventos (id, organizador_id, sede_id, titulo, descripcion, categoria,
-  distrito, inicio, estado, motivo_rechazo, destacado, hay_musica, aforo, alerta_apdayc)
+  distrito, inicio, estado, motivo_rechazo, destacado, hay_musica, aforo, publicado, publicado_en, alerta_apdayc)
 select ('13600000-0000-4000-8000-' || lpad(e.numero::text, 12, '0'))::uuid,
   '13000000-0000-4000-8000-000000000001'::uuid,
   ('13100000-0000-4000-8000-' || lpad(e.sede::text, 12, '0'))::uuid,
   e.titulo, e.descripcion, e.categoria, case when e.sede = 1 then 'Piura' else 'Castilla' end,
   e.inicio::timestamptz, e.estado, case when e.estado = 'rechazado' then 'Completar la descripción del programa.' end,
   e.numero = 1, e.categoria in ('musica', 'danza'), case when e.sede = 1 then 643 else 120 end,
+  e.estado = 'aprobado', case when e.estado = 'aprobado' then '2026-10-01 09:00:00-05'::timestamptz end,
   case when e.numero = 7 then 'La descripción menciona DJ, pero el organizador no declaró música. Revisar APDAYC.' end
 from (values
   (1, 1, 'Noche de música piurana', 'Concierto ficticio de artistas locales.', 'musica', '2026-10-16 20:00:00-05', 'aprobado'),
@@ -99,7 +103,8 @@ from (values
 on conflict (id) do update set titulo = excluded.titulo, descripcion = excluded.descripcion,
   categoria = excluded.categoria, distrito = excluded.distrito, inicio = excluded.inicio,
   estado = excluded.estado, motivo_rechazo = excluded.motivo_rechazo, destacado = excluded.destacado,
-  hay_musica = excluded.hay_musica, aforo = excluded.aforo, alerta_apdayc = excluded.alerta_apdayc;
+  hay_musica = excluded.hay_musica, aforo = excluded.aforo, publicado = excluded.publicado,
+  publicado_en = excluded.publicado_en, alerta_apdayc = excluded.alerta_apdayc;
 
 insert into public.eventos_categorias_precio (id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id)
 select ('13700000-0000-4000-8000-' || lpad((e.numero * 10 + p.orden)::text, 12, '0'))::uuid,

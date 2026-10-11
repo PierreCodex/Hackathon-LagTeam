@@ -5,7 +5,7 @@ import { BotonEnlace, Tarjeta } from "@/components/ui";
 import type { IconoDestino } from "@/lib/navegacion";
 import { guardaDeRol, NOMBRE_PLURAL_ROL, rutaIngresar } from "@/lib/sesion";
 import { obtenerSesion } from "@/lib/sesion-servidor";
-import { PantallaSesion } from "./pantalla-sesion";
+import { PantallaSesion, type PantallaSesionProps } from "./pantalla-sesion";
 
 export type GuardaRolProps = {
   /** Rol que pide la ruta. */
@@ -14,6 +14,8 @@ export type GuardaRolProps = {
   ruta: string;
   titulo: string;
   destinoActivo?: IconoDestino;
+  /** Ancho del contenido con el rol correcto (ver `Pantalla`). */
+  ancho?: PantallaSesionProps["ancho"];
   /** Contenido de la página; solo se pinta con el rol correcto. */
   children: (perfil: Perfil) => ReactNode;
 };
@@ -23,7 +25,7 @@ export type GuardaRolProps = {
  * otro rol → "Esta sección es para …" sin datos del rol; perfil sin leer → aviso con "Reintentar".
  * Ocultar es comodidad: el permiso real lo da la API (AD-3).
  */
-export async function GuardaRol({ rol, ruta, titulo, destinoActivo, children }: GuardaRolProps) {
+export async function GuardaRol({ rol, ruta, titulo, destinoActivo, ancho, children }: GuardaRolProps) {
   const sesion = await obtenerSesion();
   const guarda = guardaDeRol(sesion, rol);
 
@@ -52,7 +54,7 @@ export async function GuardaRol({ rol, ruta, titulo, destinoActivo, children }: 
   }
 
   return (
-    <PantallaSesion sesion={sesion} rutaActual={ruta} titulo={titulo} destinoActivo={destinoActivo}>
+    <PantallaSesion sesion={sesion} rutaActual={ruta} titulo={titulo} destinoActivo={destinoActivo} ancho={ancho}>
       {children(guarda.perfil)}
     </PantallaSesion>
   );
