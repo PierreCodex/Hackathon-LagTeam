@@ -182,6 +182,51 @@ export const ResultadosPiezaSchema = z.object({
 });
 export type ResultadosPieza = z.infer<typeof ResultadosPiezaSchema>;
 
+/** Redes donde "Publicar ahora" publica con Upload-Post (3.4). TikTok y X quedan en exportación. */
+export const RedPublicacionSchema = z.enum(["instagram", "facebook"]);
+export type RedPublicacion = z.infer<typeof RedPublicacionSchema>;
+
+/** Largo máximo del texto del post (el pie de Instagram admite 2200; se reserva sitio para el enlace). */
+export const MAX_TEXTO_PUBLICACION = 2000;
+
+/** Cuerpo de `POST /api/v1/marketing/piezas/:id/publicaciones`. */
+export const PublicarPiezaSchema = z.object({
+  redes: z
+    .array(RedPublicacionSchema)
+    .min(1)
+    .max(2)
+    .refine((redes) => new Set(redes).size === redes.length, "Redes repetidas"),
+  /** Texto del post. Sin él, la API lo arma con los textos de la pieza. El enlace rastreable se añade siempre. */
+  texto: textoHasta(MAX_TEXTO_PUBLICACION).optional(),
+  /** Si llega, la publicación se programa para esa fecha en lugar de salir ahora. */
+  programar_para: fechaHora.optional(),
+});
+export type PublicarPieza = z.infer<typeof PublicarPiezaSchema>;
+
+/** Resultado de la publicación en una red. */
+export const ResultadoRedPublicacionSchema = z.object({
+  red: RedPublicacionSchema,
+  ok: z.boolean(),
+  /** Enlace al post, si el proveedor lo devuelve. */
+  url: z.string().nullable(),
+  error: z.string().nullable(),
+});
+export type ResultadoRedPublicacion = z.infer<typeof ResultadoRedPublicacionSchema>;
+
+/** Respuesta de `POST /api/v1/marketing/piezas/:id/publicaciones` (201). */
+export const PublicacionPiezaSchema = z.object({
+  pieza_id: z.uuid(),
+  /** Enlace rastreable que lleva el post (AD-8): sus clics y ventas cuentan para la pieza. */
+  enlace: EnlaceSchema,
+  url_enlace: z.url(),
+  /** Texto final publicado, con el enlace. */
+  texto: z.string(),
+  /** `true` si quedó programada para `programar_para`. */
+  programada: z.boolean(),
+  redes: z.array(ResultadoRedPublicacionSchema),
+});
+export type PublicacionPieza = z.infer<typeof PublicacionPiezaSchema>;
+
 /** Códigos de error del módulo `marketing`. */
 export const CODIGOS_MARKETING = {
   EVENTO_NO_ENCONTRADO: "EVENTO_NO_ENCONTRADO",
@@ -189,6 +234,10 @@ export const CODIGOS_MARKETING = {
   EVENTO_FINALIZADO: "EVENTO_FINALIZADO",
   PIEZA_NO_ENCONTRADA: "PIEZA_NO_ENCONTRADA",
   ENLACE_NO_ENCONTRADO: "ENLACE_NO_ENCONTRADO",
+  /** Falta `UPLOADPOST_API_KEY` o `WEB_URL` en la API (503): la web ofrece descargar y copiar. */
+  PUBLICACION_NO_CONFIGURADA: "PUBLICACION_NO_CONFIGURADA",
+  /** Upload-Post falló o no respondió (502): la web ofrece descargar y copiar. */
+  PUBLICACION_FALLIDA: "PUBLICACION_FALLIDA",
   /** Mismo valor que `CODIGO_BD_NO_DISPONIBLE`. */
   BD_NO_DISPONIBLE: "BD_NO_DISPONIBLE",
 } as const;

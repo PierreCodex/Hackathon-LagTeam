@@ -7,6 +7,7 @@ import { CODIGO_SIN_CONEXION, pedirApi } from "@/lib/api";
 import { fechaCalendario, fechaPieza, nombreRed, rutaMarketingEvento, soles, textoPrecio, urlPng } from "@/lib/pieza";
 import { rutaIngresar } from "@/lib/sesion";
 import { tokenDelNavegador } from "@/lib/supabase/navegador";
+import { PublicarPieza } from "./publicar-pieza";
 
 export type PanelMarketingProps = {
   /** Base de la API (`API_URL`): "Generar" va del navegador directo a la API, sin el límite de duración de Vercel. */
@@ -120,7 +121,7 @@ export function PanelMarketing({ apiUrl, eventoId, titulo, piezaInicial, errorPi
           </div>
         </EsqueletoGrupo>
       ) : pieza ? (
-        <VistaPieza pieza={pieza} />
+        <VistaPieza apiUrl={apiUrl} pieza={pieza} />
       ) : (
         !error && (
           <Tarjeta className="flex flex-col gap-2">
@@ -172,7 +173,7 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   );
 }
 
-function VistaPieza({ pieza }: { pieza: Pieza }) {
+function VistaPieza({ apiUrl, pieza }: { apiUrl: string; pieza: Pieza }) {
   const { textos, campana, datos } = pieza;
   const precio = textoPrecio(datos.precio_minimo_centimos);
   const png = urlPng(pieza.id, "4x5");
@@ -264,6 +265,8 @@ function VistaPieza({ pieza }: { pieza: Pieza }) {
               </ol>
             </div>
           </Tarjeta>
+
+          <PublicarPieza apiUrl={apiUrl} pieza={pieza} />
         </div>
       </div>
     </section>

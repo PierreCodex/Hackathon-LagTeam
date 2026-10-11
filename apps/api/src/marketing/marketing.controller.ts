@@ -5,6 +5,9 @@ import {
   CrearEnlaceSchema,
   type Enlace,
   type Pieza,
+  type PublicacionPieza,
+  type PublicarPieza,
+  PublicarPiezaSchema,
   type ResultadosPieza,
 } from "@reto18/shared";
 import { Roles, UsuarioActual, type UsuarioAutenticado } from "../identidad/roles.js";
@@ -44,6 +47,21 @@ export class MarketingController {
     @Body({ schema: CrearEnlaceSchema }) datos: CrearEnlace,
   ): Promise<Enlace> {
     return this.marketing.crearEnlace(usuario.id, id, datos);
+  }
+
+  /**
+   * `POST /api/v1/marketing/piezas/:id/publicaciones` (organizador dueño): publica o programa el
+   * flyer en Instagram y Facebook con Upload-Post, con un enlace rastreable en el texto (3.4). 201.
+   */
+  @Post("piezas/:id/publicaciones")
+  @Roles("organizador")
+  @HttpCode(HttpStatus.CREATED)
+  publicar(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param("id") id: string,
+    @Body({ schema: PublicarPiezaSchema }) datos: PublicarPieza,
+  ): Promise<PublicacionPieza> {
+    return this.marketing.publicarPieza(usuario.id, id, datos);
   }
 
   /** `GET /api/v1/marketing/piezas/:id/resultados` (organizador dueño): clics y ventas por enlace y en total. */

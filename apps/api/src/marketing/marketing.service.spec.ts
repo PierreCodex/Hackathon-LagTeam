@@ -7,6 +7,7 @@ import { respaldoTextosYCampana } from "../ia/funciones/textos-y-campana.js";
 import type { ClienteSupabase } from "../supabase/supabase.module.js";
 import type { VentasService } from "../ventas/ventas.service.js";
 import { INTENTOS_CODIGO_ENLACE, MarketingService } from "./marketing.service.js";
+import type { PublicadorUploadPost } from "./publicador-upload-post.js";
 
 const ORGANIZADOR = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const EVENTO = "11111111-1111-4111-8111-111111111111";
@@ -53,6 +54,7 @@ function servicio(cliente: { insert?: Respuesta; lectura?: Respuesta } | null) {
       eventos as unknown as EventosService,
       ia as unknown as IaService,
       {} as unknown as VentasService,
+      {} as unknown as PublicadorUploadPost,
     ),
     eventos,
     ia,
@@ -123,6 +125,7 @@ function servicioEnlaces(
     {} as unknown as EventosService,
     {} as unknown as IaService,
     { ventasPorRef } as unknown as VentasService,
+    {} as unknown as PublicadorUploadPost,
   );
   return { marketing, from, inserciones, ventasPorRef };
 }
