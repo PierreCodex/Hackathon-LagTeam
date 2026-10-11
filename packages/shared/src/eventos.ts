@@ -78,6 +78,31 @@ export const EventoSchema = z.object({
 });
 export type Evento = z.infer<typeof EventoSchema>;
 
+const fechaDia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD");
+const mesCalendario = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Usa el formato AAAA-MM");
+const enteroQuery = z.preprocess((v) => v === "" ? undefined : v, z.coerce.number().int().min(0).max(2147483647));
+
+/** Filtros del catálogo público; los precios son céntimos de PEN. */
+export const CatalogoPublicoQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  desde: fechaDia.optional(), hasta: fechaDia.optional(),
+  categoria: CategoriaEventoSchema.optional(),
+  distrito: z.string().trim().min(1).max(100).optional(),
+  precio_minimo_centimos: enteroQuery.optional(), precio_maximo_centimos: enteroQuery.optional(),
+}).superRefine((filtros, ctx) => {
+  if (filtros.desde && filtros.hasta && filtros.desde > filtros.hasta) {
+    ctx.addIssue({ code: "custom", path: ["hasta"], message: "hasta debe ser igual o posterior a desde" });
+  }
+  if (filtros.precio_minimo_centimos !== undefined && filtros.precio_maximo_centimos !== undefined &&
+      filtros.precio_minimo_centimos > filtros.precio_maximo_centimos) {
+    ctx.addIssue({ code: "custom", path: ["precio_maximo_centimos"], message: "El precio máximo debe ser igual o mayor al mínimo" });
+  }
+});
+export type CatalogoPublicoQuery = z.infer<typeof CatalogoPublicoQuerySchema>;
+export const MesCatalogoSchema = z.object({ mes: mesCalendario });
+export type MesCatalogo = z.infer<typeof MesCatalogoSchema>;
+
+
 /** Contratos de revisión administrativa; el contrato del alta permanece compatible. */
 export const EventoIdSchema = z.uuid();
 export const RechazoEventoSchema = z.object({ motivo_rechazo: z.string().trim().min(1).max(600) });
@@ -96,6 +121,17 @@ export const CategoriaPrecioSchema = z.object({
   precio_centimos: z.number().int().min(0).max(2147483647), seccion_id: z.uuid().nullable(),
 });
 export type CategoriaPrecio = z.infer<typeof CategoriaPrecioSchema>;
+
+export const SedePublicaSchema = z.object({ id: z.uuid(), nombre: texto, direccion: texto, distrito: texto });
+export type SedePublica = z.infer<typeof SedePublicaSchema>;
+export const EventoPublicoSchema = z.object({
+  id: z.uuid(), titulo: texto, descripcion: texto, categoria: CategoriaEventoSchema, distrito: texto,
+  inicio: z.iso.datetime({ offset: true }), destacado: z.boolean(), foto_url: z.url().nullable(),
+  aforo: enteroPositivo, precio_minimo_centimos: z.number().int().min(0).nullable(),
+  sede: SedePublicaSchema, categorias: z.array(CategoriaPrecioSchema),
+});
+export type EventoPublico = z.infer<typeof EventoPublicoSchema>;
+export const ListaEventosPublicosSchema = z.array(EventoPublicoSchema);
 
 /** Tamaño máximo de la foto y de la constancia de APDAYC (5 MB). */
 export const TAMANO_MAXIMO_ARCHIVO_EVENTO = 5 * 1024 * 1024;
