@@ -337,10 +337,14 @@ export const PrecioAsientoSchema = z.object({
 });
 export type PrecioAsiento = z.infer<typeof PrecioAsientoSchema>;
 
-/** Respuesta de `GET` y `PUT /api/v1/eventos/:id/precios`: los rangos y cada asiento con su categoría resuelta. */
+/**
+ * Respuesta de `GET` y `PUT /api/v1/eventos/:id/precios`: los rangos, cada asiento con su categoría
+ * resuelta y las categorías del evento (nombre/color/precio), para elegir y pintar en la pizarra de precios.
+ */
 export const PreciosEventoSchema = z.object({
   rangos: z.array(RangoPrecioSchema),
   asientos: z.array(PrecioAsientoSchema),
+  categorias: z.array(CategoriaPrecioSchema),
 });
 export type PreciosEvento = z.infer<typeof PreciosEventoSchema>;
 

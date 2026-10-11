@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
-import { EventoSchema, type MapaSede, MapaSedeSchema, type PreciosEvento, PreciosEventoSchema, type RangoPrecioEntrada } from "@reto18/shared";
+import { type CategoriaPrecio, EventoSchema, type MapaSede, MapaSedeSchema, type PreciosEvento, PreciosEventoSchema, type RangoPrecioEntrada } from "@reto18/shared";
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { aEntrada, CROQUIS, entradaDeCroquis } from "../fixtures/croquis.js";
@@ -52,7 +52,12 @@ interface Escenario {
   eventoId: string;
   /** Categoría por nombre: "VIP", "General", "Platea baja", "Platea media", "Mezanine" y "Zona" (de zona general). */
   categorias: Record<string, string>;
+  /** Las mismas categorías, con todos sus campos (para comparar con `PreciosEvento.categorias`). */
+  categoriasCompletas: CategoriaPrecio[];
 }
+
+/** Compara listas de categorías sin depender del orden en que las devuelve la BD. */
+const porId = (categorias: CategoriaPrecio[]) => [...categorias].sort((a, b) => a.id.localeCompare(b.id));
 
 describe("precios por rango de asientos contra la BD de prueba", () => {
   let app: INestApplication;
@@ -107,9 +112,15 @@ describe("precios por rango de asientos contra la BD de prueba", () => {
     ].map(([nombre, seccion_id], i) => ({
       evento_id: eventoId, sede_id: sede.id, nombre, color: "#D97706", precio_centimos: 1000 * (i + 1), seccion_id,
     }));
-    const categorias = await bd.from("eventos_categorias_precio").insert(filas).select("id, nombre");
+    const categorias = await bd.from("eventos_categorias_precio")
+      .insert(filas).select("id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id");
     expect(categorias.error).toBeNull();
-    return { sede, eventoId, categorias: Object.fromEntries(categorias.data!.map((c) => [c.nombre, c.id])) };
+    const categoriasCompletas = categorias.data! as CategoriaPrecio[];
+    return {
+      sede, eventoId,
+      categorias: Object.fromEntries(categoriasCompletas.map((c) => [c.nombre, c.id])),
+      categoriasCompletas,
+    };
   }
 
   /** Cubre todo el croquis: cada fila con la categoría de su sección, y la fila A con tres categorías. */
@@ -162,6 +173,8 @@ describe("precios por rango de asientos contra la BD de prueba", () => {
     expect(sinIds(guardados)).toEqual(esperadoCompleto(e));
     expect(guardados.asientos.map((a) => a.asiento_id)).toEqual(idsDeAsientos(e.sede));
     expect(sinIdDeRango(guardados)).toEqual(rangos);
+    // Las categorías del evento llegan completas (nombre, color, precio), sin depender del orden de la BD.
+    expect(porId(guardados.categorias)).toEqual(porId(e.categoriasCompletas));
     // El dueño y el admin leen lo mismo.
     expect(await precios(e.eventoId)).toEqual(guardados);
     expect(await precios(e.eventoId, admin)).toEqual(guardados);
@@ -178,6 +191,8 @@ describe("precios por rango de asientos contra la BD de prueba", () => {
     expect(menos.asientos.filter((a) => a.categoria_id).map((a) => [a.fila, a.numero])).toEqual(
       [3, 4, 5, 6, 7, 8, 9, 10].map((n) => ["U", n]),
     );
+    // Las categorías del evento no cambian con los rangos: siguen siendo las mismas seis.
+    expect(porId(menos.categorias)).toEqual(porId(e.categoriasCompletas));
 
     const vacia = await guardar(lucia, e.eventoId, { rangos: [] });
     expect(vacia.status).toBe(200);
@@ -312,6 +327,7 @@ describe("precios por rango de asientos contra la BD de prueba", () => {
 
     expect(sinIds(semilla)).toEqual(FILAS.flatMap(({ seccion, fila, numeros }) => numeros.map((numero) => ({ seccion, fila, numero, categoria_id: categoria[seccion] }))));
     expect(semilla.rangos).toHaveLength(23);
+    expect(semilla.categorias.map((c) => c.id).sort()).toEqual(Object.values(categoria).sort());
   });
 
   it("las funciones de precios no se pueden ejecutar desde el navegador (AD-1)", async () => {

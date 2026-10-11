@@ -468,19 +468,24 @@ export class EventosService {
     }
   }
 
-  /** Rangos (en el orden del mapa: sección, fila, desde; los que no casan, al final) y asientos con su categoría. */
+  /**
+   * Rangos (en el orden del mapa: sección, fila, desde; los que no casan, al final), asientos con su
+   * categoría y las categorías del evento (para elegir y pintar en la pizarra de precios, 2.10).
+   */
   private async preciosDe(eventoId: string): Promise<PreciosEvento> {
-    const { data, error } = await this.cliente()
-      .rpc("eventos_leer_precios", { p_evento_id: eventoId })
-      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
-    if (error) {
-      this.logger.warn(`No se pudieron leer los precios del evento ${eventoId}: ${error.message}`);
+    const senal = () => AbortSignal.timeout(TIEMPO_LIMITE_BD_MS);
+    const [{ data, error }, categorias] = await Promise.all([
+      this.cliente().rpc("eventos_leer_precios", { p_evento_id: eventoId }).abortSignal(senal()),
+      this.cliente().from("eventos_categorias_precio").select(COLUMNAS_CATEGORIA).eq("evento_id", eventoId).order("nombre").abortSignal(senal()),
+    ]);
+    if (error || categorias.error) {
+      this.logger.warn(`No se pudieron leer los precios del evento ${eventoId}: ${(error ?? categorias.error)?.message}`);
       throw bdNoDisponible("No se pudieron leer los precios. Inténtalo de nuevo.");
     }
     if (data === null || data === undefined) {
       throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
     }
-    const precios = PreciosEventoSchema.safeParse(data);
+    const precios = PreciosEventoSchema.safeParse({ ...(data as object), categorias: categorias.data ?? [] });
     if (!precios.success) {
       this.logger.error(`Los precios del evento ${eventoId} no cumplen PreciosEventoSchema: ${precios.error.message}`);
       throw new InternalServerErrorException({ codigo: "ERROR_INTERNO", mensaje: "No se pudieron leer los precios" });

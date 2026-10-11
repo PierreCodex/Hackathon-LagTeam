@@ -245,8 +245,9 @@ export class EventosController {
   }
 
   /**
-   * `GET /api/v1/eventos/:id/precios` (organizador dueño o admin): rangos de precio del evento y cada
-   * asiento numerado del mapa vigente con su categoría (`categoria_id` nulo si ningún rango lo cubre).
+   * `GET /api/v1/eventos/:id/precios` (organizador dueño o admin): rangos de precio del evento, cada
+   * asiento numerado del mapa vigente con su categoría (`categoria_id` nulo si ningún rango lo cubre)
+   * y las categorías del evento (nombre, color y precio), para elegir y pintar en la pizarra de precios.
    */
   @Get(":id/precios")
   @Roles("organizador", "admin")
