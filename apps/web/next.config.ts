@@ -4,10 +4,10 @@ import { parseEnv } from "node:util";
 import type { NextConfig } from "next";
 
 // En local, las variables viven en el `.env` de la raíz del monorepo.
-// De ahí solo se copian API_URL y las variables públicas de Supabase (URL y clave anon):
+// De ahí solo se copian API_URL y las variables públicas (Supabase y la clave de Maps del navegador):
 // la web nunca recibe la clave de servicio (AD-1).
 // En Vercel no existe ese archivo: las variables se cargan en el proyecto.
-const COPIAR = ["API_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const;
+const COPIAR = ["API_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"] as const;
 
 try {
   const raiz = parseEnv(readFileSync(path.resolve(process.cwd(), "../../.env"), "utf8"));
