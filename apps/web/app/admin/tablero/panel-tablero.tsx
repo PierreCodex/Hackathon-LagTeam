@@ -179,7 +179,11 @@ function BotonExcel({ apiUrl }: { apiUrl: string }) {
 /** Tablero del administrador: indicadores, desgloses, público, comisión, liquidación y Excel. */
 export function PanelTablero({ apiUrl, tablero }: PanelTableroProps) {
   const r = tablero.resumen;
-  const asistencia = r.entradas > 0 ? Math.round((r.asistentes / r.entradas) * 100) : 0;
+  // Asistencia solo de los eventos ya realizados: los futuros aún no pueden tener QR validados.
+  const realizados = tablero.eventos.filter((e) => Date.parse(e.inicio) < Date.parse(tablero.generado_en));
+  const vendidasRealizados = realizados.reduce((t, e) => t + e.entradas, 0);
+  const asistentesRealizados = realizados.reduce((t, e) => t + e.asistentes, 0);
+  const asistencia = vendidasRealizados > 0 ? Math.round((asistentesRealizados / vendidasRealizados) * 100) : 0;
   const maximoCiudad = Math.max(0, ...tablero.publico_por_ciudad.map((p) => p.compradores));
 
   return (
@@ -193,7 +197,7 @@ export function PanelTablero({ apiUrl, tablero }: PanelTableroProps) {
         <Indicador etiqueta="Ventas" valor={soles(r.ventas_centimos)} detalle={`${r.eventos} eventos con ventas`} />
         <Indicador etiqueta="Comisión de la plataforma" valor={soles(r.comision_centimos)} />
         <Indicador etiqueta="Entradas vendidas" valor={String(r.entradas)} detalle={`${r.compradores} compradores`} />
-        <Indicador etiqueta="Asistencia" valor={`${asistencia} %`} detalle={`${r.asistentes} QR validados en puerta`} />
+        <Indicador etiqueta="Asistencia" valor={`${asistencia} %`} detalle={`${asistentesRealizados} de ${vendidasRealizados} en eventos ya realizados`} />
       </div>
 
       <FormularioComision key={`${tablero.comision.modelo}-${tablero.comision.valor}`} apiUrl={apiUrl} comision={tablero.comision} />

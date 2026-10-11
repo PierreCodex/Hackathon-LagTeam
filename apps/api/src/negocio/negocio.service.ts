@@ -29,6 +29,6 @@ export class NegocioService {
       this.identidad.ciudadesDe(ordenes.map((o) => o.usuario_id)),
       this.identidad.correosDe(eventos.map((e) => e.organizador_id)),
     ]);
-    return armarTablero({ comision, ordenes, eventos, asistencia, ciudades, correos });
+    return armarTablero({ comision, ordenes, eventos, asistencia, ciudades, correos, ahora: new Date().toISOString() });
   }
 }

@@ -57,6 +57,7 @@ describe("armarTablero", () => {
     asistencia: new Map([[EV_1, 2], [EV_2, 1]]),
     ciudades: new Map([["u1", "Sullana"], ["u2", null]]),
     correos: new Map([[ORG_A, "a@example.invalid"]]),
+    ahora: "2026-10-20T00:00:00Z",
   });
 
   it("resume ventas, comisión, entradas, asistentes y compradores", () => {

@@ -46,6 +46,8 @@ export type EventoTablero = z.infer<typeof EventoTableroSchema>;
 
 /** `GET /api/v1/negocio/tablero` (administrador): todo lo del tablero, la liquidación y la comisión. */
 export const TableroSchema = z.object({
+  /** Instante del cálculo: separa los eventos ya realizados de los futuros. */
+  generado_en: z.string(),
   comision: ComisionSchema,
   resumen: z.object({
     ventas_centimos: centimos,

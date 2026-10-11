@@ -10,6 +10,8 @@ export interface DatosTablero {
   asistencia: Map<string, number>;
   ciudades: Map<string, string | null>;
   correos: Map<string, string>;
+  /** Instante del cálculo (ISO). */
+  ahora: string;
 }
 
 /** Día de Lima (UTC−5, sin horario de verano) de un instante ISO: `2026-10-11`. */
@@ -92,6 +94,7 @@ export function armarTablero(datos: DatosTablero): Tablero {
 
   const filasEventos = [...porEvento.values()].sort((a, b) => b.importe_centimos - a.importe_centimos);
   return {
+    generado_en: datos.ahora,
     comision: datos.comision,
     resumen: {
       ventas_centimos: ordenes.reduce((t, o) => t + o.total_centimos, 0),
