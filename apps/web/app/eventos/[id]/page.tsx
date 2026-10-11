@@ -6,7 +6,7 @@ import { PantallaSesion } from "@/components/layout/pantalla-sesion";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
 import { categoriasDeZonaGeneral } from "@/lib/compra";
-import { etiquetaCategoria, rutaComprar, soles, textoPrecio } from "@/lib/catalogo";
+import { etiquetaCategoria, rutaButacas, rutaComprar, soles, textoPrecio } from "@/lib/catalogo";
 import { fechaPieza } from "@/lib/pieza";
 import { ImagenEvento } from "../../portada/tarjeta-evento";
 
@@ -105,16 +105,20 @@ export default async function FichaEvento({ params, searchParams }: Props) {
             ) : (
               <p className="text-ink-secondary">Los precios se publicarán pronto.</p>
             )}
-            {categoriasDeZonaGeneral(categorias).length > 0 ? (
-              <BotonEnlace href={rutaComprar(evento.id, ref)} anchoCompleto>
-                Comprar entradas
+            {/* Categorías sin zona general = butacas numeradas: se compran eligiendo la butaca en el mapa (2.11). */}
+            {categorias.some((c) => c.seccion_id === null) && (
+              <BotonEnlace href={rutaButacas(evento.id, ref)} anchoCompleto>
+                Elegir butaca
               </BotonEnlace>
-            ) : (
-              categorias.length > 0 && (
-                <Aviso tipo="info" titulo="La elección de butaca llega muy pronto.">
-                  Este evento tiene butacas numeradas: podrás elegir la tuya en el mapa de la sala.
-                </Aviso>
-              )
+            )}
+            {categoriasDeZonaGeneral(categorias).length > 0 && (
+              <BotonEnlace
+                href={rutaComprar(evento.id, ref)}
+                variante={categorias.some((c) => c.seccion_id === null) ? "secundario" : "primario"}
+                anchoCompleto
+              >
+                {categorias.some((c) => c.seccion_id === null) ? "Comprar en zona general" : "Comprar entradas"}
+              </BotonEnlace>
             )}
           </Tarjeta>
         </div>
