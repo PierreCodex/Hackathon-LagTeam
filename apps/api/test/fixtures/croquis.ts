@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { MapaSede } from "@reto18/shared";
+import type { MapaSede, MapaSedeEntrada } from "@reto18/shared";
 
 /** Oráculo transcrito del plan, independiente de la generación SQL. */
 export const CROQUIS = [
@@ -37,6 +37,27 @@ export function mapaDeCroquis(): MapaSede {
       }))).map((fila, f) => ({ ...fila, orden: f + 1 })),
     })),
   };
+}
+
+/** Un mapa (de `GET .../mapa` o de `mapaDeCroquis()`) como cuerpo de entrada: sin ids, salvo los de las zonas generales. */
+export function aEntrada(mapa: MapaSede): MapaSedeEntrada {
+  return {
+    nombre: mapa.nombre, direccion: mapa.direccion, distrito: mapa.distrito,
+    secciones: mapa.secciones.map((s) => s.tipo === "general"
+      ? { id: s.id, nombre: s.nombre, orden: s.orden, tipo: "general" as const, capacidad: s.capacidad }
+      : {
+        nombre: s.nombre, orden: s.orden, tipo: "numerada" as const,
+        filas: s.filas.map((f) => ({
+          nombre: f.nombre, orden: f.orden,
+          bloques: f.bloques.map((b) => ({ orden: b.orden, desplazamiento: b.desplazamiento, asientos: b.asientos.map((a) => ({ numero: a.numero })) })),
+        })),
+      }),
+  };
+}
+
+/** El mapa de los croquis (3 secciones numeradas, 643 asientos) como cuerpo de entrada, sin ids. */
+export function entradaDeCroquis(nombre = "Teatro de ejemplo de Piura"): MapaSedeEntrada {
+  return { ...aEntrada(mapaDeCroquis()), nombre };
 }
 
 export const SEDE_CROQUIS_ID = "13100000-0000-4000-8000-000000000001";

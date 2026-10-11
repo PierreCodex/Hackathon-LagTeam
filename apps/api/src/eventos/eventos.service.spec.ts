@@ -147,6 +147,7 @@ describe("EventosService.crear", () => {
 
   it.each([
     ["SEDE_NO_EXISTE", 404],
+    ["SEDE_AJENA", 403],
     ["AFORO_SUPERA_SEDE", 400],
   ])("la RPC rechaza con %s → %i y borra lo subido", async (codigo, estado) => {
     const s = simulado({ data: null, error: { code: "P0001", message: codigo, details: "detalle" } });
@@ -240,19 +241,28 @@ describe("EventosService.crear", () => {
 });
 
 describe("EventosService.listarSedes", () => {
-  it("devuelve las sedes con su capacidad como número", async () => {
+  it("pasa el organizador y devuelve las sedes con su capacidad como número y si son propias", async () => {
+    const llamada = vi.fn();
     const cliente = {
-      rpc: () => ({
-        abortSignal: async () => ({
-          data: [{ id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: "643" }],
-          error: null,
-        }),
-      }),
+      rpc: (nombre: string, args: unknown) => {
+        llamada(nombre, args);
+        return {
+          abortSignal: async () => ({
+            data: [
+              { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: "643", propia: false },
+              { id: "s2", nombre: "Patio", direccion: "Plaza", distrito: "Castilla", capacidad: 120, propia: true },
+            ],
+            error: null,
+          }),
+        };
+      },
     } as unknown as ClienteSupabase;
 
-    expect(await new EventosService(cliente, {} as ArchivosEventos).listarSedes()).toEqual([
-      { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: 643 },
+    expect(await new EventosService(cliente, {} as ArchivosEventos).listarSedes(ORGANIZADOR)).toEqual([
+      { id: "s1", nombre: "Teatro", direccion: "Centro", distrito: "Piura", capacidad: 643, propia: false },
+      { id: "s2", nombre: "Patio", direccion: "Plaza", distrito: "Castilla", capacidad: 120, propia: true },
     ]);
+    expect(llamada).toHaveBeenCalledWith("eventos_listar_sedes", { p_organizador: ORGANIZADOR });
   });
 
   it("la BD falla → 503 BD_NO_DISPONIBLE", async () => {
@@ -260,7 +270,7 @@ describe("EventosService.listarSedes", () => {
       rpc: () => ({ abortSignal: async () => ({ data: null, error: { message: "timeout" } }) }),
     } as unknown as ClienteSupabase;
 
-    await expect(new EventosService(cliente, {} as ArchivosEventos).listarSedes()).rejects.toMatchObject({
+    await expect(new EventosService(cliente, {} as ArchivosEventos).listarSedes(ORGANIZADOR)).rejects.toMatchObject({
       response: { codigo: CODIGO_BD_NO_DISPONIBLE },
     });
   });

@@ -10,17 +10,47 @@ import {
   Inject,
   Injectable,
   type NestInterceptor,
+  Param,
   PayloadTooLargeException,
+  type PipeTransform,
   Post,
+  Put,
   UploadedFiles,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileFieldsInterceptor } from "@nestjs/platform-express";
-import { CODIGOS_EVENTOS, type EventoCreado, type SedeResumen, TAMANO_MAXIMO_ARCHIVO_EVENTO } from "@reto18/shared";
+import {
+  CODIGOS_EVENTOS,
+  type DuplicarSede,
+  DuplicarSedeSchema,
+  type Evento,
+  type EventoCreado,
+  IdSchema,
+  type MapaSede,
+  type MapaSedeEntrada,
+  MapaSedeEntradaSchema,
+  type SedeResumen,
+  TAMANO_MAXIMO_ARCHIVO_EVENTO,
+} from "@reto18/shared";
 import type { Observable } from "rxjs";
 import { Roles, UsuarioActual, type UsuarioAutenticado } from "../identidad/roles.js";
 import { archivoNoValido } from "./archivos-eventos.js";
-import { type ArchivosAlta, EventosService } from "./eventos.service.js";
+import { type ArchivosAlta, type EsquemaValidable, EventosService, validarConEsquema } from "./eventos.service.js";
+
+/** Valida un `@Body` o un `@Param` con zod: si falla, 400 `DATOS_INVALIDOS` nombrando la ruta del campo. */
+class ValidarCon<T> implements PipeTransform<unknown, T> {
+  constructor(
+    private readonly esquema: EsquemaValidable<T>,
+    private readonly raiz: string,
+  ) {}
+
+  transform(valor: unknown): T {
+    return validarConEsquema(this.esquema, valor, this.raiz);
+  }
+}
+
+const ID_VALIDO = new ValidarCon(IdSchema, "id");
+const MAPA_VALIDO = new ValidarCon(MapaSedeEntradaSchema, "mapa");
 
 const MultipartAlta = FileFieldsInterceptor(
   [
@@ -81,10 +111,65 @@ export class EventosController {
     return this.eventos.crear(usuario.id, datos, archivos ?? {});
   }
 
-  /** `GET /api/v1/eventos/sedes` (organizador): sedes compartidas para elegir en el alta. */
+  /**
+   * `GET /api/v1/eventos/sedes` (organizador): sedes compartidas para elegir en el alta.
+   * `propia` dice si quien llama puede reemplazar su mapa (si no, puede usarla o duplicarla).
+   */
   @Get("sedes")
   @Roles("organizador")
-  sedes(): Promise<SedeResumen[]> {
-    return this.eventos.listarSedes();
+  sedes(@UsuarioActual() usuario: UsuarioAutenticado): Promise<SedeResumen[]> {
+    return this.eventos.listarSedes(usuario.id);
+  }
+
+  /** `POST /api/v1/eventos/sedes` (organizador): crea una sede con su mapa (`MapaSedeEntradaSchema`). 201 con el `MapaSede`. */
+  @Post("sedes")
+  @Roles("organizador")
+  @HttpCode(HttpStatus.CREATED)
+  crearSede(@UsuarioActual() usuario: UsuarioAutenticado, @Body(MAPA_VALIDO) mapa: MapaSedeEntrada): Promise<MapaSede> {
+    return this.eventos.crearSede(usuario.id, mapa);
+  }
+
+  /** `GET /api/v1/eventos/sedes/:id/mapa` (organizador o admin): el mapa de la sede, con sus ids. */
+  @Get("sedes/:id/mapa")
+  @Roles("organizador", "admin")
+  leerMapa(@Param("id", ID_VALIDO) id: string): Promise<MapaSede> {
+    return this.eventos.leerMapa(id);
+  }
+
+  /**
+   * `PUT /api/v1/eventos/sedes/:id/mapa` (organizador dueño de la sede): reemplaza el mapa entero.
+   * 403 `SEDE_AJENA` si no es suya; 409 `MAPA_CERRADO` si ya tiene un evento publicado.
+   */
+  @Put("sedes/:id/mapa")
+  @Roles("organizador")
+  guardarMapa(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param("id", ID_VALIDO) id: string,
+    @Body(MAPA_VALIDO) mapa: MapaSedeEntrada,
+  ): Promise<MapaSede> {
+    return this.eventos.guardarMapa(usuario.id, id, mapa);
+  }
+
+  /** `POST /api/v1/eventos/sedes/:id/duplicar` (organizador): copia la sede a su nombre. 201 con el `MapaSede` nuevo. */
+  @Post("sedes/:id/duplicar")
+  @Roles("organizador")
+  @HttpCode(HttpStatus.CREATED)
+  duplicarSede(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param("id", ID_VALIDO) id: string,
+    @Body(new ValidarCon(DuplicarSedeSchema, "datos")) datos: DuplicarSede,
+  ): Promise<MapaSede> {
+    return this.eventos.duplicarSede(usuario.id, id, datos.nombre);
+  }
+
+  /**
+   * `POST /api/v1/eventos/:id/publicar` (organizador del evento): publica un evento aprobado y cierra
+   * el mapa de su sede. 200 con el evento; repetirlo no cambia nada.
+   */
+  @Post(":id/publicar")
+  @Roles("organizador")
+  @HttpCode(HttpStatus.OK)
+  publicar(@UsuarioActual() usuario: UsuarioAutenticado, @Param("id", ID_VALIDO) id: string): Promise<Evento> {
+    return this.eventos.publicarEvento(usuario.id, id);
   }
 }

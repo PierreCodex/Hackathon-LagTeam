@@ -1,5 +1,8 @@
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  HttpException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -16,6 +19,9 @@ import {
   type EstadoEvento,
   type Evento,
   type EventoCreado,
+  type MapaSede,
+  type MapaSedeEntrada,
+  MapaSedeSchema,
   type SedeResumen,
 } from "@reto18/shared";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
@@ -32,7 +38,7 @@ export const TIEMPO_LIMITE_BD_MS = 10_000;
 
 export const COLUMNAS_EVENTO =
   "id, organizador_id, sede_id, titulo, descripcion, categoria, distrito, inicio, estado, motivo_rechazo, " +
-  "destacado, hay_musica, constancia_apdayc_url, foto_url, aforo";
+  "destacado, hay_musica, constancia_apdayc_url, foto_url, aforo, publicado";
 export const COLUMNAS_CATEGORIA = "id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id";
 
 /** Colores que se asignan, en orden, a las categorías que llegan sin color. */
@@ -142,10 +148,13 @@ export class EventosService {
     return this.leerCreado(eventoId, datos);
   }
 
-  /** Sedes compartidas con su distrito y su capacidad (el máximo del aforo en el formulario). */
-  async listarSedes(): Promise<SedeResumen[]> {
+  /**
+   * Sedes compartidas con su distrito y su capacidad (el máximo del aforo en el formulario).
+   * `propia`: la sede es del organizador que pregunta (puede reemplazar su mapa).
+   */
+  async listarSedes(organizadorId: string): Promise<SedeResumen[]> {
     const { data, error } = await this.cliente()
-      .rpc("eventos_listar_sedes")
+      .rpc("eventos_listar_sedes", { p_organizador: organizadorId })
       .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
     if (error) {
       this.logger.warn(`No se pudieron listar las sedes: ${error.message}`);
@@ -157,7 +166,107 @@ export class EventosService {
       direccion: s.direccion,
       distrito: s.distrito,
       capacidad: Number(s.capacidad),
+      propia: s.propia === true,
     }));
+  }
+
+  /** Crea una sede con su mapa completo, a nombre del organizador. */
+  async crearSede(organizadorId: string, mapa: MapaSedeEntrada): Promise<MapaSede> {
+    const id = await this.llamarRpc(
+      "eventos_guardar_mapa",
+      { p_organizador: organizadorId, p_sede_id: null, p_mapa: mapa },
+      "guardar el mapa",
+    );
+    return this.leerMapaCreado(id);
+  }
+
+  /** Mapa de una sede (secciones, filas, bloques y asientos), ordenado. */
+  async leerMapa(sedeId: string): Promise<MapaSede> {
+    const { data, error } = await this.cliente()
+      .rpc("eventos_leer_mapa", { p_sede_id: sedeId })
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudo leer el mapa de la sede ${sedeId}: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer el mapa de la sede. Inténtalo de nuevo.");
+    }
+    if (data === null || data === undefined) {
+      throw new NotFoundException({ codigo: CODIGOS_EVENTOS.SEDE_NO_EXISTE, mensaje: "La sede indicada no existe" });
+    }
+    const mapa = MapaSedeSchema.safeParse(data);
+    if (!mapa.success) {
+      this.logger.error(`El mapa de la sede ${sedeId} no cumple MapaSedeSchema: ${mapa.error.message}`);
+      throw new InternalServerErrorException({ codigo: "ERROR_INTERNO", mensaje: "No se pudo leer el mapa de la sede" });
+    }
+    return mapa.data;
+  }
+
+  /** Reemplaza el mapa entero de una sede propia cuyo mapa sigue abierto. */
+  async guardarMapa(organizadorId: string, sedeId: string, mapa: MapaSedeEntrada): Promise<MapaSede> {
+    await this.llamarRpc(
+      "eventos_guardar_mapa",
+      { p_organizador: organizadorId, p_sede_id: sedeId, p_mapa: mapa },
+      "guardar el mapa",
+    );
+    return this.leerMapa(sedeId);
+  }
+
+  /** Copia una sede (propia o ajena) con su mapa e ids nuevos, a nombre del organizador. */
+  async duplicarSede(organizadorId: string, sedeId: string, nombre: string): Promise<MapaSede> {
+    const id = await this.llamarRpc(
+      "eventos_duplicar_sede",
+      { p_organizador: organizadorId, p_sede_id: sedeId, p_nombre: nombre },
+      "duplicar la sede",
+    );
+    return this.leerMapaCreado(id);
+  }
+
+  /** Lee el mapa de una sede recién creada: si falla, la sede ya existe y repetir crearía otra. */
+  private async leerMapaCreado(id: string): Promise<MapaSede> {
+    try {
+      return await this.leerMapa(id);
+    } catch (e) {
+      if (e instanceof ServiceUnavailableException) {
+        throw bdNoDisponible("El local se creó, pero no se pudo leer. Recarga tus locales.");
+      }
+      throw e;
+    }
+  }
+
+  /** Publica un evento aprobado del organizador y cierra el mapa de su sede. Idempotente. */
+  async publicarEvento(organizadorId: string, eventoId: string): Promise<Evento> {
+    await this.llamarRpc(
+      "eventos_publicar_evento",
+      { p_organizador: organizadorId, p_evento_id: eventoId },
+      "publicar el evento",
+    );
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select(COLUMNAS_EVENTO)
+      .eq("id", eventoId)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS))
+      .single();
+    if (error || !data) {
+      this.logger.warn(`Evento ${eventoId} publicado, pero no se pudo leer: ${error?.message}`);
+      throw bdNoDisponible("El evento se publicó, pero no se pudo leer. Recarga tus eventos.");
+    }
+    return data as unknown as Evento;
+  }
+
+  /** Llama a una RPC que devuelve un id y traduce sus errores `P0001` a los códigos del módulo. */
+  private async llamarRpc(nombre: string, args: Record<string, unknown>, accion: string): Promise<string> {
+    const { data, error, status } = await this.cliente()
+      .rpc(nombre, args)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (!error && typeof data === "string") return data;
+    const errorBd = error as ErrorBd | null;
+    const traducido = errorBd?.code === "P0001" ? ERRORES_RPC[errorBd.message] : undefined;
+    if (traducido) throw traducido(errorBd?.details ?? errorBd!.message);
+    if (status === 0) {
+      // Sin respuesta (tiempo límite o red): no se sabe si la BD lo confirmó.
+      throw bdNoDisponible(`No se pudo confirmar la operación (${accion}). Recarga antes de repetirla.`);
+    }
+    this.logger.error(`La BD rechazó ${accion} (${status} ${errorBd?.code ?? ""}): ${errorBd?.message ?? "sin id"}`);
+    throw new InternalServerErrorException({ codigo: "ERROR_INTERNO", mensaje: `No se pudo ${accion}` });
   }
 
   /**
@@ -221,6 +330,12 @@ export class EventosService {
     if (error?.code === "P0001" && error.message === CODIGOS_EVENTOS.SEDE_NO_EXISTE) {
       return new NotFoundException({ codigo: CODIGOS_EVENTOS.SEDE_NO_EXISTE, mensaje: "sede: la sede no existe" });
     }
+    if (error?.code === "P0001" && error.message === CODIGOS_EVENTOS.SEDE_AJENA) {
+      return new ForbiddenException({
+        codigo: CODIGOS_EVENTOS.SEDE_AJENA,
+        mensaje: `sede: ${error.details ?? "la sede es de otro organizador: crea tu propio local o duplícalo"}`,
+      });
+    }
     if (error?.code === "P0001" && error.message === CODIGOS_EVENTOS.AFORO_SUPERA_SEDE) {
       return new BadRequestException({
         codigo: CODIGOS_EVENTOS.AFORO_SUPERA_SEDE,
@@ -280,6 +395,21 @@ class ResultadoIncierto extends Error {
   }
 }
 
+/** Excepción HTTP de cada código `P0001` de las RPC del mapa y de la publicación. */
+const ERRORES_RPC: Record<string, (mensaje: string) => HttpException> = {
+  [CODIGOS_EVENTOS.SEDE_NO_EXISTE]: (m) => new NotFoundException({ codigo: CODIGOS_EVENTOS.SEDE_NO_EXISTE, mensaje: m }),
+  [CODIGOS_EVENTOS.SEDE_AJENA]: (m) => new ForbiddenException({ codigo: CODIGOS_EVENTOS.SEDE_AJENA, mensaje: m }),
+  [CODIGOS_EVENTOS.MAPA_CERRADO]: (m) => new ConflictException({ codigo: CODIGOS_EVENTOS.MAPA_CERRADO, mensaje: m }),
+  [CODIGOS_EVENTOS.SECCION_EN_USO]: (m) => new ConflictException({ codigo: CODIGOS_EVENTOS.SECCION_EN_USO, mensaje: m }),
+  [CODIGOS_EVENTOS.EVENTO_NO_EXISTE]: (m) => new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: m }),
+  [CODIGOS_EVENTOS.EVENTO_AJENO]: (m) => new ForbiddenException({ codigo: CODIGOS_EVENTOS.EVENTO_AJENO, mensaje: m }),
+  [CODIGOS_EVENTOS.EVENTO_NO_APROBADO]: (m) =>
+    new ConflictException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_APROBADO, mensaje: m }),
+  // Al publicar choca con el mapa vigente: 409 (en el alta es un dato inválido: 400).
+  [CODIGOS_EVENTOS.AFORO_SUPERA_SEDE]: (m) =>
+    new ConflictException({ codigo: CODIGOS_EVENTOS.AFORO_SUPERA_SEDE, mensaje: `aforo: ${m}` }),
+};
+
 function bdNoDisponible(mensaje: string): ServiceUnavailableException {
   return new ServiceUnavailableException({ codigo: CODIGOS_EVENTOS.BD_NO_DISPONIBLE, mensaje });
 }
@@ -296,10 +426,25 @@ export function parsearDatos(crudo: unknown): AltaEvento {
   } else if (crudo === undefined) {
     throw datosInvalidos("datos: falta el campo con los datos del evento (JSON)");
   }
-  const resultado = AltaEventoSchema.safeParse(valor);
+  return validarConEsquema(AltaEventoSchema, valor, "datos");
+}
+
+/** Lo que se necesita de un esquema de zod para validar. */
+export interface EsquemaValidable<T> {
+  safeParse(
+    valor: unknown,
+  ): { success: true; data: T } | { success: false; error: { issues: { path: PropertyKey[]; message: string }[] } };
+}
+
+/**
+ * Valida con zod y, si falla, lanza 400 `DATOS_INVALIDOS` con un mensaje que nombra la ruta de cada campo
+ * (p. ej. `secciones.0.filas.2.bloques.0.asientos.3.numero: …`). `raiz` nombra el valor entero.
+ */
+export function validarConEsquema<T>(esquema: EsquemaValidable<T>, valor: unknown, raiz: string): T {
+  const resultado = esquema.safeParse(valor);
   if (!resultado.success) {
     throw datosInvalidos(
-      resultado.error.issues.map((i) => `${i.path.length ? i.path.join(".") : "datos"}: ${i.message}`).join("; "),
+      resultado.error.issues.map((i) => `${i.path.length ? i.path.map(String).join(".") : raiz}: ${i.message}`).join("; "),
     );
   }
   return resultado.data;

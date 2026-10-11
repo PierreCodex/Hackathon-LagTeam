@@ -52,6 +52,12 @@ it("la demo tiene eventos variados, Weekend completo y una zona general con prec
   expect(datos.every((e) => e.inicio >= "2026-10-01" && e.inicio < "2026-12-01")).toBe(true);
   const fechas = datos.filter((e) => e.estado === "aprobado").map((e) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(e.inicio)));
   expect(fechas).toEqual(expect.arrayContaining(["2026-10-16", "2026-10-17", "2026-10-18"]));
+  // Los aprobados salen al público (publicados); el pendiente y el rechazado, no (historia 2.3).
+  expect(datos.every((e) => e.publicado === (e.estado === "aprobado"))).toBe(true);
+  const sedes = await admin.from("eventos_sedes").select("id, creado_por, mapa_cerrado").in("id", [SEDE_CROQUIS_ID, SEDE_GENERAL_ID]);
+  expect(sedes.error).toBeNull();
+  expect(sedes.data).toHaveLength(2);
+  expect(sedes.data!.every((s) => s.creado_por === null && s.mapa_cerrado === true)).toBe(true);
   const sede = await admin.from("eventos_sedes").select(seleccionMapa).eq("id", SEDE_GENERAL_ID).single();
   expect(sede.error).toBeNull();
   const general = MapaSedeSchema.parse(sede.data).secciones[0]!;

@@ -45,4 +45,5 @@ Se corta por capacidad. Incluye el adaptador de la API de Claude, la función `l
 - Waits on epic-compra-butacas-acceso because: necesita la pizarra que recibe la propuesta.
 - Waits on epic-marketing-ia because: necesita el módulo `ia` de la historia 3.1. El adaptador de la API de Claude lo construye este epic, porque solo él lo usa (10/10/2026).
 - Decision: se construye solo cuando el flujo principal de la demo funciona. El responsable es quien termine primero (usuario, 10/10/2026).
+- Decision: flujo del evento: alta (`pendiente`) → aprobación (1.5) → mapa del local (croquis con IA del epic 5 y/o pizarra 2.9) → publicar → ventas. Solo los eventos aprobados y publicados salen al público; publicar exige capacidad suficiente y cierra el mapa del local (AD-4). Cada sede tiene dueño: solo él edita su mapa y los demás la usan o la duplican a su nombre. La publicación se construye en la 2.3; la 1.6 filtra por `publicado`, la 1.10 y la 2.9 llevan al organizador a "Arma el mapa y publica", y el epic 5 entra en el flujo con la pizarra manual como respaldo (Jean Pierre, 10/10/2026).
 - Unknown: si hay una clave de la API de Claude con saldo.

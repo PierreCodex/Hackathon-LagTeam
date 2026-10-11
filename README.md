@@ -45,14 +45,26 @@ curl localhost:3001/api/v1/identidad/perfil -H "Authorization: Bearer $TOKEN"
 
 ### Alta de eventos (organizador)
 
-- `POST /api/v1/eventos` (rol `organizador`), `multipart/form-data`: campo `datos` con el JSON de `AltaEventoSchema` (`packages/shared`), archivo `foto` (JPG, PNG o WebP) y, si `hay_musica` es `true`, archivo `constancia` de APDAYC (PDF o imagen). Máximo 5 MB por archivo; el tipo se comprueba por el contenido, no por la extensión. `sede` es `{ "tipo": "existente", "sede_id" }` o `{ "tipo": "nueva", "nombre", "direccion", "distrito", "capacidad" }` (una sede nueva es de zona general y queda disponible para todos). El `aforo` no puede superar la capacidad de la sede. Precios en céntimos con IGV; `color` de cada categoría es opcional. Responde 201 con `{ evento, categorias }` y el evento en `pendiente`.
-- `GET /api/v1/eventos/sedes` (rol `organizador`): sedes con su distrito y su `capacidad` (asientos numerados más zonas generales), para elegir la sede y mostrar el aforo máximo.
-- Errores: 400 `DATOS_INVALIDOS` (el mensaje nombra el campo), `ARCHIVO_NO_VALIDO`, `MUSICA_SIN_CONSTANCIA`, `AFORO_SUPERA_SEDE`; 404 `SEDE_NO_EXISTE`; 503 `STORAGE_NO_DISPONIBLE` o `BD_NO_DISPONIBLE`. Si el alta falla después de subir los archivos, se borran. Excepción: si se pierde la conexión con la base de datos a mitad del alta (503 `BD_NO_DISPONIBLE`), los archivos se conservan y sus rutas quedan en el log, porque el evento puede haberse creado.
+- `POST /api/v1/eventos` (rol `organizador`), `multipart/form-data`: campo `datos` con el JSON de `AltaEventoSchema` (`packages/shared`), archivo `foto` (JPG, PNG o WebP) y, si `hay_musica` es `true`, archivo `constancia` de APDAYC (PDF o imagen). Máximo 5 MB por archivo; el tipo se comprueba por el contenido, no por la extensión. `sede` es `{ "tipo": "existente", "sede_id" }` o `{ "tipo": "nueva", "nombre", "direccion", "distrito", "capacidad" }` (una sede nueva es de zona general, queda a nombre del organizador y disponible para todos). Una sede existente solo se puede usar si es propia o si su mapa está cerrado (publicada o sembrada); una sede abierta de otro organizador da 403 `SEDE_AJENA` (crea tu propio local o duplícalo). El `aforo` no puede superar la capacidad de la sede. Precios en céntimos con IGV; `color` de cada categoría es opcional. Responde 201 con `{ evento, categorias }` y el evento en `pendiente`.
+- `GET /api/v1/eventos/sedes` (rol `organizador`): sedes con su distrito, su `capacidad` (asientos numerados más zonas generales), para elegir la sede y mostrar el aforo máximo, y `propia` ("la puedes editar": `true` si la creó quien llama y su mapa sigue abierto).
+- Errores: 400 `DATOS_INVALIDOS` (el mensaje nombra el campo), `ARCHIVO_NO_VALIDO`, `MUSICA_SIN_CONSTANCIA`, `AFORO_SUPERA_SEDE`; 403 `SEDE_AJENA`; 404 `SEDE_NO_EXISTE`; 503 `STORAGE_NO_DISPONIBLE` o `BD_NO_DISPONIBLE`. Si el alta falla después de subir los archivos, se borran. Excepción: si se pierde la conexión con la base de datos a mitad del alta (503 `BD_NO_DISPONIBLE`), los archivos se conservan y sus rutas quedan en el log, porque el evento puede haberse creado.
 - Los archivos van a los buckets `eventos-fotos` (público) y `eventos-constancias` (privado: se guarda la URL del objeto, que no se abre sin firma). Los crea la migración `20261011000000_eventos_alta.sql`; no hace falta crearlos a mano.
 
 ```bash
 curl -X POST localhost:3001/api/v1/eventos -H "Authorization: Bearer $TOKEN"   -F 'datos={"titulo":"Noche de marinera","categoria":"danza","descripcion":"Marinera norteña con parejas de Piura.","inicio":"2026-12-05T20:00:00-05:00","aforo":100,"hay_musica":false,"sede":{"tipo":"existente","sede_id":"13100000-0000-4000-8000-000000000001"},"categorias":[{"nombre":"General","precio_centimos":2000}]}'   -F foto=@foto.jpg
 ```
+
+### Mapa de la sede y publicación (organizador)
+
+Flujo: alta (`pendiente`) → aprobación (1.5) → mapa del local → **publicar** → ventas. Solo los eventos aprobados **y** publicados salen al público.
+
+- `POST /api/v1/eventos/sedes` (rol `organizador`), JSON de `MapaSedeEntradaSchema`: `nombre`, `direccion`, `distrito` y `secciones`. Una sección `numerada` lleva `filas` → `bloques` (`orden`, `desplazamiento`) → `asientos` (`numero`, único en la fila; puede haber huecos). Una `general` lleva `capacidad` y no tiene filas. Sin ids. Límites (`LIMITES_MAPA`): 20 secciones, 100 filas por sección, 200 asientos por fila y 5000 asientos por mapa. Responde 201 con el `MapaSede` (con ids). La sede queda a nombre del organizador.
+- `GET /api/v1/eventos/sedes/:id/mapa` (roles `organizador` y `admin`): el `MapaSede`, ordenado por sección, fila, bloque y número.
+- `PUT /api/v1/eventos/sedes/:id/mapa` (rol `organizador`, solo el dueño de la sede): reemplaza el mapa entero en una transacción; responde 200 con el mapa nuevo. Los ids de filas, bloques y asientos cambian. Una zona general se conserva (con sus categorías de precio) si se envía con su `id`. Si cambia el `distrito`, cambia también el de los eventos de la sede.
+- `POST /api/v1/eventos/sedes/:id/duplicar` (rol `organizador`), `{ "nombre" }`: copia cualquier sede (propia, de otro organizador o sembrada) con ids nuevos, a nombre de quien la duplica y con el mapa abierto. Responde 201 con el `MapaSede` de la copia.
+- `POST /api/v1/eventos/:id/publicar` (rol `organizador`, solo el del evento): exige el evento `aprobado` y que la capacidad de la sede alcance el `aforo`. Marca `publicado` y **cierra el mapa** de la sede: desde entonces nadie lo reemplaza; quien necesite otro mapa duplica la sede. Responde 200 con el evento; repetirlo no cambia nada.
+- Errores: 400 `DATOS_INVALIDOS` (el mensaje nombra la ruta del campo, p. ej. `secciones.0.filas.2.bloques.0.asientos.3.numero`); 403 `SEDE_AJENA` (la sede es de otro organizador o de la semilla), `EVENTO_AJENO`; 404 `SEDE_NO_EXISTE`, `EVENTO_NO_EXISTE`; 409 `MAPA_CERRADO`, `SECCION_EN_USO` (el reemplazo quita una zona general con categorías de precio), `EVENTO_NO_APROBADO`, `AFORO_SUPERA_SEDE`; 503 `BD_NO_DISPONIBLE`.
+- Las sedes sembradas no tienen dueño y tienen el mapa cerrado (sus eventos aprobados están publicados).
 
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
@@ -87,7 +99,7 @@ eventos de octubre–noviembre de 2026. El 16, 17 y 18 de octubre tienen eventos
 Weekend. Hay precios en céntimos de PEN con IGV, una muestra de arte gratuita y eventos pendiente y rechazado.
 
 En la nube, aplica primero todas las migraciones de `supabase/migrations` en orden, incluidas
-`20261010020000_eventos.sql` y `20261011000000_eventos_alta.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
+`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, `20261011010000_marketing.sql` y `20261011020000_eventos_mapa.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
 `supabase/seed.sql` y ejecútalo. Puedes ejecutarlo otra vez: conserva los identificadores de la demo
 y no duplica filas. No requiere variables ni herramientas de la CLI dentro del SQL Editor.
 
@@ -143,7 +155,7 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`; esta última también crea los buckets de Storage `eventos-fotos` y `eventos-constancias`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`, que también crea los buckets de Storage `eventos-fotos` y `eventos-constancias`, `20261011010000_marketing.sql`, y `20261011020000_eventos_mapa.sql`, del mapa de la sede y la publicación): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
 4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 
