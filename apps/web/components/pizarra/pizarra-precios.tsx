@@ -12,6 +12,7 @@ import {
   colorDeCategoria,
   estadoDeErrorGuardadoPrecios,
   pintarAsientos,
+  rangosDeSeccion,
   resolverCategoriaDeAsiento,
   SELECCION_NINGUNA,
   seleccionarAsiento,
@@ -70,6 +71,15 @@ export function PizarraPrecios({ eventoId, mapa, precios, apiUrl, soloLectura: s
     if (!nuevo) return;
     setRangos((anteriores) => agregarRango(anteriores, nuevo));
     setAsientos((anteriores) => pintarAsientos(anteriores, nuevo));
+    setSeleccion(SELECCION_NINGUNA);
+    limpiarAvisos();
+  }
+
+  /** Pinta toda la sección con una categoría (un rango por fila). */
+  function asignarSeccion(seccion: Parameters<typeof rangosDeSeccion>[0], categoriaId: string) {
+    const nuevos = rangosDeSeccion(seccion, categoriaId);
+    setRangos((anteriores) => nuevos.reduce(agregarRango, anteriores));
+    setAsientos((anteriores) => nuevos.reduce(pintarAsientos, anteriores));
     setSeleccion(SELECCION_NINGUNA);
     limpiarAvisos();
   }
@@ -174,6 +184,23 @@ export function PizarraPrecios({ eventoId, mapa, precios, apiUrl, soloLectura: s
                     className="flex w-full flex-col items-center gap-2 rounded-md border border-border-inverse bg-surface-inverse-raised px-4 py-4"
                   >
                     <h3 className="text-body">{seccion.nombre}</h3>
+                    {!soloLectura && categorias.length > 0 && (
+                      <label className="flex items-center gap-2 text-meta text-ink-on-inverse-secondary">
+                        Precio de toda la sección
+                        <select
+                          value=""
+                          onChange={(e) => e.target.value && asignarSeccion(seccion, e.target.value)}
+                          className="h-9 rounded-sm border border-border-inverse bg-surface-raised px-2 text-meta text-ink-primary"
+                        >
+                          <option value="">Elegir categoría…</option>
+                          {categorias.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.nombre} · S/ {soles(c.precio_centimos)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
                     <div className="flex flex-col items-center gap-1">
                       {seccion.filas.map((fila) => (
                         <FilaPrecios
