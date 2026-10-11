@@ -30,11 +30,76 @@ curl localhost:3001/api/v1/salud
 # 200 {"api":"ok","bd":"ok","hora_bd":"…"}; si la BD falla: 503 {"api":"ok","bd":"error","error":{…}}
 ```
 
+### Identidad y roles
+
+- `POST /api/v1/identidad/registro` (público): crea la cuenta de Supabase Auth ya confirmada y su perfil. Cuerpo: `correo`, `contrasena` (8 caracteres a 72 bytes), `rol` (`organizador` o `publico`), `whatsapp` (`987 654 321`, `51987654321` o `0051…` se guardan como `+51987654321`), `ciudad` opcional (`""` o `null` = sin ciudad) y `acepta_avisos`. El admin no se registra por API: lo crea `sembrar:admin`.
+- Si un registro falla a medias y deja una cuenta sin perfil, el siguiente registro con ese correo la borra y vuelve a crearla. Si hay que arreglarla a mano: borrar la cuenta en Supabase (**Authentication > Users**) y registrarse de nuevo.
+- La web inicia sesión directamente con Supabase (`signInWithPassword`) y envía el JWT como `Authorization: Bearer <token>`.
+- `GET /api/v1/identidad/perfil`: perfil de quien llama (id, correo, rol, WhatsApp, ciudad, consentimiento).
+- Para proteger un endpoint: `@Roles("admin")` (o varios roles) y `@UsuarioActual()` para leer la cuenta. `@Roles()` sin argumentos admite cualquier cuenta con perfil. El rol siempre sale de `identidad_perfiles`. Sin `@Roles()` la ruta es pública, y usar ahí `@UsuarioActual()` da un error 500 explícito. Errores: 401 `NO_AUTENTICADO`, 403 `SIN_PERMISO` / `SIN_PERFIL`, 503 `AUTH_NO_DISPONIBLE`.
+
+```bash
+curl -X POST localhost:3001/api/v1/identidad/registro -H 'content-type: application/json'   -d '{"correo":"ana@ejemplo.pe","contrasena":"una-clave-8","rol":"organizador","whatsapp":"987 654 321","acepta_avisos":true}'
+curl localhost:3001/api/v1/identidad/perfil -H "Authorization: Bearer $TOKEN"
+```
+
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
 ```bash
 pnpm build && pnpm lint && pnpm test
+pnpm test:int            # con la BD de prueba levantada (ver abajo)
 ```
+
+## Pruebas de integración
+
+`pnpm test:int` levanta la app NestJS real (la misma configuración que `main.ts`) contra una
+**BD de prueba local**: Supabase en Docker con la CLI (devDependency de la raíz). Nunca usa la BD
+de desarrollo del `.env`: lee la URL y las claves de `supabase status` y se niega a ejecutar si la
+URL no es `localhost`/`127.0.0.1`. `pnpm test` (unitarias) sigue sin necesitar ninguna BD.
+
+```bash
+# Requisito: Docker Desktop en marcha
+pnpm db:start            # la primera vez descarga las imágenes (varios minutos); aplica supabase/migrations
+pnpm test:int            # pruebas de integración (en serie)
+pnpm db:stop             # apaga la BD de prueba cuando acabes
+```
+
+Si la BD no está levantada, `pnpm test:int` falla al inicio, sin ejecutar ninguna prueba, y dice
+que ejecutes `pnpm db:start`. Tras añadir una migración nueva, aplícala con `pnpm exec supabase db reset`.
+
+### Escribir una prueba de integración
+
+Crea `apps/api/test/integracion/<algo>.int.spec.ts` y usa las ayudas de `test/integracion/ayudas/`:
+
+| Ayuda | Qué hace |
+|---|---|
+| `crearAppDePrueba(controladores?)` | La app real en memoria, conectada a la BD de prueba. `controladores` añade controladores solo de prueba, protegidos por el guard real. Ciérrala con `app.close()` |
+| `tokenPorRol(rol)` | Crea un usuario de Supabase Auth con `app_metadata.rol` (`admin`, `organizador` o `publico`) y su perfil en `identidad_perfiles` (de ahí saca el rol el guard), y devuelve `{ id, token }`. Los usuarios se borran solos al terminar cada archivo |
+| `api(app, token?)` | `get`, `post`, `put`, `patch`, `delete` con `supertest` y `Authorization: Bearer <token>` |
+
+```ts
+import type { INestApplication } from "@nestjs/common";
+import { afterAll, beforeAll, expect, it } from "vitest";
+import { crearAppDePrueba } from "./ayudas/app.js";
+import { api } from "./ayudas/http.js";
+import { tokenPorRol } from "./ayudas/tokens.js";
+
+let app: INestApplication;
+beforeAll(async () => {
+  app = await crearAppDePrueba();
+});
+afterAll(async () => {
+  await app.close();
+});
+
+it("un organizador puede consultar la salud", async () => {
+  const { token } = await tokenPorRol("organizador");
+  const respuesta = await api(app, token).get("/api/v1/salud");
+  expect(respuesta.status).toBe(200);
+});
+```
+
+La CI ejecuta también `pnpm db:start` y `pnpm test:int` en cada PR.
 
 ## Despliegue (pasos de Jean Pierre)
 
@@ -43,8 +108,9 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar la migración `supabase/migrations/20261010000000_salud.sql`: pegarla en **SQL Editor** y ejecutarla, o con la CLI `supabase link` + `supabase db push`.
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`.
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
+4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 
 ### 2. Railway (API)
 

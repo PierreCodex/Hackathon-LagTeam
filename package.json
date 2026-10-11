@@ -10,7 +10,10 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "dev:api": "pnpm --filter @reto18/api dev",
-    "dev:web": "pnpm --filter @reto18/web dev"
+    "dev:web": "pnpm --filter @reto18/web dev",
+    "test:int": "pnpm --filter @reto18/api test:int",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -18,6 +21,7 @@
     "eslint": "10.12.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.13.0",
+    "supabase": "2.120.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.1"
   }
