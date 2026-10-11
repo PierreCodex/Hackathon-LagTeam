@@ -252,17 +252,26 @@ describe("precios por rango de asientos contra la BD de prueba", () => {
     expect(await precios(e.eventoId)).toEqual(antes);
   });
 
-  it("categoría de otro evento, inexistente o de zona general → 400 CATEGORIA_NO_VALIDA, sin guardar nada", async () => {
+  it("categoría de otro evento o inexistente → 400 CATEGORIA_NO_VALIDA, sin guardar nada", async () => {
     const e = await escenario();
     const otro = await escenario();
     const antes = await precios(e.eventoId);
 
-    for (const categoria_id of [otro.categorias.VIP!, randomUUID(), e.categorias.Zona!]) {
+    for (const categoria_id of [otro.categorias.VIP!, randomUUID()]) {
       const respuesta = await guardar(lucia, e.eventoId, { rangos: [{ categoria_id, seccion: "Platea baja", fila: "A", desde: 1, hasta: 2 }] });
       expect(respuesta.status).toBe(400);
       expect(respuesta.body.error.codigo).toBe("CATEGORIA_NO_VALIDA");
     }
     expect(await precios(e.eventoId)).toEqual(antes);
+  });
+
+  it("categoría de la zona general (la del alta) → 200 y deja de ser de la zona general", async () => {
+    const e = await escenario();
+    const zona = e.categorias.Zona!;
+    const respuesta = await guardar(lucia, e.eventoId, { rangos: [{ categoria_id: zona, seccion: "Platea baja", fila: "A", desde: 1, hasta: 2 }] });
+    expect(respuesta.status, JSON.stringify(respuesta.body)).toBe(200);
+    const bd = clienteAdminDePrueba();
+    expect((await bd.from("eventos_categorias_precio").select("seccion_id").eq("id", zona).single()).data).toEqual({ seccion_id: null });
   });
 
   it("publicar con algún asiento sin categoría → 409 ASIENTOS_SIN_PRECIO; con todos cubiertos publica y los precios se cierran", async () => {
