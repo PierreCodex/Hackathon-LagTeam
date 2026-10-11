@@ -60,3 +60,11 @@ export const DESTINOS_POR_ROL: Record<Rol, readonly Destino[]> = {
     { id: "registro", etiqueta: "Registro", href: "/puerta/registro" },
   ],
 };
+
+/**
+ * Destinos del menú de la cabecera de escritorio (≥ 1024 px): los de la barra sin "Cuenta",
+ * porque la cuenta va a la derecha de la cabecera. Mismo orden que la barra.
+ */
+export function destinosCabecera(rol: Rol): readonly Destino[] {
+  return DESTINOS_POR_ROL[rol].filter((destino) => destino.id !== "cuenta");
+}

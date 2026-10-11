@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useState, type FormEvent } from "react";
-import { Aviso, Boton, Campo } from "@/components/ui";
+import { Aviso, Boton, Campo, CampoContrasena } from "@/components/ui";
 import { ingresar, type EstadoIngreso } from "./acciones";
 
 type ErroresCampo = { correo?: string; contrasena?: string };
@@ -48,10 +48,9 @@ export function FormularioIngreso({ siguiente }: { siguiente: string | null }) {
         onChange={(e) => setCorreo(e.target.value)}
         error={errores.correo}
       />
-      <Campo
+      <CampoContrasena
         id="contrasena"
         etiqueta="Contraseña"
-        type="password"
         autoComplete="current-password"
         value={contrasena}
         onChange={(e) => setContrasena(e.target.value)}

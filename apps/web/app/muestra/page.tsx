@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarraInferior, Pantalla } from "@/components/layout";
+import { BarraInferior, IsotipoMarcaAgua, Logotipo, Pantalla } from "@/components/layout";
+import { AccionCabeceraSesion } from "@/components/layout/pantalla-sesion";
 import {
   Aviso,
   Boton,
   BotonEnlace,
   Campo,
+  CampoContrasena,
   Chip,
   Esqueleto,
   EsqueletoGrupo,
@@ -22,18 +23,26 @@ export const metadata: Metadata = {
 type Muestra = { token: string; hex: string; uso: string };
 
 const PALETA: Muestra[] = [
-  { token: "surface-base", hex: "#000000", uso: "Lienzo" },
-  { token: "surface-raised", hex: "#141414", uso: "Tarjetas y campos" },
-  { token: "surface-overlay", hex: "#1E1F20", uso: "Hojas, avisos, chips" },
-  { token: "border-hairline", hex: "#2E2F31", uso: "Línea fina" },
-  { token: "ink-primary", hex: "#FFFFFF", uso: "Texto principal" },
-  { token: "ink-secondary", hex: "#BDBFC1", uso: "Texto secundario" },
+  { token: "surface-base", hex: "#F1F1F2", uso: "Lienzo del contenido" },
+  { token: "surface-raised", hex: "#FFFFFF", uso: "Tarjetas y campos" },
+  { token: "surface-overlay", hex: "#FFFFFF", uso: "Hojas, avisos" },
+  { token: "border-hairline", hex: "#DCDCDE", uso: "Línea fina" },
+  { token: "ink-primary", hex: "#373435", uso: "Texto principal y precios" },
+  { token: "ink-secondary", hex: "#6D6E71", uso: "Texto secundario" },
   { token: "ink-muted", hex: "#727376", uso: "Bordes y deshabilitado, no texto" },
-  { token: "accent", hex: "#ED3237", uso: "Única acción" },
+  { token: "accent", hex: "#ED3237", uso: "Botón principal, destino activo" },
   { token: "accent-pressed", hex: "#C4262B", uso: "Botón pulsado" },
-  { token: "state-success", hex: "#3DBE7A", uso: "Éxito" },
-  { token: "state-warning", hex: "#F2A900", uso: "Advertencia" },
-  { token: "state-error", hex: "#FF6B6F", uso: "Error" },
+  { token: "state-success", hex: "#2E8B57", uso: "Éxito" },
+  { token: "state-warning", hex: "#B07A00", uso: "Advertencia" },
+  { token: "state-error", hex: "#C4262B", uso: "Error (con icono y texto)" },
+];
+
+const PALETA_INVERSA: Muestra[] = [
+  { token: "surface-inverse", hex: "#272424", uso: "Cabecera, pie, barra, panel" },
+  { token: "surface-inverse-raised", hex: "#373435", uso: "Tarjetas sobre carbón" },
+  { token: "border-inverse", hex: "#3F3C3C", uso: "Línea fina sobre carbón" },
+  { token: "ink-on-inverse", hex: "#FFFFFF", uso: "Texto sobre carbón" },
+  { token: "ink-on-inverse-secondary", hex: "#BDBFC1", uso: "Secundario sobre carbón, borde de campo" },
 ];
 
 const PALETA_MAPA: Muestra[] = [
@@ -60,6 +69,11 @@ const FONDO: Record<string, string> = {
   "state-success": "bg-state-success",
   "state-warning": "bg-state-warning",
   "state-error": "bg-state-error",
+  "surface-inverse": "bg-surface-inverse",
+  "surface-inverse-raised": "bg-surface-inverse-raised",
+  "border-inverse": "bg-border-inverse",
+  "ink-on-inverse": "bg-ink-on-inverse",
+  "ink-on-inverse-secondary": "bg-ink-on-inverse-secondary",
   "price-1": "bg-price-1",
   "price-2": "bg-price-2",
   "price-3": "bg-price-3",
@@ -114,23 +128,34 @@ export default function MuestraSistemaDiseno() {
       titulo="Sistema de diseño"
       rol="publico"
       destinoActivo="eventos"
-      accionCabecera={
-        <Link
-          href="/muestra"
-          className="inline-flex min-h-12 items-center px-2 text-meta text-ink-secondary underline-offset-4 hover:underline"
-        >
-          Ingresar
-        </Link>
-      }
+      accionCabecera={<AccionCabeceraSesion sesion={{ tipo: "anonima" }} />}
     >
       <p className="text-ink-secondary">
-        Tokens, tipografía y componentes base del DESIGN.md. Revisa esta página a 360 px y a 1024 px.
+        Tokens, tipografía y componentes base del DESIGN.md. Revisa esta página a 360 px y a 1440 px: desde
+        1024 px la cabecera lleva el menú del rol, hay pie y no hay barra inferior.
       </p>
 
       <Seccion id="paleta" titulo="Paleta">
         <Muestras lista={PALETA} />
+        <h3 className="text-meta text-ink-secondary">Estructura carbón</h3>
+        <Muestras lista={PALETA_INVERSA} />
         <h3 className="text-meta text-ink-secondary">Solo dentro del mapa de butacas</h3>
         <Muestras lista={PALETA_MAPA} />
+      </Seccion>
+
+      <Seccion id="logotipo" titulo="Logotipo">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="superficie-inversa relative flex min-h-32 items-center justify-center overflow-hidden rounded-md bg-surface-inverse p-6">
+            <IsotipoMarcaAgua className="-right-6 -bottom-6 w-40 opacity-[0.06]" />
+            <Logotipo variante="oscuro" className="relative h-14" />
+          </div>
+          <div className="flex min-h-32 items-center justify-center rounded-md border border-border-hairline bg-surface-raised p-6">
+            <Logotipo variante="claro" className="h-14" />
+          </div>
+        </div>
+        <p className="text-meta text-ink-secondary">
+          logo-oscuro sobre carbón y logo-claro sobre claro; nunca menos de 120 px de ancho.
+        </p>
       </Seccion>
 
       <Seccion id="tipografia" titulo="Tipografía · Inter">
@@ -160,6 +185,9 @@ export default function MuestraSistemaDiseno() {
           <Boton>Primario</Boton>
           <Boton variante="secundario">Secundario</Boton>
         </div>
+        <div className="superficie-inversa flex flex-wrap gap-3 rounded-md bg-surface-inverse p-4">
+          <Boton variante="inverso">Inverso sobre carbón</Boton>
+        </div>
         <p className="text-meta text-ink-secondary">
           Al pulsar, el primario pasa a accent-pressed. Uno rojo por pantalla (aquí se repite solo para
           mostrarlo).
@@ -185,17 +213,19 @@ export default function MuestraSistemaDiseno() {
           error="Escribe un correo completo, por ejemplo lucia@correo.pe."
         />
         <Campo id="muestra-sede" etiqueta="Sede" defaultValue="Teatro Municipal" disabled />
+        <CampoContrasena id="muestra-contrasena" etiqueta="Contraseña" defaultValue="butaca-17" />
       </Seccion>
 
       <Seccion id="tarjetas" titulo="Tarjeta">
         <Tarjeta como="article" sinRelleno>
-          <div className="flex aspect-[4/3] items-end bg-surface-overlay p-3">
-            <h3 className="text-title">Muestra de Arte Piurano</h3>
+          <div className="relative flex aspect-[4/3] items-end overflow-hidden bg-surface-inverse p-3 text-ink-on-inverse">
+            <IsotipoMarcaAgua className="top-3 right-3 w-12 opacity-50" />
+            <h3 className="relative text-title">Muestra de Arte Piurano</h3>
           </div>
           <div className="flex flex-col gap-1 px-4 py-3">
             <p className="text-meta text-ink-secondary">Sáb 17 oct · 8:00 pm · Teatro Municipal, Piura</p>
-            <p>
-              Desde <span className="font-extrabold text-accent">S/ 25</span>
+            <p className="text-ink-secondary">
+              Desde <span className="font-extrabold text-ink-primary">S/ 25</span>
             </p>
           </div>
         </Tarjeta>
