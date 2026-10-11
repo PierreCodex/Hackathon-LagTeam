@@ -35,6 +35,8 @@ type Fase = "idle" | "creando" | "pagando";
 type FilaMapa = Extract<MapaSede["secciones"][number], { tipo: "numerada" }>["filas"][number];
 
 const RUTA = (eventoId: string) => `/eventos/${eventoId}/butacas`;
+/** Butacas que se pueden comprar de una vez. */
+const MAXIMO_BUTACAS = 10;
 
 /**
  * Mapa de butacas (historia 2.11, versión reducida del 11/10/2026): el navegador lee el estado inicial
@@ -49,16 +51,23 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
   const [butacas, setButacas] = useState<ButacaVenta[]>(butacasIniciales);
   const [actualizandoMapa, setActualizandoMapa] = useState(false);
 
-  const [seleccion, setSeleccion] = useState<string | null>(null);
+  const [seleccion, setSeleccion] = useState<string[]>([]);
   const [metodo, setMetodo] = useState<MetodoPago>("tarjeta");
-  const [ordenId, setOrdenId] = useState<string | null>(null);
+  /** Órdenes ya creadas por butaca (si el pago falló, se reintenta sobre la misma orden). */
+  const [ordenes, setOrdenes] = useState<Record<string, string>>({});
   const [fase, setFase] = useState<Fase>("idle");
   const [error, setError] = useState<ErrorApi | null>(null);
   const [adelantaron, setAdelantaron] = useState(false);
+  /** Butacas compradas en este intento cuando alguna otra falló (para enlazar a Mis entradas). */
+  const [compradas, setCompradas] = useState(0);
 
   const porId = useMemo(() => new Map(butacas.map((b) => [b.asiento_id, b])), [butacas]);
-  const butacaElegida = seleccion ? porId.get(seleccion) : undefined;
-  const pendientePago = ordenId !== null;
+  const elegidas = seleccion.flatMap((id) => {
+    const b = porId.get(id);
+    return b ? [b] : [];
+  });
+  const total = elegidas.reduce((suma, b) => suma + b.precio_centimos, 0);
+  const pendientePago = seleccion.some((id) => ordenes[id]);
   const ocupado = fase !== "idle";
 
   /** Vuelve a pedir el mapa de butacas (tras `BUTACA_NO_DISPONIBLE`/`ASIENTO_NO_EXISTE`/`VENTA_CERRADA`). */
@@ -84,7 +93,7 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
           setButacas((anteriores) =>
             anteriores.map((b) => (b.asiento_id === fila.asiento_id ? { ...b, estado: fila.estado! } : b)),
           );
-          setSeleccion((actual) => (actual === fila.asiento_id && fila.estado === "vendida" ? null : actual));
+          if (fila.estado === "vendida") setSeleccion((actual) => actual.filter((id) => id !== fila.asiento_id));
         },
       )
       .subscribe();
@@ -97,48 +106,45 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
     if (ocupado) return;
     setError(null);
     setAdelantaron(false);
-    setOrdenId(null); // una selección nueva empieza una compra nueva
-    setSeleccion((actual) => (actual === asientoId ? null : asientoId));
+    setCompradas(0);
+    setSeleccion((actual) => {
+      if (actual.includes(asientoId)) return actual.filter((id) => id !== asientoId);
+      return actual.length >= MAXIMO_BUTACAS ? actual : [...actual, asientoId];
+    });
   }
 
-  async function manejarError(errorApi: ErrorApi, ordenIdDeEsteIntento: string | null) {
-    setError(errorApi);
-    if (estadoDeErrorCompraButaca(errorApi).tipo === "revisar_mapa") {
-      setAdelantaron(true);
-      setOrdenId(null);
-      setSeleccion(null);
-      await recargarButacas();
-      return;
+  /** Crea (si hace falta) y paga la orden de una butaca. Devuelve el error, o `null` si quedó pagada. */
+  async function comprarUna(asientoId: string, token: string): Promise<ErrorApi | null> {
+    let ordenId = ordenes[asientoId];
+    if (!ordenId) {
+      setFase("creando");
+      const creada = await pedirApi("ventas/ordenes/asiento", OrdenSchema, {
+        apiUrl,
+        metodo: "POST",
+        cuerpo: { evento_id: eventoId, asiento_id: asientoId },
+        cabeceras: { Authorization: `Bearer ${token}` },
+      });
+      if (!creada.ok) return creada.error;
+      const id = creada.datos.id;
+      ordenId = id;
+      setOrdenes((a) => ({ ...a, [asientoId]: id }));
     }
-    setOrdenId(ordenIdDeEsteIntento);
-  }
-
-  async function pagar(id: string, token: string) {
     setFase("pagando");
-    const pagada = await pedirApi(`ventas/ordenes/${encodeURIComponent(id)}/pagar`, OrdenPagadaSchema, {
+    const pagada = await pedirApi(`ventas/ordenes/${encodeURIComponent(ordenId)}/pagar`, OrdenPagadaSchema, {
       apiUrl,
       metodo: "POST",
       cuerpo: { metodo },
       cabeceras: { Authorization: `Bearer ${token}` },
     });
-    setFase("idle");
-    if (!pagada.ok) {
-      await manejarError(pagada.error, id);
-      return;
-    }
-    // La butaca queda vendida en esta pantalla también (las demás la reciben por Realtime).
-    const vendida = seleccion;
-    setButacas((anteriores) => anteriores.map((b) => (b.asiento_id === vendida ? { ...b, estado: "vendida" } : b)));
-    setSeleccion(null);
-    setOrdenId(null);
-    router.refresh();
-    router.push("/mis-entradas");
+    return pagada.ok ? null : pagada.error;
   }
 
+  /** Compra cada butaca elegida, una tras otra: las que se pueden se compran aunque otra falle. */
   async function comprar() {
-    if (ocupado) return;
+    if (ocupado || seleccion.length === 0) return;
     setError(null);
     setAdelantaron(false);
+    setCompradas(0);
 
     const token = await tokenDelNavegador();
     if (!token) {
@@ -146,26 +152,41 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
       return;
     }
 
-    if (ordenId) {
-      await pagar(ordenId, token);
-      return;
+    const vendidas: string[] = [];
+    const fallidas: { id: string; error: ErrorApi }[] = [];
+    for (const id of seleccion) {
+      const problema = await comprarUna(id, token);
+      if (problema) fallidas.push({ id, error: problema });
+      else vendidas.push(id);
     }
-    if (!seleccion) return;
+    setFase("idle");
 
-    setFase("creando");
-    const creada = await pedirApi("ventas/ordenes/asiento", OrdenSchema, {
-      apiUrl,
-      metodo: "POST",
-      cuerpo: { evento_id: eventoId, asiento_id: seleccion },
-      cabeceras: { Authorization: `Bearer ${token}` },
-    });
-    if (!creada.ok) {
-      setFase("idle");
-      await manejarError(creada.error, null);
+    // Las compradas quedan vendidas también en esta pantalla (las demás pantallas las reciben por Realtime).
+    setButacas((a) => a.map((b) => (vendidas.includes(b.asiento_id) ? { ...b, estado: "vendida" } : b)));
+    setOrdenes((a) => Object.fromEntries(Object.entries(a).filter(([id]) => !vendidas.includes(id))));
+
+    if (fallidas.length === 0) {
+      setSeleccion([]);
+      router.refresh();
+      router.push("/mis-entradas");
       return;
     }
-    setOrdenId(creada.datos.id);
-    await pagar(creada.datos.id, token);
+
+    const perdidas = fallidas.filter((x) => estadoDeErrorCompraButaca(x.error).tipo === "revisar_mapa").map((x) => x.id);
+    // Quedan seleccionadas solo las que se pueden reintentar.
+    setSeleccion(fallidas.map((x) => x.id).filter((id) => !perdidas.includes(id)));
+    setOrdenes((a) => Object.fromEntries(Object.entries(a).filter(([id]) => !perdidas.includes(id))));
+    setCompradas(vendidas.length);
+    if (perdidas.length > 0) {
+      setAdelantaron(true);
+      await recargarButacas();
+    }
+    const nombres = fallidas.map((x) => {
+      const b = porId.get(x.id);
+      return b ? `${b.seccion} ${b.fila}-${b.numero}` : "una butaca";
+    });
+    const primero = fallidas[0]!.error;
+    setError({ ...primero, mensaje: `No se pudo comprar: ${nombres.join(", ")}. ${primero.mensaje}` });
   }
 
   const decision = error ? estadoDeErrorCompraButaca(error) : null;
@@ -175,11 +196,25 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
     <div className="flex flex-col gap-6">
       {adelantaron && (
         <Aviso tipo="advertencia" titulo="Alguien se adelantó.">
-          Esa butaca ya no está disponible. Elige otra en el mapa, ya actualizado.
+          Alguna butaca ya no está disponible. Elige otra en el mapa, ya actualizado.
         </Aviso>
       )}
 
-      {error && !adelantaron && (
+      {compradas > 0 && (
+        <Aviso
+          tipo="exito"
+          titulo={`Compraste ${compradas} ${compradas === 1 ? "butaca" : "butacas"}.`}
+          accion={
+            <Boton variante="secundario" onClick={() => router.push("/mis-entradas")}>
+              Ver mis entradas
+            </Boton>
+          }
+        >
+          Las demás no se pudieron comprar: revisa el aviso de abajo.
+        </Aviso>
+      )}
+
+      {error && (
         <Aviso
           tipo="error"
           titulo="No pudimos completar la compra."
@@ -202,7 +237,7 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
         >
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-inverse px-4 py-3">
             <p className="text-meta text-ink-on-inverse-secondary">
-              {actualizandoMapa ? "Actualizando el mapa…" : "Elige una butaca disponible."}
+              {actualizandoMapa ? "Actualizando el mapa…" : `Elige tus butacas (hasta ${MAXIMO_BUTACAS}).`}
             </p>
           </div>
 
@@ -242,14 +277,26 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
           <h3 id="titulo-butaca" className="text-title">
             {evento.titulo}
           </h3>
-          {!butacaElegida ? (
-            <p className="text-meta text-ink-secondary">Toca una butaca disponible del mapa para comprarla.</p>
+          {elegidas.length === 0 ? (
+            <p className="text-meta text-ink-secondary">Toca las butacas disponibles del mapa que quieres comprar.</p>
           ) : (
             <>
-              <p>
-                Sección {butacaElegida.seccion} · Fila {butacaElegida.fila} · Asiento {butacaElegida.numero}
+              <ul className="flex flex-col gap-1">
+                {elegidas.map((b) => (
+                  <li key={b.asiento_id} className="flex items-center justify-between gap-2 text-meta">
+                    <span>
+                      {b.seccion} · Fila {b.fila} · Asiento {b.numero}
+                    </span>
+                    <span className="shrink-0 tabular-nums">S/ {soles(b.precio_centimos)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="flex items-baseline justify-between border-t border-border-hairline pt-2">
+                <span>
+                  {elegidas.length} {elegidas.length === 1 ? "butaca" : "butacas"}
+                </span>
+                <span className="text-title">S/ {soles(total)}</span>
               </p>
-              <p className="text-title">S/ {soles(butacaElegida.precio_centimos)}</p>
               <Selector
                 id="metodo-pago"
                 etiqueta="Método de pago"
@@ -260,12 +307,12 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
               />
               <Boton onClick={() => void comprar()} disabled={ocupado} anchoCompleto>
                 {fase === "creando"
-                  ? "Creando la orden…"
+                  ? "Creando las órdenes…"
                   : fase === "pagando"
                     ? "Pagando…"
                     : pendientePago
                       ? "Reintentar pago"
-                      : "Comprar"}
+                      : `Comprar ${elegidas.length} ${elegidas.length === 1 ? "butaca" : "butacas"}`}
               </Boton>
             </>
           )}
@@ -285,7 +332,7 @@ function FilaButacas({
 }: {
   fila: FilaMapa;
   porId: Map<string, ButacaVenta>;
-  seleccion: string | null;
+  seleccion: string[];
   deshabilitado: boolean;
   onClic: (asientoId: string) => void;
 }) {
@@ -304,7 +351,7 @@ function FilaButacas({
               {bloque.asientos.map((asiento) => {
                 const butaca = porId.get(asiento.id);
                 const estado = butaca?.estado ?? "vendida";
-                const seleccionada = seleccion === asiento.id;
+                const seleccionada = seleccion.includes(asiento.id);
                 const vendida = estado === "vendida";
                 return (
                   <button
