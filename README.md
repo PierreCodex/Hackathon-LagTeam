@@ -110,6 +110,21 @@ En una sede numerada, cada asiento recibe su categoría de precio (de las del al
 - La semilla asigna a los eventos 1, 2, 5 y 7 del teatro cada sección entera con su categoría homónima: sus 643 asientos tienen precio.
 - Pantalla del organizador `/organizador/eventos/:id/precios` (historia 2.10): reutiliza la estructura de la pizarra del mapa (secciones → filas → bloques → asientos) en modo solo lectura y deja seleccionar un rango dentro de una fila con dos clics (primero y último asiento) para asignarle una categoría del panel lateral, pintada con su color real. Un evento publicado abre la pantalla en solo lectura, sin controles ni "Guardar".
 
+### Mapa de butacas y compra numerada (historias 2.5/2.6/2.11, versión reducida)
+
+Decisión del equipo del 11/10/2026 (`_bmad-output/initiative-reto18-eventos/recorte-final.md`): mapa del
+evento con butacas libres u ocupadas, sin bloqueo temporal a nivel de butaca (solo la restricción única
+`ventas_evento_asientos(evento_id, asiento_id)` evita la doble venta) y sin pintar por categoría de precio
+en el mapa público. El precio de cada butaca se resuelve una sola vez, al asegurar el inventario, desde los
+rangos de la 2.4. Migración `20261017000000_ventas_butacas.sql`.
+
+- `GET /api/v1/eventos/:id/mapa-venta` (público): el `MapaSede` estructural de un evento aprobado y publicado, para pintar el mapa de butacas. 404 `EVENTO_NO_EXISTE` si no está a la venta.
+- `GET /api/v1/ventas/eventos/:id/butacas` (público): asegura el inventario de butacas del evento (idempotente) y devuelve cada una con su `asiento_id`, sección, fila, número, precio y estado (`disponible`/`vendida`), sin categoría de precio. El navegador también lee este estado en vivo por Supabase Realtime (`ventas_evento_asientos`, AD-1, solo `SELECT`).
+- `POST /api/v1/ventas/ordenes/asiento` (cualquier cuenta con perfil), `{ "evento_id", "asiento_id" }`: orden `pendiente` de esa butaca, sin cupo de zona general ni bloqueo de la butaca (dos compradores pueden tener cada uno una orden pendiente de la misma butaca). Responde 201 con la orden.
+- `POST /api/v1/ventas/ordenes/:id/pagar` (igual que la 2.1): si la orden es de una butaca, la vende con un `UPDATE … WHERE estado = 'disponible'` condicional; si ya se vendió, deshace el pago con 409 `BUTACA_NO_DISPONIBLE` y la API anula el cobro. La entrada emitida lleva su butaca (sección, fila, número).
+- Errores propios: 404 `ASIENTO_NO_EXISTE`; 409 `BUTACA_NO_DISPONIBLE`.
+- Pantalla pública `/eventos/:id/butacas` (historia 2.11): mapa oscuro con la misma estructura visual que la pizarra de precios, pero solo disponible (verde)/vendida (gris)/seleccionada (blanca); clic en una butaca libre la selecciona (una sola a la vez), con el panel lateral para elegir método de pago y comprar. Si alguien se adelantó a la butaca elegida, la pantalla lo avisa y refresca el mapa en vez de ofrecer "Reintentar".
+
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
 ```bash

@@ -1,7 +1,11 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post } from "@nestjs/common";
 import {
+  type ButacaVenta,
   type CrearOrden,
+  type CrearOrdenAsiento,
+  CrearOrdenAsientoSchema,
   CrearOrdenSchema,
+  EventoIdSchema,
   type MiEntrada,
   type Orden,
   OrdenIdSchema,
@@ -25,6 +29,29 @@ export class VentasController {
   @HttpCode(HttpStatus.CREATED)
   crear(@UsuarioActual() usuario: UsuarioAutenticado, @Body({ schema: CrearOrdenSchema }) datos: CrearOrden): Promise<Orden> {
     return this.ventas.crearOrden(usuario.id, datos);
+  }
+
+  /**
+   * `GET /api/v1/ventas/eventos/:id/butacas` (público, sin sesión): butacas numeradas de un evento a la
+   * venta, solo disponible/vendida (sin pintar por categoría, decisión del recorte del 11/10/2026).
+   */
+  @Get("eventos/:id/butacas")
+  butacas(@Param("id", { schema: EventoIdSchema }) id: string): Promise<ButacaVenta[]> {
+    return this.ventas.butacasDeVenta(id);
+  }
+
+  /**
+   * `POST /api/v1/ventas/ordenes/asiento` (cualquier cuenta con perfil): orden `pendiente` de una
+   * butaca numerada, sin bloqueo temporal de la butaca (AD-5 adaptado). 201 con la orden.
+   */
+  @Post("ordenes/asiento")
+  @Roles()
+  @HttpCode(HttpStatus.CREATED)
+  crearAsiento(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Body({ schema: CrearOrdenAsientoSchema }) datos: CrearOrdenAsiento,
+  ): Promise<Orden> {
+    return this.ventas.crearOrdenAsiento(usuario.id, datos);
   }
 
   /**

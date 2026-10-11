@@ -11,6 +11,7 @@ import {
   Inject,
   Injectable,
   type NestInterceptor,
+  NotFoundException,
   Param,
   PayloadTooLargeException,
   Patch,
@@ -267,6 +268,17 @@ export class EventosController {
     @Body(PRECIOS_VALIDOS) precios: PreciosEntrada,
   ): Promise<PreciosEvento> {
     return this.eventos.guardarPrecios(usuario.id, id, precios);
+  }
+
+  /**
+   * `GET /api/v1/eventos/:id/mapa-venta` (público, sin sesión): el mapa estructural de la sede de un
+   * evento aprobado y publicado, para el mapa de butacas (2.11). 404 `EVENTO_NO_EXISTE` si no está a la venta.
+   */
+  @Get(":id/mapa-venta")
+  async mapaVenta(@Param("id", { schema: EventoIdSchema }) id: string): Promise<MapaSede> {
+    const mapa = await this.eventos.mapaParaVenta(id);
+    if (!mapa) throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
+    return mapa;
   }
 
   @Get(":id")

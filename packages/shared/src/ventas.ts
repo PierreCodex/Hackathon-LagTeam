@@ -32,6 +32,18 @@ export const CrearOrdenSchema = z.object({
 });
 export type CrearOrden = z.infer<typeof CrearOrdenSchema>;
 
+/** Cuerpo de `POST /api/v1/ventas/ordenes/asiento` (historia 2.11, mapa de butacas). */
+export const CrearOrdenAsientoSchema = z.object({
+  evento_id: z.uuid(),
+  asiento_id: z.uuid(),
+  /** Nunca rechaza la orden (AD-8): un `ref` vacío o de más de 64 caracteres (tras recortar) queda ausente. */
+  ref: z.string().optional().transform((ref) => {
+    const limpio = ref?.trim();
+    return limpio && limpio.length <= 64 ? limpio : undefined;
+  }),
+});
+export type CrearOrdenAsiento = z.infer<typeof CrearOrdenAsientoSchema>;
+
 /** Cuerpo de `POST /api/v1/ventas/ordenes/:id/pagar`. */
 export const PagarOrdenSchema = z.object({ metodo: MetodoPagoSchema });
 export type PagarOrden = z.infer<typeof PagarOrdenSchema>;
@@ -53,8 +65,13 @@ export const OrdenSchema = z.object({
   metodo_pago: MetodoPagoSchema.nullable(),
   pagada_en: fechaHora.nullable(),
   creado_en: fechaHora,
+  /** Butaca numerada (2.11); `null` en una orden de zona general. */
+  asiento_id: z.uuid().nullable(),
 });
 export type Orden = z.infer<typeof OrdenSchema>;
+
+/** Dónde queda una butaca numerada, para mostrarla en la entrada (2.11). */
+export const AsientoEntradaSchema = z.object({ seccion: z.string(), fila: z.string(), numero: z.number().int() });
 
 /** Entrada emitida: `qr` = `entrada_id.firma` (HMAC-SHA256, AD-7). */
 export const EntradaSchema = z.object({
@@ -63,6 +80,8 @@ export const EntradaSchema = z.object({
   evento_id: z.uuid(),
   qr: z.string().min(1),
   usada_en: fechaHora.nullable(),
+  /** `null` en una entrada de zona general. */
+  asiento: AsientoEntradaSchema.nullable(),
 });
 export type Entrada = z.infer<typeof EntradaSchema>;
 
@@ -95,11 +114,27 @@ export const VentasPorRefSchema = z.object({
 });
 export type VentasPorRef = z.infer<typeof VentasPorRefSchema>;
 
+/** Butaca numerada a la venta (historia 2.11): sin categoría de precio pintada, solo disponible/vendida. */
+export const ButacaVentaSchema = z.object({
+  asiento_id: z.uuid(),
+  seccion: z.string(),
+  fila: z.string(),
+  numero: z.number().int(),
+  precio_centimos: centimos,
+  estado: z.enum(["disponible", "vendida"]),
+});
+export type ButacaVenta = z.infer<typeof ButacaVentaSchema>;
+export const ButacasVentaSchema = z.array(ButacaVentaSchema);
+
 /** Códigos de error del módulo `ventas`. */
 export const CODIGOS_VENTAS = {
   EVENTO_NO_ENCONTRADO: "EVENTO_NO_ENCONTRADO",
   CATEGORIA_NO_VALIDA: "CATEGORIA_NO_VALIDA",
   SIN_CUPO: "SIN_CUPO",
+  /** La butaca no existe en este evento (2.11). */
+  ASIENTO_NO_EXISTE: "ASIENTO_NO_EXISTE",
+  /** La butaca ya no está disponible: otro comprador se adelantó (2.11, AD-5). */
+  BUTACA_NO_DISPONIBLE: "BUTACA_NO_DISPONIBLE",
   VENTA_CERRADA: "VENTA_CERRADA",
   ORDEN_NO_ENCONTRADA: "ORDEN_NO_ENCONTRADA",
   ORDEN_NO_PENDIENTE: "ORDEN_NO_PENDIENTE",

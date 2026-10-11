@@ -101,6 +101,8 @@ export interface EventoParaVenta {
   inicio: string;
   aforo: number;
   titulo: string;
+  /** Sede del evento: la usa `mapaParaVenta` (2.11) para leer su mapa. */
+  sede_id: string;
   sede: { nombre: string; direccion: string };
   categorias: {
     id: string;
@@ -112,7 +114,7 @@ export interface EventoParaVenta {
 }
 
 const COLUMNAS_VENTA =
-  "id, organizador_id, estado, publicado, inicio, aforo, titulo, sede:eventos_sedes(nombre, direccion), " +
+  "id, organizador_id, estado, publicado, inicio, aforo, titulo, sede_id, sede:eventos_sedes(nombre, direccion), " +
   "categorias:eventos_categorias_precio(id, nombre, precio_centimos, seccion_id, seccion:eventos_secciones(tipo, capacidad))";
 
 const COLUMNAS_PUBLICO =
@@ -120,6 +122,15 @@ const COLUMNAS_PUBLICO =
   "sede:eventos_sedes(id, nombre, direccion, distrito), categorias:eventos_categorias_precio(id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id)";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Ids por bloque en `etiquetasDeAsientos`: de sobra para no pasar el límite de la URI de un GET. */
+const TAMANO_BLOQUE_ASIENTOS = 200;
+
+function agruparEnBloques<T>(valores: readonly T[], tamano: number): T[][] {
+  const bloques: T[][] = [];
+  for (let i = 0; i < valores.length; i += tamano) bloques.push(valores.slice(i, i + tamano));
+  return bloques;
+}
 
 interface ErrorBd {
   code?: string;
@@ -592,6 +603,7 @@ export class EventosService {
       inicio: fila.inicio,
       aforo: Number(fila.aforo),
       titulo: fila.titulo,
+      sede_id: fila.sede_id,
       sede: { nombre: sede?.nombre ?? "", direccion: sede?.direccion ?? "" },
       categorias: (fila.categorias ?? []).map((c) => {
         const seccion = Array.isArray(c.seccion) ? c.seccion[0] : c.seccion;
@@ -605,6 +617,53 @@ export class EventosService {
         };
       }),
     };
+  }
+
+  /** Mapa de la sede de un evento aprobado y publicado, para el mapa de butacas (2.11). `null` si no. */
+  async mapaParaVenta(eventoId: string): Promise<MapaSede | null> {
+    const evento = await this.datosParaVenta(eventoId);
+    if (!evento || evento.estado !== "aprobado" || !evento.publicado) return null;
+    return this.leerMapa(evento.sede_id);
+  }
+
+  /**
+   * Sección, fila y número de cada asiento pedido, para mostrarlos en el mapa de butacas y en las
+   * entradas (2.11). `[]` sin `asientoIds`; los asientos que no se encuentran quedan fuera del mapa.
+   * Pide los ids en bloques (`in(...)` va en la URL del GET de PostgREST: un mapa de 5000 asientos
+   * entero no entra en una sola petición sin pasar el límite de la URI).
+   */
+  async etiquetasDeAsientos(asientoIds: string[]): Promise<Map<string, { seccion: string; fila: string; numero: number }>> {
+    if (asientoIds.length === 0) return new Map();
+    const bloques = agruparEnBloques(asientoIds, TAMANO_BLOQUE_ASIENTOS);
+    const resultados = await Promise.all(bloques.map((bloque) => this.etiquetasDeUnBloque(bloque)));
+    return new Map(resultados.flatMap((m) => [...m]));
+  }
+
+  private async etiquetasDeUnBloque(asientoIds: string[]): Promise<Map<string, { seccion: string; fila: string; numero: number }>> {
+    // `eventos_asientos.fila_id` es parte de una FK compuesta hacia `eventos_bloques` (no hacia
+    // `eventos_filas` directo), así que PostgREST no puede embeber `eventos_filas` desde aquí:
+    // se sube por la FK simple real, `bloque_id` → `eventos_bloques.fila_id` → `eventos_filas`.
+    const { data, error } = await this.cliente()
+      .from("eventos_asientos")
+      .select("id, numero, bloque:eventos_bloques(fila:eventos_filas(nombre, seccion:eventos_secciones(nombre)))")
+      .in("id", asientoIds)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer las etiquetas de los asientos: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer las butacas. Inténtalo de nuevo.");
+    }
+    type Seccion = { nombre: string };
+    type Fila = { nombre: string; seccion: Seccion | Seccion[] | null };
+    type Bloque = { fila: Fila | Fila[] | null };
+    type AsientoFila = { id: string; numero: number; bloque: Bloque | Bloque[] | null };
+    const etiquetas = new Map<string, { seccion: string; fila: string; numero: number }>();
+    for (const a of (data ?? []) as unknown as AsientoFila[]) {
+      const bloque = Array.isArray(a.bloque) ? a.bloque[0] : a.bloque;
+      const fila = bloque ? (Array.isArray(bloque.fila) ? bloque.fila[0] : bloque.fila) : null;
+      const seccion = fila ? (Array.isArray(fila.seccion) ? fila.seccion[0] : fila.seccion) : null;
+      if (fila && seccion) etiquetas.set(a.id, { seccion: seccion.nombre, fila: fila.nombre, numero: Number(a.numero) });
+    }
+    return etiquetas;
   }
 
   /** Datos de varios eventos para los paneles de `negocio` (epic 4), en cualquier estado. */

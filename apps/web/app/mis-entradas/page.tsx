@@ -83,6 +83,11 @@ async function ContenidoMisEntradas() {
                 {entrada.evento.sede.nombre} · {entrada.evento.sede.direccion}
               </p>
               <p className="text-meta text-ink-secondary">{entrada.categoria}</p>
+              {entrada.asiento && (
+                <p className="text-meta text-ink-secondary">
+                  Sección {entrada.asiento.seccion} · Fila {entrada.asiento.fila} · Asiento {entrada.asiento.numero}
+                </p>
+              )}
               {entrada.usada_en && (
                 <p className="text-meta text-state-warning">Usada el {fechaPieza(entrada.usada_en)}</p>
               )}
