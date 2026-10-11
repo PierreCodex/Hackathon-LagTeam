@@ -13,7 +13,8 @@ export interface UsuarioDePrueba {
 const creados: string[] = [];
 
 /**
- * Crea un usuario de Supabase Auth con `app_metadata.rol = rol`, inicia sesión con la clave
+ * Crea un usuario de Supabase Auth con `app_metadata.rol = rol` y su perfil en
+ * `identidad_perfiles`, inicia sesión con la clave
  * pública y devuelve su id y su JWT. Cada llamada crea un usuario distinto; se borran solos
  * al terminar cada archivo de pruebas (ver `limpieza.ts`).
  */
@@ -33,7 +34,13 @@ export async function tokenPorRol(rol: Rol): Promise<UsuarioDePrueba> {
   }
   creados.push(data.user.id);
 
-  // Historia 1.2: aquí se añade el alta en `identidad_perfiles` con el mismo id y rol.
+  // Perfil en `identidad_perfiles` con el mismo id y rol: de ahí saca el rol el guard (AD-3).
+  const { error: errorPerfil } = await admin
+    .from("identidad_perfiles")
+    .insert({ id: data.user.id, rol, whatsapp: "+51987654321" });
+  if (errorPerfil) {
+    throw new Error(`No se pudo crear el perfil de prueba (${rol}): ${errorPerfil.message}`);
+  }
 
   const { data: sesion, error: errorSesion } =
     await clientePublicoDePrueba().auth.signInWithPassword({ email, password });

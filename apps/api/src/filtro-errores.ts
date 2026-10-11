@@ -14,7 +14,25 @@ const CODIGOS: Record<number, string> = {
   401: "NO_AUTENTICADO",
   403: "SIN_PERMISO",
   404: "NO_ENCONTRADO",
+  409: "CONFLICTO",
+  500: "ERROR_INTERNO",
+  503: "SERVICIO_NO_DISPONIBLE",
 };
+
+/** Lee `{ codigo, mensaje }` del cuerpo de la excepción si quien la lanzó lo indicó. */
+function errorDeRespuesta(respuesta: unknown): Partial<ErrorApi> {
+  if (typeof respuesta !== "object" || respuesta === null) return {};
+  const { codigo, mensaje, message } = respuesta as Record<string, unknown>;
+  return {
+    codigo: typeof codigo === "string" ? codigo : undefined,
+    mensaje:
+      typeof mensaje === "string"
+        ? mensaje
+        : Array.isArray(message)
+          ? message.map(String).join("; ")
+          : undefined,
+  };
+}
 
 /** Da a todos los errores la forma `{ "error": { "codigo", "mensaje" } }`. */
 @Catch()
@@ -28,7 +46,17 @@ export class FiltroErrores implements ExceptionFilter {
 
     if (excepcion instanceof HttpException) {
       estado = excepcion.getStatus();
-      error = { codigo: CODIGOS[estado] ?? `HTTP_${estado}`, mensaje: excepcion.message };
+      const propio = errorDeRespuesta(excepcion.getResponse());
+      error = {
+        codigo: propio.codigo ?? CODIGOS[estado] ?? `HTTP_${estado}`,
+        mensaje: propio.mensaje ?? excepcion.message,
+      };
+      if (estado === HttpStatus.SERVICE_UNAVAILABLE) {
+        // Dependencia caída y ya diagnosticada (Auth, BD): una línea basta, sin traza.
+        this.logger.warn(`${error.codigo}: ${error.mensaje}`);
+      } else if (estado >= 500) {
+        this.logger.error(excepcion.stack);
+      }
     } else {
       this.logger.error(excepcion instanceof Error ? excepcion.stack : String(excepcion));
     }

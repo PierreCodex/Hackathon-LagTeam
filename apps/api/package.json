@@ -10,6 +10,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env dist/main.js",
     "start": "node dist/main.js",
+    "sembrar:admin": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env dist/identidad/sembrar-admin.cli.js",
     "lint": "eslint .",
     "test": "tsc -p tsconfig.json && vitest run",
     "test:int": "vitest run --config vitest.integracion.config.ts"

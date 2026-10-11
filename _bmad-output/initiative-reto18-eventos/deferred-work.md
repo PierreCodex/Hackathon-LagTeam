@@ -15,3 +15,7 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/epic-base-roles-eventos/story-esquema-de-sedes-mapa-y-eventos-plan.md`
   summary: Igualar `[db] major_version` de `supabase/config.toml` (hoy 17, valor por defecto de `supabase init`) con la versión de Postgres del proyecto en la nube. Sin verificar; severidad estimada media.
   evidence: Se resuelve mirando la versión en el panel de Supabase (Settings > Infrastructure); si no es 17, las pruebas corren en otra versión mayor que desarrollo y producción.
+
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-base-roles-eventos/story-api-registro-inicio-de-sesion-y-roles-plan.md`
+  summary: Comprobar la historia 1.2 contra el Supabase real: aplicar la migración de identidad, registrar por la API, iniciar sesión con `signInWithPassword` y llamar a `GET /identidad/perfil`, y ejecutar `sembrar:admin` dos veces.
+  evidence: Los criterios de aceptación 2 y 3 solo están probados con Supabase simulado (revisión quick, pasada 1). Se resuelve cuando la prueba real devuelva el rol y el WhatsApp en E.164 y deje un solo admin que puede iniciar sesión.
