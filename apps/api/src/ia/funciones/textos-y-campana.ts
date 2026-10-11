@@ -195,6 +195,7 @@ function prompt(datos: EntradaTextosYCampana, ahora: Date): string {
     "- paleta: 3 colores hex (fondo, texto y acento) con buen contraste y que vayan con el tipo de evento.",
     "- campana.publico: a quién va dirigido (edad, intereses y zona de Piura).",
     "- campana.reparto: soles enteros por red (instagram, facebook, whatsapp, tiktok o x); entre 30 y 150 soles en total.",
+    "- Antes de responder suma todos los importes de campana.reparto: el máximo de 150 soles es para TODA la campaña, no para cada red. Un reparto válido es instagram 40 y facebook 20 (60 soles en total). El resumen debe usar esa misma suma.",
     `- campana.calendario: de 2 a 5 publicaciones; dias_antes entre 0 y ${Math.min(diasHasta, 30)}; hora HH:MM de Lima; qué publicar.`,
     "- campana.resumen: la campaña explicada como a un amigo, en 2 o 3 frases (cuánto invertir, en qué red y cuándo publicar).",
   ]
