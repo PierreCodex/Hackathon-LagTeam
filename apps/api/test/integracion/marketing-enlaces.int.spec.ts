@@ -8,6 +8,7 @@ import {
   OrdenSchema,
   PiezaSchema,
   ResultadosPiezaSchema,
+  VentasOrganizadorSchema,
 } from "@reto18/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -241,6 +242,30 @@ describe("marketing: enlaces rastreables y ventas por pieza (3.2)", () => {
       { ...sullana, clics: 3, ordenes: 0, entradas: 0, importe_centimos: 0 },
       { ...castilla, clics: 1, ordenes: 1, entradas: 1, importe_centimos: PRECIO },
     ]);
+  });
+
+  it("panel de ventas (4.1): la compra desde el enlace de una pieza aparece en mis-ventas asignada a esa pieza", async () => {
+    const pieza = await generarPieza(evento.id);
+    const enlace = await enlaceCreado(pieza, { red: "instagram" });
+    expect((await clic(enlace.codigo)).status).toBe(201);
+    await orden(enlace.codigo, true);
+
+    const respuesta = await api(app, organizador.token).get("/api/v1/negocio/mis-ventas");
+    expect(respuesta.status, JSON.stringify(respuesta.body)).toBe(200);
+    const ventas = VentasOrganizadorSchema.parse(respuesta.body);
+    const deLaPieza = ventas.piezas.find((p) => p.pieza_id === pieza);
+    expect(deLaPieza).toMatchObject({ evento_id: evento.id, clics: 1, ordenes: 1, entradas: 1, importe_centimos: PRECIO });
+    expect(deLaPieza?.enlaces).toEqual([
+      { codigo: enlace.codigo, red: "instagram", zona: null, clics: 1, ordenes: 1, entradas: 1, importe_centimos: PRECIO },
+    ]);
+    const delEvento = ventas.eventos.find((e) => e.evento_id === evento.id);
+    expect(delEvento?.por_categoria[0]?.entradas).toBe(delEvento?.entradas);
+
+    // Otro organizador no ve estas ventas; el público no tiene panel.
+    const ajeno = VentasOrganizadorSchema.parse((await api(app, otroOrganizador.token).get("/api/v1/negocio/mis-ventas")).body);
+    expect(ajeno.piezas).toEqual([]);
+    expect(ajeno.resumen.ordenes).toBe(0);
+    expect((await api(app, comprador.token).get("/api/v1/negocio/mis-ventas")).status).toBe(403);
   });
 
   it("AD-1: anon y authenticated no pueden leer ni escribir marketing_enlaces ni marketing_clics", async () => {
