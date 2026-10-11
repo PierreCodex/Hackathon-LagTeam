@@ -2,11 +2,12 @@ import type { ErrorApi, EventoRevision } from "@reto18/shared";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { clases } from "@/lib/clases";
 import { fechaPieza } from "@/lib/pieza";
-import { ESTADO_EVENTO, textoEstadoOrganizador } from "@/lib/revision";
+import { accionButacas, ESTADO_EVENTO, textoEstadoOrganizador } from "@/lib/revision";
 
-/** Un evento con su estado (símbolo y texto) y, si se rechazó, el motivo exacto. */
+/** Un evento con su estado (símbolo y texto), el botón a sus butacas y, si se rechazó, el motivo exacto. */
 export function FilaMisEventos({ evento }: { evento: EventoRevision }) {
   const estado = ESTADO_EVENTO[evento.estado];
+  const butacas = accionButacas(evento);
   return (
     <li>
       <Tarjeta como="article" className="flex flex-col gap-2">
@@ -23,6 +24,11 @@ export function FilaMisEventos({ evento }: { evento: EventoRevision }) {
             <h3 className="text-meta text-ink-secondary">Motivo del rechazo</h3>
             <p className="[overflow-wrap:anywhere]">{evento.motivo_rechazo}</p>
           </div>
+        )}
+        {butacas && (
+          <BotonEnlace href={butacas.href} variante="secundario" className="mt-1 self-start max-sm:w-full">
+            {butacas.texto}
+          </BotonEnlace>
         )}
       </Tarjeta>
     </li>
