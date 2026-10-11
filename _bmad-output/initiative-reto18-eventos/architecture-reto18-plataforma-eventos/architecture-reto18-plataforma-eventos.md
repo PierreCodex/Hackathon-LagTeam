@@ -86,9 +86,10 @@ graph TD
 - **Rule:**
   - La jerarquía `sede → sección → fila → bloque → asiento` pertenece a `eventos`. Una sección es `numerada` (con asientos) o `general` (con capacidad).
   - Las categorías de precio (nombre, color y precio) son **del evento**.
-  - El inventario lo crea `ventas` con `asegurarInventario(evento_id)`, que es idempotente y se llama al primer acceso de venta o de mapa de un evento aprobado. Por cada asiento crea un `ventas_evento_asientos` con su categoría, y un cupo por cada sección general. `eventos` nunca llama a `ventas`.
+  - El inventario lo crea `ventas` con `asegurarInventario(evento_id)`, que es idempotente y se llama al primer acceso de venta o de mapa de un evento publicado. Por cada asiento crea un `ventas_evento_asientos` con su categoría, y un cupo por cada sección general. `eventos` nunca llama a `ventas`.
   - La pizarra (CAP-15) y la IA (CAP-16) solo editan el mapa de la sede.
-  - Si una sede tiene algún evento aprobado, su mapa ya no se edita: para cambiarlo, se duplica la sede.
+  - Cada sede tiene dueño (`creado_por`); solo él edita su mapa. Cualquier organizador puede usar una sede o duplicarla, y la copia queda a su nombre. Las sedes sembradas no tienen dueño.
+  - Un evento sale al público solo si está **aprobado y publicado**. Publicar (el organizador, tras armar el mapa) exige que la capacidad del local alcance el aforo y **cierra el mapa** de la sede (`mapa_cerrado`): a partir de ahí no se edita y, para cambiarlo, se duplica la sede. (Cambio del 10/10/2026: antes el mapa se cerraba con el primer evento aprobado.)
 
 ### AD-5: El bloqueo y el aforo son atómicos en Postgres
 

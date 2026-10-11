@@ -148,3 +148,41 @@ after = [7, 8, "1.12"]
 hitl = false
 risk = "high"
 assignee = "Manuel Alexis"
+
+[[entry]]
+id = 13
+type = "story"
+title = "API: mapa automático tipo cine"
+description = "Cuando el organizador crea un local nuevo con una capacidad (alta 1.4 o sede 2.3), la API genera un mapa numerado tipo cine en lugar de una zona general: filas A, B, C… de hasta 20 butacas repartidas parejas, cada una partida en dos bloques por un pasillo central y con numeración continua. Se guarda con la RPC de la 2.3 y el mapa queda abierto hasta publicar; la pizarra (2.9) y el croquis con IA (epic 5) quedan como ajustes opcionales."
+verify = "Pruebas unitarias del generador (120 butacas → 6 filas de 20; 150 → 6 de 19 y 2 de 18; pasillo central) y de integración: un alta con local nuevo de 150 deja un mapa numerado de 150 asientos que se puede publicar."
+covers = ["CAP-15"]
+after = [3, "1.4"]
+hitl = false
+risk = "low"
+assignee = "Jean Pierre"
+notes = ["Decisión del 10/10/2026 para avanzar sin depender de la pizarra ni de la IA: el mapa se genera a partir del número de butacas."]
+
+[[entry]]
+id = 14
+type = "story"
+title = "API: ubicación del local con Google Places"
+description = "Agrega a eventos_sedes el place_id de Google, la dirección formateada, la latitud y la longitud. El alta (1.4) y la creación de sede (2.3) aceptan esos datos, y GET /eventos/sedes/cercanas?place_id= devuelve los locales que ya existen en ese lugar para sugerirlos (los cerrados se reutilizan; los abiertos ajenos se duplican). La clave del navegador es NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, documentada vacía en .env.example y nunca en el repositorio."
+verify = "Pruebas de integración: un alta con place_id guarda la ubicación; pedir los locales de un place_id ya registrado devuelve ese local; un local sin ubicación sigue funcionando."
+covers = ["CAP-2"]
+after = [3, "1.4"]
+hitl = false
+risk = "low"
+assignee = "Jean Pierre"
+notes = ["Decisión del 10/10/2026: el local se identifica por su ubicación de Google Places para no repetir locales. La clave debe restringirse por dominio y API en Google Cloud."]
+
+[[entry]]
+id = 15
+type = "story"
+title = "UI: buscador del local con Google Places"
+description = "En el formulario de alta (1.9), el campo del local usa el autocompletado de Google Places (Maps JavaScript API con NEXT_PUBLIC_GOOGLE_MAPS_API_KEY). Al elegir un lugar, sugiere los locales que ya existen ahí (API 2.14) o crea uno nuevo con su ubicación."
+verify = "En móvil y en escritorio, escribir el nombre de un local muestra sugerencias de Google; elegir uno ya registrado ofrece reutilizarlo y elegir uno nuevo lo crea con su ubicación."
+covers = ["CAP-2"]
+after = [14, "1.9"]
+hitl = false
+risk = "low"
+assignee = "Sandro David"
