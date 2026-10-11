@@ -109,3 +109,15 @@ export function estadoDeErrorGuardadoPrecios(error: ErrorApi): ResultadoErrorGua
   if (error.codigo === CODIGO_SIN_CONEXION_PRECIOS) return { tipo: "reintentar" };
   return { tipo: "generico" };
 }
+
+/** Rangos que pintan toda una sección numerada con una categoría: uno por fila, del primer al último asiento. */
+export function rangosDeSeccion(
+  seccion: { nombre: string; filas: { nombre: string; bloques: { asientos: { numero: number }[] }[] }[] },
+  categoriaId: string,
+): RangoPrecioEntrada[] {
+  return seccion.filas.flatMap((fila) => {
+    const numeros = fila.bloques.flatMap((b) => b.asientos.map((a) => a.numero));
+    if (numeros.length === 0) return [];
+    return [{ categoria_id: categoriaId, seccion: seccion.nombre, fila: fila.nombre, desde: Math.min(...numeros), hasta: Math.max(...numeros) }];
+  });
+}

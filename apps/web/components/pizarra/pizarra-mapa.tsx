@@ -13,6 +13,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { GeneradorCine } from "@/components/pizarra/generador-cine";
 import { Aviso, Boton, BotonEnlace, Campo, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
 import { clases } from "@/lib/clases";
@@ -332,6 +333,14 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
             error={camposConError.distrito}
           />
         </Tarjeta>
+
+        <GeneradorCine
+          haySecciones={estado.secciones.length > 0}
+          alGenerar={(secciones) => {
+            setEstado((a) => ({ ...a, secciones }));
+            limpiarErrores();
+          }}
+        />
 
         <section
           aria-label="Pizarra del mapa"
