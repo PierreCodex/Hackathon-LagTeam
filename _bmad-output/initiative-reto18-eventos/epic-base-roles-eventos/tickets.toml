@@ -54,10 +54,23 @@ risk = "low"
 assignee = "Sandro David"
 
 [[entry]]
+id = "3a"
+type = "story"
+title = "Pruebas de integración de la API"
+description = "Deja montadas las pruebas de integración de la API (runner, base de datos de prueba con Supabase local y ayudas para tokens por rol) que usan las historias API. Se separó de la 3 al construirla: es la parte 1 de la historia 1.3."
+verify = "pnpm test:int corre contra Supabase local y las pruebas de ejemplo pasan."
+covers = []
+after = [1]
+hitl = false
+risk = "medium"
+assignee = "Jean Pierre"
+notes = ["Separada de la 3 el 10/10/2026 para que cada plan tenga una sola entrada (tickets.py rechaza dos planes para la misma)."]
+
+[[entry]]
 id = 3
 type = "story"
 title = "Esquema de sedes, mapa y eventos"
-description = "Crea las migraciones de sede > sección (numerada|general con capacidad) > fila > bloque > asiento, eventos (estado, destacado, inicio, distrito, categoría, descripción, hay_musica, constancia) y categorías de precio del evento, sus esquemas zod en packages/shared y seed.sql con la sede de ejemplo de los croquis y los eventos de la demo (CAP-2, AD-4); el organizador se enlaza a auth.users para no depender de la historia 2. También deja montadas las pruebas de integración de la API (runner, base de datos de prueba y ayudas para tokens por rol) que usan las historias API. Es el contrato que usan la pizarra del epic 2 y la IA del epic 3."
+description = "Crea las migraciones de sede > sección (numerada|general con capacidad) > fila > bloque > asiento, eventos (estado, destacado, inicio, distrito, categoría, descripción, hay_musica, constancia) y categorías de precio del evento, sus esquemas zod en packages/shared y seed.sql con la sede de ejemplo de los croquis y los eventos de la demo (CAP-2, AD-4); el organizador se enlaza a auth.users para no depender de la historia 2. Las pruebas de integración de la API se separaron en la 3a. Es el contrato que usan la pizarra del epic 2 y la IA del epic 3."
 verify = "La migración se aplica en Supabase, la semilla carga y las filas, bloques y asientos de la sede de ejemplo coinciden con los dos croquis de insumos/."
 covers = ["CAP-2"]
 after = [1]
