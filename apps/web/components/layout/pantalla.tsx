@@ -16,6 +16,8 @@ export type PantallaProps = {
   rol?: Rol;
   /** Destino activo del menú y de la barra. */
   destinoActivo?: IconoDestino;
+  /** `false` para el visitante anónimo: el menú no muestra "Mis entradas" ni "Cuenta". */
+  conSesion?: boolean;
   /**
    * `completo`: todo el contenedor de 1280 px (lo normal).
    * `formulario`: una columna de 480 px centrada dentro del contenedor.
@@ -35,6 +37,7 @@ export function Pantalla({
   sinAccionesCabecera,
   rol,
   destinoActivo,
+  conSesion = true,
   ancho = "completo",
   children,
 }: PantallaProps) {
@@ -46,7 +49,12 @@ export function Pantalla({
       >
         Saltar al contenido
       </a>
-      <Cabecera accion={sinAccionesCabecera ? undefined : accionCabecera} rol={rol} destinoActivo={destinoActivo} />
+      <Cabecera
+        accion={sinAccionesCabecera ? undefined : accionCabecera}
+        rol={rol}
+        destinoActivo={destinoActivo}
+        conSesion={conSesion}
+      />
       <main id="contenido" tabIndex={-1} className={clases(CONTENEDOR, "flex flex-1 flex-col pt-6 outline-none")}>
         <div
           className={clases(
@@ -60,7 +68,7 @@ export function Pantalla({
       </main>
       {/* El hueco de la barra fija va en el pie, así la barra nunca lo tapa. */}
       <Pie huecoBarra={Boolean(rol)} />
-      {rol && <BarraInferior rol={rol} activo={destinoActivo} />}
+      {rol && <BarraInferior rol={rol} activo={destinoActivo} conSesion={conSesion} />}
     </div>
   );
 }

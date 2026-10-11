@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { clases } from "@/lib/clases";
-import { DESTINOS_POR_ROL, NOMBRE_ROL, type IconoDestino, type Rol } from "@/lib/navegacion";
+import { destinosBarra, NOMBRE_ROL, type IconoDestino, type Rol } from "@/lib/navegacion";
 import { IconoDestinoSvg } from "./icono-destino";
 
 export type BarraInferiorProps = {
@@ -8,13 +8,15 @@ export type BarraInferiorProps = {
   rol: Rol;
   /** Destino de la pantalla actual. */
   activo?: IconoDestino;
+  /** `false` para el visitante anónimo: sin "Mis entradas" ni "Cuenta". */
+  conSesion?: boolean;
   /** Fija abajo (lo normal). `false` solo para mostrarla dentro de otra página, como en /muestra. */
   fija?: boolean;
 };
 
 /** Barra inferior carbón por rol, sin menú hamburguesa; solo por debajo de 1024 px (DESIGN.md · Barra inferior). */
-export function BarraInferior({ rol, activo, fija = true }: BarraInferiorProps) {
-  const destinos = DESTINOS_POR_ROL[rol];
+export function BarraInferior({ rol, activo, conSesion = true, fija = true }: BarraInferiorProps) {
+  const destinos = destinosBarra(rol, conSesion);
   return (
     <nav
       aria-label={`Navegación de ${NOMBRE_ROL[rol].toLowerCase()}`}
