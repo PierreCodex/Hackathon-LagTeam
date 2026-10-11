@@ -25,6 +25,7 @@ import {
 import {
   capacidadSede,
   CLAVE_BORRADOR_ALTA,
+  estadoInicialAlta,
   envioIncierto,
   MENSAJE_ENVIO_INCIERTO,
   ETIQUETA_CATEGORIA,
@@ -182,7 +183,9 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
     foto: null,
     constancia: null,
   }));
-  const [paso, setPaso] = useState<PasoAlta>(inicial.paso);
+  // Siempre se empieza en el paso 1; si había un borrador, se ofrece descartarlo con "Empezar de cero".
+  const [paso, setPaso] = useState<PasoAlta>(PASOS_ALTA[0]);
+  const [hayBorrador, setHayBorrador] = useState(() => leerAlmacen(claveBorrador) !== null && inicial.estado.titulo.trim() !== "");
   const [errores, setErrores] = useState<ErroresAlta>({});
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
   /** El último envío se cortó por tiempo: quizá el evento sí se creó, así que no se ofrece "Reintentar". */
@@ -229,6 +232,15 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
       cambiar(campo, e.target.value as never);
       quitarError(idCampo);
     };
+  }
+
+  function empezarDeCero() {
+    escribirAlmacen(claveBorrador, null);
+    setEstado({ ...estadoInicialAlta(), foto: null, constancia: null });
+    setPaso(PASOS_ALTA[0]);
+    setErrores({});
+    setErrorApi(null);
+    setHayBorrador(false);
   }
 
   function irA(nuevo: PasoAlta, erroresPaso: ErroresAlta = {}) {
@@ -340,6 +352,19 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
 
   return (
     <form noValidate onSubmit={alEnviar} className="flex flex-col gap-4">
+      {hayBorrador && (
+        <Aviso
+          tipo="info"
+          titulo="Recuperamos el evento que dejaste a medias."
+          accion={
+            <Boton type="button" variante="secundario" onClick={empezarDeCero}>
+              Empezar de cero
+            </Boton>
+          }
+        >
+          Puedes seguir con esos datos o empezar un evento nuevo.
+        </Aviso>
+      )}
       <div className="flex flex-col gap-2">
         <p className="text-meta text-ink-secondary">
           Paso {indice + 1} de {PASOS_ALTA.length}
