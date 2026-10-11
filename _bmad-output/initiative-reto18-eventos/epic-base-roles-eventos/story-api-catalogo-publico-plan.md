@@ -1,7 +1,7 @@
 ---
 story: 1.6
 title: API: catálogo público
-status: ready-for-dev
+status: done
 risk: low
 ---
 
