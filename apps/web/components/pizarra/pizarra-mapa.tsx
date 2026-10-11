@@ -13,7 +13,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { GeneradorCine } from "@/components/pizarra/generador-cine";
+import { GeneradorCine, type ObjetivoCroquis } from "@/components/pizarra/generador-cine";
 import { Aviso, Boton, BotonEnlace, Campo, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
 import { clases } from "@/lib/clases";
@@ -48,6 +48,8 @@ export type PizarraMapaProps = {
   mapaInicial?: MapaSede;
   /** Base de la API (`API_URL`). */
   apiUrl: string;
+  /** Evento desde el que se arma el croquis: sus butacas deben sumar el aforo y las secciones parten de sus categorías. */
+  objetivo?: ObjetivoCroquis & { eventoId: string };
 };
 
 /** Lado de una butaca en px, por paso del control de tamaño: el último cumple el mínimo táctil de 48 px. */
@@ -64,7 +66,7 @@ function evitarEnvioEnter(e: KeyboardEvent<HTMLInputElement>) {
  * secciones en tarjetas, filas centradas) donde se edita sobre el mapa: tocar una butaca la quita, "+" al
  * final de cada bloque añade una y el hueco entre bloques es el pasillo.
  */
-export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaProps) {
+export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl, objetivo }: PizarraMapaProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [estado, setEstado] = useState<EstadoPizarra>(() => (mapaInicial ? aMapaInicial(mapaInicial) : estadoInicialPizarra()));
@@ -123,6 +125,13 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
     if (!validacion.ok) {
       setErrorLocal({ campo: validacion.campo, mensaje: validacion.mensaje });
       foco.current = validacion.campo;
+      return;
+    }
+    if (objetivo && totalButacas !== objetivo.aforo) {
+      setErrorLocal({
+        campo: null,
+        mensaje: `El mapa tiene ${totalButacas} butacas y el aforo del evento es ${objetivo.aforo}. Ajusta las secciones hasta que coincidan.`,
+      });
       return;
     }
 
@@ -249,6 +258,11 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
       {guardadoOk && !errorGuardar && !errorLocal && (
         <Aviso tipo="exito" titulo="El mapa se guardó.">
           {modoActual === "editar" ? "Los cambios ya están guardados." : "La sede quedó creada con este mapa."}
+          {objetivo && (
+            <BotonEnlace href={`/organizador/eventos/${objetivo.eventoId}/precios`} className="mt-2 self-start">
+              Siguiente: precios
+            </BotonEnlace>
+          )}
         </Aviso>
       )}
 
@@ -336,6 +350,7 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
 
         <GeneradorCine
           haySecciones={estado.secciones.length > 0}
+          objetivo={objetivo}
           alGenerar={(secciones) => {
             setEstado((a) => ({ ...a, secciones }));
             limpiarErrores();
@@ -348,7 +363,8 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
         >
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-inverse px-4 py-3">
             <p className="text-meta text-ink-on-inverse-secondary">
-              <span className="text-body text-ink-on-inverse">{totalButacas}</span> {totalButacas === 1 ? "butaca" : "butacas"}
+              <span className="text-body text-ink-on-inverse">{totalButacas}</span>
+              {objetivo ? ` de ${objetivo.aforo} butacas del aforo` : totalButacas === 1 ? " butaca" : " butacas"}
               {" · "}
               Toca una butaca para quitarla
             </p>

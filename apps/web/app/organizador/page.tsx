@@ -9,7 +9,7 @@ const RUTA = "/organizador";
 
 async function ListaMisEventos() {
   const { eventos, error } = await cargarMisEventos();
-  return <ContenidoMisEventos eventos={eventos} error={error} rutaActual={RUTA} />;
+  return <ContenidoMisEventos eventos={eventos} error={error} rutaActual={RUTA} apiUrl={process.env.API_URL ?? ""} />;
 }
 
 /** Mis eventos del organizador (1.8, 1.10): "Nuevo evento" y la lista con estado y motivo del rechazo. */

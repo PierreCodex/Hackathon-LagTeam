@@ -121,3 +121,19 @@ export function rangosDeSeccion(
     return [{ categoria_id: categoriaId, seccion: seccion.nombre, fila: fila.nombre, desde: Math.min(...numeros), hasta: Math.max(...numeros) }];
   });
 }
+
+/**
+ * Rangos iniciales cuando el evento aún no tiene ninguno: cada sección numerada cuyo nombre coincide
+ * con una categoría (sin distinguir mayúsculas) se pinta entera con ella. Es lo que deja el croquis
+ * armado desde el evento, donde las secciones nacen con el nombre de sus categorías.
+ */
+export function rangosPorNombreDeSeccion(
+  secciones: Parameters<typeof rangosDeSeccion>[0][],
+  categorias: readonly { id: string; nombre: string }[],
+): RangoPrecioEntrada[] {
+  const porNombre = new Map(categorias.map((c) => [c.nombre.trim().toLowerCase(), c.id]));
+  return secciones.flatMap((s) => {
+    const categoriaId = porNombre.get(s.nombre.trim().toLowerCase());
+    return categoriaId ? rangosDeSeccion(s, categoriaId) : [];
+  });
+}

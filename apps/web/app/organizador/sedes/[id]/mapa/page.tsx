@@ -1,14 +1,32 @@
-import { MapaSedeSchema, type ErrorApi, type MapaSede } from "@reto18/shared";
+import { MapaSedeSchema, PreciosEventoSchema, type ErrorApi, type MapaSede } from "@reto18/shared";
 import type { Metadata } from "next";
 import { GuardaRol } from "@/components/layout/guarda-rol";
 import { PizarraMapa } from "@/components/pizarra/pizarra-mapa";
 import { Aviso, BotonEnlace } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { cargarMisEventos, tokenDelServidor } from "../../../datos-organizador";
 
 export const metadata: Metadata = { title: "Mapa de la sede · Reto 18" };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ evento?: string }> };
+
+/**
+ * Aforo y categorías del evento desde el que se arma el croquis (`?evento=`), o `undefined` si no se
+ * encuentra entre los eventos del organizador o ya está publicado (la pizarra queda como antes).
+ */
+async function cargarObjetivo(eventoId: string | undefined) {
+  if (!eventoId) return undefined;
+  const { eventos } = await cargarMisEventos();
+  const evento = eventos.find((e) => e.id === eventoId);
+  const token = await tokenDelServidor();
+  if (!evento || evento.publicado || !token) return undefined;
+  const precios = await pedirApi(`eventos/${eventoId}/precios`, PreciosEventoSchema, {
+    cabeceras: { Authorization: `Bearer ${token}` },
+  });
+  const categorias = precios.ok ? precios.datos.categorias.map((c) => c.nombre) : [];
+  return { eventoId, aforo: evento.aforo, categorias };
+}
 
 /** Mapa de `GET .../mapa` con el token de la sesión, o el error para pintarlo con "Reintentar". */
 async function cargarMapa(id: string): Promise<{ mapa?: MapaSede; error?: ErrorApi }> {
@@ -30,8 +48,8 @@ async function cargarMapa(id: string): Promise<{ mapa?: MapaSede; error?: ErrorA
   return resultado.ok ? { mapa: resultado.datos } : { error: resultado.error };
 }
 
-async function ContenidoMapa({ id, ruta }: { id: string; ruta: string }) {
-  const { mapa, error } = await cargarMapa(id);
+async function ContenidoMapa({ id, ruta, eventoId }: { id: string; ruta: string; eventoId?: string }) {
+  const [{ mapa, error }, objetivo] = await Promise.all([cargarMapa(id), cargarObjetivo(eventoId)]);
   if (!mapa) {
     return (
       <Aviso
@@ -47,7 +65,7 @@ async function ContenidoMapa({ id, ruta }: { id: string; ruta: string }) {
       </Aviso>
     );
   }
-  return <PizarraMapa modo="editar" sedeId={id} mapaInicial={mapa} apiUrl={process.env.API_URL ?? ""} />;
+  return <PizarraMapa modo="editar" sedeId={id} mapaInicial={mapa} apiUrl={process.env.API_URL ?? ""} objetivo={objetivo} />;
 }
 
 /**
@@ -55,12 +73,13 @@ async function ContenidoMapa({ id, ruta }: { id: string; ruta: string }) {
  * `SEDE_AJENA`/`MAPA_CERRADO` (Design Notes): la pizarra siempre se abre editable y solo ofrece
  * duplicar si el guardado falla con esos códigos.
  */
-export default async function MapaSedePage({ params }: Props) {
+export default async function MapaSedePage({ params, searchParams }: Props) {
   const { id } = await params;
-  const ruta = `/organizador/sedes/${id}/mapa`;
+  const { evento } = await searchParams;
+  const ruta = `/organizador/sedes/${id}/mapa${evento ? `?evento=${encodeURIComponent(evento)}` : ""}`;
   return (
     <GuardaRol rol="organizador" ruta={ruta} titulo="Mapa de la sede" destinoActivo="mis-eventos">
-      {() => <ContenidoMapa id={id} ruta={ruta} />}
+      {() => <ContenidoMapa id={id} ruta={ruta} eventoId={evento} />}
     </GuardaRol>
   );
 }

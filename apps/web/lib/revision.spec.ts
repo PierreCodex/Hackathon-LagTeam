@@ -60,12 +60,14 @@ describe("textoEstadoOrganizador", () => {
 
 describe("accionButacas", () => {
   const sede_id = "13100000-0000-4000-8000-000000000001";
+  const id = "13100000-0000-4000-8000-000000000002";
   const href = `/organizador/sedes/${sede_id}/mapa`;
+  const conEvento = `${href}?evento=${id}`;
   it.each([
-    [{ estado: "pendiente", publicado: false, sede_id }, { texto: "Armar butacas", href }],
-    [{ estado: "aprobado", publicado: false, sede_id }, { texto: "Armar butacas", href }],
-    [{ estado: "aprobado", publicado: true, sede_id }, { texto: "Ver butacas", href }],
-    [{ estado: "rechazado", publicado: false, sede_id }, null],
+    [{ id, estado: "pendiente", publicado: false, sede_id }, { texto: "Armar butacas", href: conEvento }],
+    [{ id, estado: "aprobado", publicado: false, sede_id }, { texto: "Armar butacas", href: conEvento }],
+    [{ id, estado: "aprobado", publicado: true, sede_id }, { texto: "Ver butacas", href }],
+    [{ id, estado: "rechazado", publicado: false, sede_id }, null],
   ] as const)("%o → %o", (evento, esperado) => {
     expect(accionButacas(evento)).toEqual(esperado);
   });

@@ -2,59 +2,77 @@
 
 import { useState } from "react";
 import { Aviso, Boton, Campo, Tarjeta } from "@/components/ui";
+import { clases } from "@/lib/clases";
 import {
+  filasDeSeccion,
   generarSeccionesCine,
-  sugerirDimensiones,
-  sugerirGrupos,
+  repartirAforo,
+  sugerirAsientosPorFila,
   validarConfigCine,
-  type GrupoFilas,
 } from "@/lib/mapa-cine";
 import type { EstadoSeccion } from "@/lib/pizarra-mapa";
+
+/** Lo que el alta del evento ya decidió: el aforo (total de butacas) y sus categorías de precio. */
+export type ObjetivoCroquis = { aforo: number; categorias: string[] };
 
 export type GeneradorCineProps = {
   /** La pizarra ya tiene secciones numeradas: generar las reemplaza (se pide confirmación). */
   haySecciones: boolean;
+  /** Si viene de un evento, el total debe ser su aforo y las secciones parten de sus categorías. */
+  objetivo?: ObjetivoCroquis;
   alGenerar: (secciones: EstadoSeccion[]) => void;
 };
 
+type FilaGenerador = { nombre: string; asientos: string };
+
 const entero = (texto: string) => (texto.trim() === "" ? NaN : Number(texto));
 
+function inicial(objetivo: ObjetivoCroquis | undefined): FilaGenerador[] {
+  if (!objetivo) return [];
+  const nombres = objetivo.categorias.length > 0 ? objetivo.categorias : ["General"];
+  return repartirAforo(objetivo.aforo, nombres).map((s) => ({ nombre: s.nombre, asientos: String(s.asientos) }));
+}
+
 /**
- * Arma la sala de una vez (2.13): aforo → filas × asientos por fila sugeridos, filas agrupadas en
- * secciones (sugeridas o a mano) y pasillo al medio. El resultado se retoca después en la pizarra.
+ * Arma la sala de una vez (2.13): las butacas del aforo repartidas entre las secciones (las categorías
+ * del evento), con + y − por sección y el total siempre validado contra el aforo. Las filas salen solas
+ * según los asientos por fila; el resultado se retoca después en la pizarra.
  */
-export function GeneradorCine({ haySecciones, alGenerar }: GeneradorCineProps) {
+export function GeneradorCine({ haySecciones, objetivo, alGenerar }: GeneradorCineProps) {
   const [abierto, setAbierto] = useState(!haySecciones);
-  const [aforo, setAforo] = useState("");
-  const [filas, setFilas] = useState("");
-  const [asientos, setAsientos] = useState("");
+  const [aforoLibre, setAforoLibre] = useState("");
+  const [porFila, setPorFila] = useState(() => (objetivo ? String(sugerirAsientosPorFila(objetivo.aforo)) : ""));
   const [pasillo, setPasillo] = useState(true);
-  const [grupos, setGrupos] = useState<{ nombre: string; filas: string }[]>([]);
+  const [secciones, setSecciones] = useState<FilaGenerador[]>(() => inicial(objetivo));
   const [error, setError] = useState<string | null>(null);
 
-  const nFilas = entero(filas);
-  const nAsientos = entero(asientos);
-  const total = Number.isFinite(nFilas) && Number.isFinite(nAsientos) ? nFilas * nAsientos : 0;
-  const sumaGrupos = grupos.reduce((s, g) => s + (Number(g.filas) || 0), 0);
+  const aforo = objetivo ? objetivo.aforo : entero(aforoLibre);
+  const nPorFila = entero(porFila);
+  const total = secciones.reduce((s, x) => s + (Number(x.asientos) || 0), 0);
+  const diferencia = Number.isFinite(aforo) ? aforo - total : 0;
 
-  function sugerir() {
-    const d = sugerirDimensiones(entero(aforo));
-    if (!d.filas) {
-      setError("Escribe el aforo para sugerirte filas y asientos.");
+  function cambiarAsientos(i: number, valor: string) {
+    setSecciones((a) => a.map((x, j) => (j === i ? { ...x, asientos: valor } : x)));
+    setError(null);
+  }
+
+  function repartir() {
+    if (!Number.isInteger(aforo) || aforo < 1) {
+      setError("Escribe el aforo para repartir las butacas.");
       return;
     }
-    setFilas(String(d.filas));
-    setAsientos(String(d.asientosPorFila));
-    setGrupos(aTexto(sugerirGrupos(d.filas)));
+    const nombres = secciones.length > 0 ? secciones.map((s) => s.nombre || "General") : ["General"];
+    setSecciones(repartirAforo(aforo, nombres).map((s) => ({ nombre: s.nombre, asientos: String(s.asientos) })));
+    if (!Number.isFinite(nPorFila) || nPorFila < 1) setPorFila(String(sugerirAsientosPorFila(aforo)));
     setError(null);
   }
 
   function generar() {
     const config = {
-      filas: nFilas,
-      asientosPorFila: nAsientos,
+      asientosPorFila: nPorFila,
       pasilloCentral: pasillo,
-      grupos: grupos.map((g) => ({ nombre: g.nombre, filas: entero(g.filas) })),
+      secciones: secciones.map((s) => ({ nombre: s.nombre, asientos: entero(s.asientos) })),
+      aforo: Number.isFinite(aforo) ? aforo : undefined,
     };
     const problema = validarConfigCine(config);
     if (problema) {
@@ -82,39 +100,33 @@ export function GeneradorCine({ haySecciones, alGenerar }: GeneradorCineProps) {
           Armar la sala automáticamente
         </h2>
         <p className="text-meta text-ink-secondary">
-          Dinos cuántas filas y asientos tiene y cómo agruparlas en secciones. Después puedes retocar la pizarra y
-          ponerle precio a cada sección.
+          {objetivo
+            ? `Tu evento tiene un aforo de ${objetivo.aforo} butacas y estas categorías. Ajusta cuántas butacas tiene cada una con + y −: el total debe ser ${objetivo.aforo}.`
+            : "Reparte las butacas entre las secciones y elige cuántos asientos van por fila. Después puedes retocar la pizarra."}
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Campo
-          id="generador-aforo"
-          etiqueta="Aforo (opcional)"
-          inputMode="numeric"
-          value={aforo}
-          onChange={(e) => setAforo(e.target.value)}
-          className="sm:flex-1"
-        />
-        <Boton type="button" variante="secundario" onClick={sugerir}>
-          Sugerir filas y secciones
-        </Boton>
-      </div>
-
       <div className="grid grid-cols-2 gap-3">
+        {objetivo ? (
+          <div className="flex flex-col gap-2">
+            <span className="text-meta text-ink-primary">Aforo del evento</span>
+            <span className="flex h-12 items-center text-title">{objetivo.aforo}</span>
+          </div>
+        ) : (
+          <Campo
+            id="generador-aforo"
+            etiqueta="Aforo (butacas)"
+            inputMode="numeric"
+            value={aforoLibre}
+            onChange={(e) => setAforoLibre(e.target.value)}
+          />
+        )}
         <Campo
-          id="generador-filas"
-          etiqueta="Filas"
-          inputMode="numeric"
-          value={filas}
-          onChange={(e) => setFilas(e.target.value)}
-        />
-        <Campo
-          id="generador-asientos"
+          id="generador-por-fila"
           etiqueta="Asientos por fila"
           inputMode="numeric"
-          value={asientos}
-          onChange={(e) => setAsientos(e.target.value)}
+          value={porFila}
+          onChange={(e) => setPorFila(e.target.value)}
         />
       </div>
 
@@ -126,55 +138,85 @@ export function GeneradorCine({ haySecciones, alGenerar }: GeneradorCineProps) {
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-body">Secciones (de adelante hacia atrás)</h3>
+          <Boton type="button" variante="secundario" onClick={repartir}>
+            Repartir automáticamente
+          </Boton>
+        </div>
+        {secciones.map((s, i) => {
+          const n = Number(s.asientos) || 0;
+          const filas = Number.isFinite(nPorFila) && nPorFila > 0 ? filasDeSeccion(n, nPorFila) : 0;
+          return (
+            <div key={i} className="flex flex-col gap-1 border-b border-border-hairline pb-2">
+              <div className="flex items-end gap-2">
+                <Campo
+                  id={`generador-seccion-${i}`}
+                  etiqueta={`Sección ${i + 1}`}
+                  placeholder="Ej.: VIP"
+                  maxLength={60}
+                  value={s.nombre}
+                  onChange={(e) => setSecciones((a) => a.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
+                  className="min-w-0 flex-1"
+                />
+                {!objetivo && (
+                  <Boton
+                    type="button"
+                    variante="secundario"
+                    aria-label={`Quitar la sección ${i + 1}`}
+                    onClick={() => setSecciones((a) => a.filter((_, j) => j !== i))}
+                  >
+                    ✕
+                  </Boton>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Boton
+                  type="button"
+                  variante="secundario"
+                  aria-label={`Quitar una butaca a ${s.nombre || `la sección ${i + 1}`}`}
+                  disabled={n <= 1}
+                  onClick={() => cambiarAsientos(i, String(n - 1))}
+                >
+                  −
+                </Boton>
+                <input
+                  aria-label={`Butacas de ${s.nombre || `la sección ${i + 1}`}`}
+                  inputMode="numeric"
+                  value={s.asientos}
+                  onChange={(e) => cambiarAsientos(i, e.target.value)}
+                  className="h-12 w-20 rounded-sm border border-ink-on-inverse-secondary bg-surface-raised text-center text-body"
+                />
+                <Boton
+                  type="button"
+                  variante="secundario"
+                  aria-label={`Agregar una butaca a ${s.nombre || `la sección ${i + 1}`}`}
+                  onClick={() => cambiarAsientos(i, String(n + 1))}
+                >
+                  +
+                </Boton>
+                <span className="text-meta text-ink-secondary">
+                  butacas{filas > 0 ? ` · ${filas} ${filas === 1 ? "fila" : "filas"}` : ""}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {!objetivo && (
           <Boton
             type="button"
             variante="secundario"
-            disabled={!Number.isFinite(nFilas) || nFilas < 1}
-            onClick={() => setGrupos(aTexto(sugerirGrupos(nFilas)))}
+            className="self-start"
+            onClick={() => setSecciones((a) => [...a, { nombre: "", asientos: "" }])}
           >
-            Sugerir secciones
+            + Agregar sección
           </Boton>
-        </div>
-        {grupos.map((g, i) => (
-          <div key={i} className="flex items-end gap-2">
-            <Campo
-              id={`generador-seccion-${i}`}
-              etiqueta={`Sección ${i + 1}`}
-              placeholder="Ej.: VIP"
-              maxLength={60}
-              value={g.nombre}
-              onChange={(e) => setGrupos((a) => a.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
-              className="flex-1"
-            />
-            <Campo
-              id={`generador-seccion-${i}-filas`}
-              etiqueta="Filas"
-              inputMode="numeric"
-              value={g.filas}
-              onChange={(e) => setGrupos((a) => a.map((x, j) => (j === i ? { ...x, filas: e.target.value } : x)))}
-              className="w-20"
-            />
-            <Boton
-              type="button"
-              variante="secundario"
-              aria-label={`Quitar la sección ${i + 1}`}
-              onClick={() => setGrupos((a) => a.filter((_, j) => j !== i))}
-            >
-              ✕
-            </Boton>
-          </div>
-        ))}
-        <Boton
-          type="button"
-          variante="secundario"
-          className="self-start"
-          onClick={() => setGrupos((a) => [...a, { nombre: "", filas: "" }])}
-        >
-          + Agregar sección
-        </Boton>
-        {grupos.length > 0 && Number.isFinite(nFilas) && (
-          <p className="text-meta text-ink-secondary">
-            {sumaGrupos} de {nFilas} filas asignadas{total > 0 ? ` · ${total} butacas en total` : ""}.
+        )}
+        {Number.isFinite(aforo) && (
+          <p
+            className={clases("text-meta", diferencia === 0 ? "text-state-success" : "text-state-error")}
+            aria-live="polite"
+          >
+            {total} de {aforo} butacas
+            {diferencia > 0 ? ` · faltan ${diferencia}` : diferencia < 0 ? ` · sobran ${-diferencia}` : " · cuadra con el aforo"}
           </p>
         )}
       </div>
@@ -197,8 +239,4 @@ export function GeneradorCine({ haySecciones, alGenerar }: GeneradorCineProps) {
       </div>
     </Tarjeta>
   );
-}
-
-function aTexto(grupos: GrupoFilas[]) {
-  return grupos.map((g) => ({ nombre: g.nombre, filas: String(g.filas) }));
 }
