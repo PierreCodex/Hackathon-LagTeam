@@ -99,6 +99,15 @@ export function PizarraPrecios({ eventoId, mapa, precios, apiUrl, soloLectura: s
   async function guardar() {
     if (guardando || soloLectura) return;
     limpiarAvisos();
+    // Cada butaca numerada debe tener categoría: se avisa qué secciones faltan antes de enviar.
+    const sinPrecio = [...new Set(asientos.filter((x) => !x.categoria_id).map((x) => x.seccion))];
+    if (sinPrecio.length > 0) {
+      setError({
+        codigo: "ASIENTOS_SIN_PRECIO",
+        mensaje: `Falta asignar categoría a las butacas de: ${sinPrecio.join(", ")}. Usa «Precio de toda la sección» en cada una.`,
+      });
+      return;
+    }
     setGuardando(true);
     const token = await tokenDelNavegador();
     if (!token) {
