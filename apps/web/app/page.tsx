@@ -1,4 +1,4 @@
-import { Pantalla } from "@/components/layout";
+import { PantallaSesion } from "@/components/layout/pantalla-sesion";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { consultarSalud, resumir } from "../lib/salud";
 
@@ -10,7 +10,7 @@ export default async function Inicio() {
   const sano = api === "ok" && bd === "ok";
 
   return (
-    <Pantalla titulo="Eventos culturales de Piura">
+    <PantallaSesion titulo="Eventos culturales de Piura" destinoActivo="eventos" rutaActual="/">
       <Tarjeta como="section" aria-labelledby="titulo-salud" className="flex flex-col gap-3">
         <h2 id="titulo-salud" className="text-meta text-ink-secondary">
           Estado del sistema
@@ -29,6 +29,6 @@ export default async function Inicio() {
           {detalle}
         </Aviso>
       </Tarjeta>
-    </Pantalla>
+    </PantallaSesion>
   );
 }

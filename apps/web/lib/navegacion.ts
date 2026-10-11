@@ -3,6 +3,7 @@
  * Única fuente de los menús: la barra y cualquier otra navegación leen de aquí.
  *
  * Las rutas son las previstas; cada historia que construye una pantalla confirma la suya.
+ * El destino principal de organizador y administrador es su portada (`/organizador`, `/admin`, 1.8).
  */
 
 export const ROLES = ["publico", "organizador", "administrador", "puerta"] as const;
@@ -43,13 +44,13 @@ export const DESTINOS_POR_ROL: Record<Rol, readonly Destino[]> = {
     { id: "cuenta", etiqueta: "Cuenta", href: "/cuenta" },
   ],
   organizador: [
-    { id: "mis-eventos", etiqueta: "Mis eventos", href: "/organizador/eventos" },
+    { id: "mis-eventos", etiqueta: "Mis eventos", href: "/organizador" },
     { id: "marketing", etiqueta: "Marketing", href: "/organizador/marketing" },
     { id: "ventas", etiqueta: "Ventas", href: "/organizador/ventas" },
     { id: "cuenta", etiqueta: "Cuenta", href: "/cuenta" },
   ],
   administrador: [
-    { id: "aprobar", etiqueta: "Aprobar", href: "/admin/aprobar" },
+    { id: "aprobar", etiqueta: "Aprobar", href: "/admin" },
     { id: "weekend", etiqueta: "Weekend", href: "/admin/weekend" },
     { id: "tablero", etiqueta: "Tablero", href: "/admin/tablero" },
     { id: "cuenta", etiqueta: "Cuenta", href: "/cuenta" },

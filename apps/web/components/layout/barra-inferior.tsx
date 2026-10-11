@@ -4,7 +4,7 @@ import { DESTINOS_POR_ROL, NOMBRE_ROL, type IconoDestino, type Rol } from "@/lib
 import { IconoDestinoSvg } from "./icono-destino";
 
 export type BarraInferiorProps = {
-  /** Rol de quien navega. Llega como dato: la sesión real llega con la historia 1.8. */
+  /** Rol de quien navega. Lo decide la sesión (`PantallaSesion`, historia 1.8). */
   rol: Rol;
   /** Destino de la pantalla actual. */
   activo?: IconoDestino;
