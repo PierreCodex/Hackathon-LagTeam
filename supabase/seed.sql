@@ -123,4 +123,17 @@ select ('13700000-0000-4000-8000-' || lpad((e.numero * 10 + 1)::text, 12, '0')):
 from (values (3, 1500), (4, 0), (6, 500), (8, 1000)) as e(numero, precio)
 on conflict (id) do update set nombre = excluded.nombre, color = excluded.color,
   precio_centimos = excluded.precio_centimos, seccion_id = excluded.seccion_id;
+
+-- Rangos de precio (historia 2.4) de los eventos del teatro: cada sección entera con su categoría homónima.
+delete from public.eventos_precios_rango r
+where r.evento_id in (select ('13600000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid from unnest(array[1, 2, 5, 7]) n);
+insert into public.eventos_precios_rango (evento_id, categoria_id, seccion, fila, desde, hasta)
+select c.evento_id, c.id, s.nombre, f.nombre, min(a.numero), max(a.numero)
+from public.eventos_categorias_precio c
+join public.eventos_secciones s on s.sede_id = c.sede_id and s.nombre = c.nombre and s.tipo = 'numerada'
+join public.eventos_filas f on f.seccion_id = s.id
+join public.eventos_asientos a on a.fila_id = f.id
+where c.evento_id in (select ('13600000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid from unnest(array[1, 2, 5, 7]) n)
+  and c.sede_id = '13100000-0000-4000-8000-000000000001'::uuid
+group by c.evento_id, c.id, s.nombre, f.nombre;
 commit;
