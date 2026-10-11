@@ -29,6 +29,11 @@ export type OpcionesApi = {
   metodo?: string;
   /** Se envía como JSON. */
   cuerpo?: unknown;
+  /**
+   * Se envía como multipart (p. ej. el alta de evento con su foto). Sin `Content-Type`:
+   * lo pone `fetch` con el `boundary`. Si llega, `cuerpo` se ignora.
+   */
+  formulario?: FormData;
   /** Cabeceras adicionales (p. ej. Authorization cuando llegue la sesión, 1.8). */
   cabeceras?: Record<string, string>;
   /** Señal para cancelar desde la pantalla; se combina con el tiempo límite. */
@@ -72,11 +77,13 @@ export async function pedirApi<T>(
     fetchFn = fetch,
     tiempoLimiteMs = TIEMPO_LIMITE_API_MS,
     cuerpo,
+    formulario,
     cabeceras,
     signal,
     cache = "no-store",
   } = opciones;
-  const metodo = opciones.metodo ?? (cuerpo === undefined ? "GET" : "POST");
+  const conJson = formulario === undefined && cuerpo !== undefined;
+  const metodo = opciones.metodo ?? (formulario === undefined && cuerpo === undefined ? "GET" : "POST");
 
   if (!apiUrl) {
     return sinConexion();
@@ -90,10 +97,10 @@ export async function pedirApi<T>(
       cache,
       headers: {
         Accept: "application/json",
-        ...(cuerpo === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(conJson ? { "Content-Type": "application/json" } : {}),
         ...cabeceras,
       },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      body: formulario ?? (conJson ? JSON.stringify(cuerpo) : undefined),
       signal: signal ? AbortSignal.any([signal, tiempoLimite]) : tiempoLimite,
     });
   } catch {

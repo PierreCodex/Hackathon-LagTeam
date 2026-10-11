@@ -140,6 +140,26 @@ describe("pedirApi", () => {
     expect(init?.body).toBe(JSON.stringify({ titulo: "Nuevo" }));
     expect(init?.headers).toMatchObject({ "Content-Type": "application/json" });
   });
+
+  it("envía un FormData como multipart con POST, sin Content-Type propio", async () => {
+    const fetchFn = respuestaJson({ id: "e3", titulo: "Con foto" }, 201);
+    const formulario = new FormData();
+    formulario.append("datos", JSON.stringify({ titulo: "Con foto" }));
+    formulario.append("foto", new Blob(["x"], { type: "image/png" }), "foto.png");
+
+    const resultado = await pedirApi("eventos", EventoSchema, {
+      apiUrl: API,
+      fetchFn,
+      formulario,
+      cabeceras: { Authorization: "Bearer t" },
+    });
+
+    expect(resultado).toEqual({ ok: true, datos: { id: "e3", titulo: "Con foto" } });
+    const init = fetchFn.mock.calls[0]?.[1];
+    expect(init?.method).toBe("POST");
+    expect(init?.body).toBe(formulario);
+    expect(init?.headers).toEqual({ Accept: "application/json", Authorization: "Bearer t" });
+  });
 });
 
 describe("urlApi", () => {
