@@ -9,6 +9,7 @@ import {
   type SedeResumen,
 } from "@reto18/shared";
 import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
+import { BuscadorLugar } from "@/components/sede/buscador-lugar";
 import {
   AreaTexto,
   Aviso,
@@ -481,6 +482,19 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
           </>
         ) : (
           <>
+            <BuscadorLugar
+              clave={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+              nombreActual={estado.sedeNombre}
+              alElegir={(lugar) => {
+                setEstado((anterior) => ({
+                  ...anterior,
+                  sedeNombre: lugar.nombre,
+                  sedeDireccion: lugar.direccion || anterior.sedeDireccion,
+                  sedeDistrito: lugar.distrito || anterior.sedeDistrito,
+                }));
+                quitarError("sede-nombre", "sede-direccion", "sede-distrito");
+              }}
+            />
             <Campo
               id="sede-nombre"
               etiqueta="Nombre de la sede"
