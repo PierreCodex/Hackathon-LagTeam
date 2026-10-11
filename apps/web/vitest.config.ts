@@ -6,7 +6,7 @@ export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   resolve: { alias: { "@": fileURLToPath(new URL(".", import.meta.url)) } },
   test: {
-    include: ["lib/**/*.spec.ts", "components/**/*.spec.tsx"],
+    include: ["lib/**/*.spec.ts", "components/**/*.spec.tsx", "app/**/*.spec.{ts,tsx}"],
     environment: "node",
   },
 });

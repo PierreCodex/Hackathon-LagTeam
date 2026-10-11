@@ -46,6 +46,7 @@ import {
 } from "@/lib/alta-evento";
 import { CODIGO_SIN_CONEXION, pedirApi } from "@/lib/api";
 import { clases } from "@/lib/clases";
+import { rutaMarketingEvento } from "@/lib/pieza";
 import { rutaIngresar } from "@/lib/sesion";
 import { tokenDelNavegador } from "@/lib/supabase/navegador";
 
@@ -187,7 +188,8 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
   const [incierto, setIncierto] = useState(false);
   const [sinSesion, setSinSesion] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [creado, setCreado] = useState(false);
+  /** Id del evento creado: la pantalla de pendiente enlaza a su Marketing. */
+  const [creado, setCreado] = useState<string | null>(null);
   /** Id del elemento que recibe el foco tras el siguiente pintado. */
   const foco = useRef<string | null>(null);
 
@@ -297,7 +299,7 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
 
     if (resultado.ok) {
       escribirAlmacen(claveBorrador, null);
-      setCreado(true);
+      setCreado(resultado.datos.evento.id);
       foco.current = ID_TITULO_PENDIENTE;
       return;
     }
@@ -323,7 +325,7 @@ function FormularioPasos({ apiUrl, sedes, errorSedes, rutaActual, idUsuario }: F
         </h2>
         <p className="text-ink-secondary">El Club lo revisará y te avisaremos cuando esté publicado.</p>
         <p className="font-bold">Mientras tanto, prepara tu campaña</p>
-        <BotonEnlace href="/organizador/marketing" anchoCompleto>
+        <BotonEnlace href={rutaMarketingEvento(creado)} anchoCompleto>
           Marketing
         </BotonEnlace>
       </Tarjeta>
