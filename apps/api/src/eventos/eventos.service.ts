@@ -15,6 +15,8 @@ import {
   AltaEventoSchema,
   type CategoriaPrecio,
   CODIGOS_EVENTOS,
+  type CategoriaEvento,
+  type EstadoEvento,
   type Evento,
   type EventoCreado,
   type MapaSede,
@@ -47,6 +49,28 @@ export interface ArchivosAlta {
   foto?: ArchivoEntrada[];
   constancia?: ArchivoEntrada[];
 }
+
+/** Lo que `marketing` necesita de un evento para su pieza (AD-2: lo lee solo por aquí). */
+export interface EventoParaPieza {
+  id: string;
+  organizador_id: string;
+  estado: EstadoEvento;
+  titulo: string;
+  descripcion: string;
+  categoria: CategoriaEvento;
+  inicio: string;
+  distrito: string;
+  foto_url: string | null;
+  sede: { nombre: string; direccion: string };
+  /** Mínimo de sus categorías de pago, en céntimos (AD-10); `0` si todas son gratis; `null` si no tiene ninguna. */
+  precio_minimo_centimos: number | null;
+}
+
+const COLUMNAS_PIEZA =
+  "id, organizador_id, estado, titulo, descripcion, categoria, inicio, distrito, foto_url, " +
+  "sede:eventos_sedes(nombre, direccion), categorias:eventos_categorias_precio(precio_centimos)";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ErrorBd {
   code?: string;
@@ -245,6 +269,44 @@ export class EventosService {
     throw new InternalServerErrorException({ codigo: "ERROR_INTERNO", mensaje: `No se pudo ${accion}` });
   }
 
+  /**
+   * Evento con su sede (nombre y dirección) y el precio mínimo de sus categorías, para la pieza de
+   * marketing. `null` si no existe (o el id no es un UUID). No filtra por dueño ni estado: lo decide quien llama.
+   */
+  async datosParaPieza(eventoId: string): Promise<EventoParaPieza | null> {
+    if (!UUID.test(eventoId)) return null;
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select(COLUMNAS_PIEZA)
+      .eq("id", eventoId)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS))
+      .maybeSingle();
+    if (error) {
+      this.logger.warn(`No se pudo leer el evento ${eventoId}: ${error.message}`);
+      throw bdNoDisponible("No se pudo leer el evento. Inténtalo de nuevo.");
+    }
+    if (!data) return null;
+    const fila = data as unknown as Omit<EventoParaPieza, "sede" | "precio_minimo_centimos"> & {
+      sede: EventoParaPieza["sede"] | EventoParaPieza["sede"][] | null;
+      categorias: { precio_centimos: number }[] | null;
+    };
+    const sede = Array.isArray(fila.sede) ? fila.sede[0] : fila.sede;
+    const precios = (fila.categorias ?? []).map((c) => Number(c.precio_centimos));
+    return {
+      id: fila.id,
+      organizador_id: fila.organizador_id,
+      estado: fila.estado,
+      titulo: fila.titulo,
+      descripcion: fila.descripcion,
+      categoria: fila.categoria,
+      inicio: fila.inicio,
+      distrito: fila.distrito,
+      foto_url: fila.foto_url,
+      sede: { nombre: sede?.nombre ?? "", direccion: sede?.direccion ?? "" },
+      precio_minimo_centimos: precioMinimo(precios),
+    };
+  }
+
   private async leerCreado(id: string, datos: AltaEvento): Promise<EventoCreado> {
     const supabase = this.cliente();
     const senal = () => AbortSignal.timeout(TIEMPO_LIMITE_BD_MS);
@@ -314,6 +376,16 @@ export function conColores(categorias: AltaEvento["categorias"]): { nombre: stri
     }
     return { nombre: c.nombre, precio_centimos: c.precio_centimos, color };
   });
+}
+
+/**
+ * Precio "desde" de la pieza: el mínimo de las categorías de pago (> 0); `0` solo si todas valen 0
+ * (gratuito); `null` sin categorías. Una cortesía a 0 no convierte un evento de pago en «Entrada libre».
+ */
+export function precioMinimo(precios: number[]): number | null {
+  if (!precios.length) return null;
+  const dePago = precios.filter((p) => p > 0);
+  return dePago.length ? Math.min(...dePago) : 0;
 }
 
 /** Error cuyo resultado en la BD se desconoce: no se deben borrar los archivos. */
