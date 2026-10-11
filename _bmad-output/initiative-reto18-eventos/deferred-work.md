@@ -19,3 +19,11 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/epic-base-roles-eventos/story-api-registro-inicio-de-sesion-y-roles-plan.md`
   summary: Comprobar la historia 1.2 contra el Supabase real: aplicar la migración de identidad, registrar por la API, iniciar sesión con `signInWithPassword` y llamar a `GET /identidad/perfil`, y ejecutar `sembrar:admin` dos veces.
   evidence: Los criterios de aceptación 2 y 3 solo están probados con Supabase simulado (revisión quick, pasada 1). Se resuelve cuando la prueba real devuelva el rol y el WhatsApp en E.164 y deje un solo admin que puede iniciar sesión.
+
+- source_plan: `_bmad-output/initiative-reto18-eventos/change-layout-escritorio-estilo-joinnus/change-layout-escritorio-estilo-joinnus.md`
+  summary: "¿Olvidaste tu contraseña?" en la pantalla de acceso (Supabase `resetPasswordForEmail` y una pantalla para la contraseña nueva).
+  evidence: Joinnus lo tiene; no está en la spec y no sirve al flujo de la demo. El prototipo `mockups/escritorio.html` lo muestra tachado.
+
+- source_plan: `_bmad-output/initiative-reto18-eventos/change-layout-escritorio-estilo-joinnus/change-layout-escritorio-estilo-joinnus.md`
+  summary: Favoritos y fila "Lo más vendido" con ranking en la portada.
+  evidence: Requieren datos que la API del catálogo (1.6) no expone, como las ventas por evento. Se retoma si sobra tiempo tras el epic 4.

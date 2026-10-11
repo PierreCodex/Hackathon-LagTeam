@@ -20,10 +20,10 @@ title = "UI: compra, Mis entradas y escáner"
 description = "Entrega al público el checkout de zona general con pago simulado (tarjeta, Yape, Plin) y el WhatsApp del perfil prellenado, que envía con la orden el ?ref= con el que llegó el comprador (AD-8), 'Mis entradas' con el QR, y la pantalla de escáner de la puerta con la cámara del móvil en línea (CAP-5, CAP-6, CAP-7)."
 verify = "Desde un móvil se compra una entrada general con pago simulado, el QR aparece en 'Mis entradas', el escáner de otro móvil lo acepta y al segundo escaneo lo rechaza."
 covers = ["CAP-5", "CAP-6", "CAP-7"]
-after = [1, "1.8"]
+after = [1, "1.8", "1.12"]
 hitl = false
 risk = "medium"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 2
@@ -59,10 +59,10 @@ title = "UI: pizarra del mapa de la sede"
 description = "Entrega la pizarra visual del organizador: añadir y quitar secciones y filas, '+' al final de una fila, tocar un asiento para quitarlo, bloques separados por pasillos con numeración continua, y guardar con la API; una sede con eventos aprobados se ofrece duplicar (CAP-15). El epic 5 rellena esta pizarra con la propuesta de la IA."
 verify = "Desde la pizarra vacía se reproduce uno de los croquis de ejemplo con sus secciones, filas, bloques y numeración, y se guarda."
 covers = ["CAP-15"]
-after = [3, "1.7"]
+after = [3, "1.12"]
 hitl = false
 risk = "medium"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 references = ["spec-reto18-plataforma-eventos/mapa-asientos.md"]
 
 [[entry]]
@@ -87,7 +87,7 @@ covers = ["CAP-15"]
 after = [4, 9]
 hitl = false
 risk = "medium"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 5
@@ -120,10 +120,10 @@ title = "UI: elegir butaca en el mapa"
 description = "Entrega al público el mapa del evento con colores de precio y butacas vendidas en gris, actualizado con Supabase Realtime y reutilizando el dibujo del mapa de la pizarra (9, 10), para elegir butaca y comprarla con el checkout de la historia 8; 'Mis entradas' muestra sección, fila y asiento (CAP-15)."
 verify = "El jurado elige y compra una butaca desde su móvil, la ve en su QR, y en otro móvil abierto la butaca pasa a gris sin recargar."
 covers = ["CAP-15", "CAP-5"]
-after = [6, 8, 10]
+after = [6, 8, 10, "1.12"]
 hitl = false
 risk = "medium"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 7
@@ -144,7 +144,7 @@ title = "UI: puerta sin conexión"
 description = "Añade a la pantalla de escáner el manifiesto en IndexedDB, la validación local comprobando que el código está en la lista del manifiesto y no se ha usado en ese móvil, la cola de sincronización que se vacía al reconectar y el aviso de conflicto (CAP-7, AD-7)."
 verify = "En modo avión un QR válido se acepta y al reconectar queda sincronizado; el mismo QR usado en dos móviles sin conexión deja el segundo como conflicto registrado."
 covers = ["CAP-7"]
-after = [7, 8]
+after = [7, 8, "1.12"]
 hitl = false
 risk = "high"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
