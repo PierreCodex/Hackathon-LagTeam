@@ -2,6 +2,7 @@ import { CODIGOS_EVENTOS, type ErrorApi } from "@reto18/shared";
 import { describe, expect, it, vi } from "vitest";
 import {
   abrirConstancia,
+  accionButacas,
   aplicarErrorAccion,
   type PestanaConstancia,
   type TarjetaConError,
@@ -54,6 +55,19 @@ describe("textoEstadoOrganizador", () => {
     [{ estado: "aprobado", publicado: true }, "Aprobado · Publicado"],
   ] as const)("%o → %s", (evento, esperado) => {
     expect(textoEstadoOrganizador(evento)).toBe(esperado);
+  });
+});
+
+describe("accionButacas", () => {
+  const sede_id = "13100000-0000-4000-8000-000000000001";
+  const href = `/organizador/sedes/${sede_id}/mapa`;
+  it.each([
+    [{ estado: "pendiente", publicado: false, sede_id }, { texto: "Armar butacas", href }],
+    [{ estado: "aprobado", publicado: false, sede_id }, { texto: "Armar butacas", href }],
+    [{ estado: "aprobado", publicado: true, sede_id }, { texto: "Ver butacas", href }],
+    [{ estado: "rechazado", publicado: false, sede_id }, null],
+  ] as const)("%o → %o", (evento, esperado) => {
+    expect(accionButacas(evento)).toEqual(esperado);
   });
 });
 
