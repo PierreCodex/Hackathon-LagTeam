@@ -54,11 +54,13 @@ export function textoEstadoOrganizador(evento: Pick<EventoRevision, "estado" | "
  * Rechazado: sin botón.
  */
 export function accionButacas(
-  evento: Pick<EventoRevision, "estado" | "publicado" | "sede_id">,
+  evento: Pick<EventoRevision, "id" | "estado" | "publicado" | "sede_id">,
 ): { texto: string; href: string } | null {
   if (evento.estado === "rechazado") return null;
   const href = `/organizador/sedes/${evento.sede_id}/mapa`;
-  return { texto: evento.publicado ? "Ver butacas" : "Armar butacas", href };
+  if (evento.publicado) return { texto: "Ver butacas", href };
+  // Sin publicar: el croquis se arma desde el evento, para cuadrar su aforo y sus categorías.
+  return { texto: "Armar butacas", href: `${href}?evento=${evento.id}` };
 }
 
 /** Quita de la lista el evento que otra sesión ya decidió. */

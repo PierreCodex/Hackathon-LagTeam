@@ -3,9 +3,10 @@ import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { clases } from "@/lib/clases";
 import { fechaPieza } from "@/lib/pieza";
 import { accionButacas, ESTADO_EVENTO, textoEstadoOrganizador } from "@/lib/revision";
+import { BotonPublicar } from "./boton-publicar";
 
 /** Un evento con su estado (símbolo y texto), el botón a sus butacas y, si se rechazó, el motivo exacto. */
-export function FilaMisEventos({ evento }: { evento: EventoRevision }) {
+export function FilaMisEventos({ evento, apiUrl = "" }: { evento: EventoRevision; apiUrl?: string }) {
   const estado = ESTADO_EVENTO[evento.estado];
   const butacas = accionButacas(evento);
   return (
@@ -25,11 +26,19 @@ export function FilaMisEventos({ evento }: { evento: EventoRevision }) {
             <p className="[overflow-wrap:anywhere]">{evento.motivo_rechazo}</p>
           </div>
         )}
-        {butacas && (
-          <BotonEnlace href={butacas.href} variante="secundario" className="mt-1 self-start max-sm:w-full">
-            {butacas.texto}
-          </BotonEnlace>
-        )}
+        <div className="mt-1 flex flex-wrap gap-2">
+          {butacas && (
+            <BotonEnlace href={butacas.href} variante="secundario" className="max-sm:w-full">
+              {butacas.texto}
+            </BotonEnlace>
+          )}
+          {evento.estado === "aprobado" && !evento.publicado && (
+            <BotonEnlace href={`/organizador/eventos/${evento.id}/precios`} variante="secundario" className="max-sm:w-full">
+              Precios
+            </BotonEnlace>
+          )}
+        </div>
+        {evento.estado === "aprobado" && !evento.publicado && <BotonPublicar eventoId={evento.id} apiUrl={apiUrl} />}
       </Tarjeta>
     </li>
   );
@@ -41,10 +50,12 @@ export type ContenidoMisEventosProps = {
   error?: ErrorApi;
   /** Ruta de la página, para "Reintentar". */
   rutaActual: string;
+  /** Base de la API (`API_URL`) para "Publicar" desde el navegador. */
+  apiUrl?: string;
 };
 
 /** Mis eventos (1.10): "Nuevo evento" y, debajo, el error, el vacío o la lista. Sin datos propios. */
-export function ContenidoMisEventos({ eventos, error, rutaActual }: ContenidoMisEventosProps) {
+export function ContenidoMisEventos({ eventos, error, rutaActual, apiUrl }: ContenidoMisEventosProps) {
   return (
     <>
       <BotonEnlace href="/organizador/eventos/nuevo" className="self-start max-sm:w-full">
@@ -72,7 +83,7 @@ export function ContenidoMisEventos({ eventos, error, rutaActual }: ContenidoMis
       ) : (
         <ul className="flex flex-col gap-3">
           {eventos.map((evento) => (
-            <FilaMisEventos key={evento.id} evento={evento} />
+            <FilaMisEventos key={evento.id} evento={evento} apiUrl={apiUrl} />
           ))}
         </ul>
       )}

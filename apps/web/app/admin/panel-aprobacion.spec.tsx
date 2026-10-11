@@ -229,7 +229,7 @@ describe("Mis eventos (1.10)", () => {
   it("aprobado sin publicar → Falta armar el mapa y publicar, con Armar butacas hacia la pizarra de su sede", () => {
     const html = pintarFila({ ...PENDIENTE, estado: "aprobado" });
     expect(html).toContain("Aprobado · Falta armar el mapa y publicar");
-    expect(html).toMatch(new RegExp(`<a [^>]*href="/organizador/sedes/${PENDIENTE.sede_id}/mapa"[^>]*>Armar butacas</a>`));
+    expect(html).toMatch(new RegExp(`<a [^>]*href="/organizador/sedes/${PENDIENTE.sede_id}/mapa\\?evento=${PENDIENTE.id}"[^>]*>Armar butacas</a>`));
   });
 
   it("rechazado → sin botón de butacas", () => {

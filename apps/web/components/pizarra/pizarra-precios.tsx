@@ -13,6 +13,7 @@ import {
   estadoDeErrorGuardadoPrecios,
   pintarAsientos,
   rangosDeSeccion,
+  rangosPorNombreDeSeccion,
   resolverCategoriaDeAsiento,
   SELECCION_NINGUNA,
   seleccionarAsiento,
@@ -44,8 +45,19 @@ function sinId(rango: PreciosEvento["rangos"][number]): RangoPrecioEntrada {
  * real. Guarda con `PUT /eventos/:id/precios`, que reemplaza todos los rangos del evento.
  */
 export function PizarraPrecios({ eventoId, mapa, precios, apiUrl, soloLectura: soloLecturaInicial }: PizarraPreciosProps) {
-  const [asientos, setAsientos] = useState(precios.asientos);
-  const [rangos, setRangos] = useState(() => precios.rangos.map(sinId));
+  // Sin rangos guardados y con el evento sin publicar: cada sección con nombre de categoría ya viene pintada.
+  const [inicial] = useState(() => {
+    const guardados = precios.rangos.map(sinId);
+    const numeradas = mapa.secciones.filter((x) => x.tipo === "numerada");
+    const sugeridos = guardados.length === 0 && !soloLecturaInicial ? rangosPorNombreDeSeccion(numeradas, precios.categorias) : [];
+    return {
+      rangos: sugeridos.length > 0 ? sugeridos : guardados,
+      asientos: sugeridos.reduce(pintarAsientos, precios.asientos),
+      sugerido: sugeridos.length > 0,
+    };
+  });
+  const [asientos, setAsientos] = useState(inicial.asientos);
+  const [rangos, setRangos] = useState(inicial.rangos);
   const [seleccion, setSeleccion] = useState<SeleccionRango>(SELECCION_NINGUNA);
   const [soloLectura, setSoloLectura] = useState(soloLecturaInicial);
   const [guardando, setGuardando] = useState(false);
@@ -125,6 +137,12 @@ export function PizarraPrecios({ eventoId, mapa, precios, apiUrl, soloLectura: s
       {soloLectura && (
         <Aviso tipo="info" titulo="Este evento ya está publicado.">
           La pizarra de precios es de solo lectura: el mapa de butacas de su sede ya no cambia.
+        </Aviso>
+      )}
+
+      {inicial.sugerido && !guardadoOk && !error && (
+        <Aviso tipo="info" titulo="Pintamos cada sección con su categoría.">
+          Revisa los precios y pulsa Guardar. Después vuelve a Mis eventos y publica el evento.
         </Aviso>
       )}
 
