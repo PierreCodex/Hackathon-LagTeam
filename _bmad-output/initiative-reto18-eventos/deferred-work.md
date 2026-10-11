@@ -27,3 +27,21 @@
 - source_plan: `_bmad-output/initiative-reto18-eventos/change-layout-escritorio-estilo-joinnus/change-layout-escritorio-estilo-joinnus.md`
   summary: Favoritos y fila "Lo más vendido" con ranking en la portada.
   evidence: Requieren datos que la API del catálogo (1.6) no expone, como las ventas por evento. Se retoma si sobra tiempo tras el epic 4.
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Evitar que `campana.resumen` del modelo contradiga `presupuesto_total_soles` (historia 3.1; el rango de 30 a 150 soles ya se valida en `completar`).
+  evidence: Sin verificar (severidad estimada media). `completar` recalcula el total pero deja el resumen libre del modelo. Se resuelve generando piezas con el modelo de Ollama real y comparando el resumen con el reparto.
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Proteger Ollama: limitar generaciones por organizador o evento y las llamadas concurrentes, y enviar una credencial opcional (`OLLAMA_TOKEN` o Cloudflare Access) al túnel.
+  evidence: Revisión completa de la 3.1: el POST no tiene límite y cada llamada ocupa hasta 30 s del único Ollama; el túnel queda público sin autenticación.
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Endurecer la entrada y salida de la IA: delimitar título y descripción en el prompt (inyección), recortar textos largos en vez de descartar la respuesta, e incluir el cuerpo del error HTTP de Ollama en el log.
+  evidence: Revisión completa de la 3.1. Depende de cómo se comporte el modelo real con `format` (pattern y maxLength); probar con el modelo de Jean Pierre.
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Robustez de `marketing`: validar los datos de la pieza antes de llamar a la IA e insertar (hoy un fallo de `PiezaSchema.parse` da 500 con la fila ya guardada), sacar `EntradaTextosYCampanaSchema.parse` del camino que lanza, y releer el estado del evento antes del insert.
+  evidence: Revisión completa de la 3.1: casos poco frecuentes (foto_url relativa, sede vacía, evento rechazado durante la llamada a la IA).
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Calendario de la campaña: descartar publicaciones de hoy con la hora pasada y las del día del evento posteriores a su inicio; ajustar `horaMismoDia` para eventos antes de las 10:00.
+  evidence: Revisión de la 3.1: casos poco frecuentes; la generación de eventos ya pasados queda bloqueada con 409 EVENTO_FINALIZADO.
+- source_plan: `_bmad-output/initiative-reto18-eventos/epic-marketing-ia/story-api-modulo-ia-y-primera-campana-plan.md`
+  summary: Limpieza y pruebas de la 3.1: `organizador_id` de `marketing_piezas` sin `on delete` ni vínculo con el dueño del evento; UUID, tiempo límite y `bdNoDisponible` duplicados entre módulos; pruebas que verifiquen que el GET lee los datos actuales del evento y las líneas de días del prompt; márgenes de tiempo de las pruebas.
+  evidence: Revisión completa de la 3.1 (verification-gap y adversarial); sin impacto en la demo.
