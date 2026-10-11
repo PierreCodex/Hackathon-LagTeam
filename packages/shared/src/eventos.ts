@@ -75,3 +75,85 @@ export const CategoriaPrecioSchema = z.object({
   precio_centimos: z.number().int().min(0).max(2147483647), seccion_id: z.uuid().nullable(),
 });
 export type CategoriaPrecio = z.infer<typeof CategoriaPrecioSchema>;
+
+/** Tamaño máximo de la foto y de la constancia de APDAYC (5 MB). */
+export const TAMANO_MAXIMO_ARCHIVO_EVENTO = 5 * 1024 * 1024;
+/** Tipos que se aceptan para la foto del evento. */
+export const TIPOS_FOTO_EVENTO = ["image/jpeg", "image/png", "image/webp"] as const;
+/** Tipos que se aceptan para la constancia de APDAYC. */
+export const TIPOS_CONSTANCIA_EVENTO = ["application/pdf", ...TIPOS_FOTO_EVENTO] as const;
+
+const textoHasta = (maximo: number) => z.string().trim().min(1).max(maximo);
+
+/** Sede del alta: una existente (`sede_id`) o una nueva de zona general (AD-4). */
+export const SedeAltaSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("existente"), sede_id: z.uuid() }),
+  z.object({
+    tipo: z.literal("nueva"),
+    nombre: textoHasta(150),
+    direccion: textoHasta(200),
+    distrito: textoHasta(100),
+    capacidad: enteroPositivo,
+  }),
+]);
+export type SedeAlta = z.infer<typeof SedeAltaSchema>;
+
+/** Categoría de precio del alta. `color` es opcional: la API asigna uno de la paleta. */
+export const CategoriaAltaSchema = z.object({
+  nombre: textoHasta(60),
+  precio_centimos: z.number().int().min(0).max(2147483647),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+});
+export type CategoriaAlta = z.infer<typeof CategoriaAltaSchema>;
+
+/**
+ * Campo `datos` (JSON) de `POST /api/v1/eventos`, multipart junto a `foto` y `constancia`.
+ * Precios en céntimos de PEN con IGV incluido (AD-10). El organizador sale del token.
+ */
+export const AltaEventoSchema = z.object({
+  titulo: textoHasta(150),
+  categoria: CategoriaEventoSchema,
+  descripcion: z.string().trim().min(20).max(600),
+  inicio: z.iso.datetime({ offset: true }).refine((v) => new Date(v).getTime() > Date.now(), {
+    message: "La fecha de inicio debe ser futura",
+  }),
+  aforo: enteroPositivo,
+  hay_musica: z.boolean(),
+  sede: SedeAltaSchema,
+  categorias: z.array(CategoriaAltaSchema).min(1).max(6).superRefine((categorias, ctx) => {
+    const nombres = new Set<string>();
+    categorias.forEach((categoria, i) => {
+      const clave = categoria.nombre.toLocaleLowerCase("es");
+      if (nombres.has(clave)) ctx.addIssue({ code: "custom", message: "Nombre de categoría repetido", path: [i, "nombre"] });
+      nombres.add(clave);
+    });
+  }),
+});
+export type AltaEventoEntrada = z.input<typeof AltaEventoSchema>;
+export type AltaEvento = z.output<typeof AltaEventoSchema>;
+
+/** Sede de `GET /api/v1/eventos/sedes`. `capacidad`: asientos numerados más zonas generales. */
+export const SedeResumenSchema = z.object({
+  id: z.uuid(), nombre: texto, direccion: texto, distrito: texto, capacidad: z.number().int().min(0),
+});
+export type SedeResumen = z.infer<typeof SedeResumenSchema>;
+
+/** Respuesta 201 de `POST /api/v1/eventos`. */
+export const EventoCreadoSchema = z.object({
+  evento: EventoSchema,
+  categorias: z.array(CategoriaPrecioSchema),
+});
+export type EventoCreado = z.infer<typeof EventoCreadoSchema>;
+
+/** Códigos de error del módulo `eventos`. */
+export const CODIGOS_EVENTOS = {
+  DATOS_INVALIDOS: "DATOS_INVALIDOS",
+  ARCHIVO_NO_VALIDO: "ARCHIVO_NO_VALIDO",
+  MUSICA_SIN_CONSTANCIA: "MUSICA_SIN_CONSTANCIA",
+  SEDE_NO_EXISTE: "SEDE_NO_EXISTE",
+  AFORO_SUPERA_SEDE: "AFORO_SUPERA_SEDE",
+  STORAGE_NO_DISPONIBLE: "STORAGE_NO_DISPONIBLE",
+  /** Mismo valor que `CODIGO_BD_NO_DISPONIBLE`. */
+  BD_NO_DISPONIBLE: "BD_NO_DISPONIBLE",
+} as const;
+export type CodigoEventos = (typeof CODIGOS_EVENTOS)[keyof typeof CODIGOS_EVENTOS];
