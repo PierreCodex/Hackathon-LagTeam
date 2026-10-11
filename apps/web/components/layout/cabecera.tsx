@@ -11,6 +11,8 @@ export type CabeceraProps = {
   rol?: Rol;
   /** Destino de la pantalla actual: se marca en blanco con subrayado rojo de 3 px. */
   destinoActivo?: IconoDestino;
+  /** `false` para el visitante anónimo: sin "Mis entradas". */
+  conSesion?: boolean;
 };
 
 /** Contenedor de 1280 px con márgenes de 16 px (móvil) y 32 px (escritorio). */
@@ -20,8 +22,8 @@ export const CONTENEDOR = "mx-auto w-full max-w-pagina px-margin-mobile lg:px-ma
  * Cabecera carbón de 68 px (DESIGN.md · Cabecera). No es fija: se desplaza con el contenido.
  * Móvil: logotipo y acción. Escritorio (`lg`): además, el menú del rol en texto.
  */
-export function Cabecera({ accion, rol, destinoActivo }: CabeceraProps) {
-  const destinos = rol ? destinosCabecera(rol) : [];
+export function Cabecera({ accion, rol, destinoActivo, conSesion = true }: CabeceraProps) {
+  const destinos = rol ? destinosCabecera(rol, conSesion) : [];
   return (
     <header className="superficie-inversa bg-surface-inverse text-ink-on-inverse">
       <div className={clases(CONTENEDOR, "flex h-[68px] items-center gap-8")}>

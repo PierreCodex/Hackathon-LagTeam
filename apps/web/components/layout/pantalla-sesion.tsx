@@ -108,6 +108,7 @@ export async function PantallaSesion({
       titulo={titulo}
       rol={rolBarraDeSesion(sesion)}
       destinoActivo={destinoActivo}
+      conSesion={sesion.tipo !== "anonima"}
       ancho={ancho}
       sinAccionesCabecera={sinAccionesCabecera}
       accionCabecera={<AccionCabeceraSesion sesion={sesion} activa={destinoActivo === "cuenta"} />}

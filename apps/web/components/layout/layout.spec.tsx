@@ -11,16 +11,26 @@ function menuCabecera(html: string) {
 }
 
 describe("layout de escritorio (1.12)", () => {
-  it("anónimo: menú de público, Registrarse solo en escritorio, Ingresar, pie y barra solo en móvil", () => {
+  it("anónimo: menú de público sin Mis entradas ni Cuenta, Registrarse solo en escritorio, Ingresar, pie y barra solo en móvil", () => {
     const html = renderToStaticMarkup(
-      <Pantalla rol="publico" destinoActivo="eventos" accionCabecera={<AccionCabeceraSesion sesion={{ tipo: "anonima" }} />}>
+      <Pantalla
+        rol="publico"
+        conSesion={false}
+        destinoActivo="eventos"
+        accionCabecera={<AccionCabeceraSesion sesion={{ tipo: "anonima" }} />}
+      >
         <p>contenido</p>
       </Pantalla>,
     );
     const menu = menuCabecera(html);
     expect(menu).toContain("Eventos");
-    expect(menu).toContain("Mis entradas");
+    expect(menu).toContain("Calendario");
+    expect(menu).not.toContain("Mis entradas");
     expect(menu).not.toContain("Cuenta");
+    const barra = html.match(/<nav aria-label="Navegación de público"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    expect(barra).toContain("Calendario");
+    expect(barra).not.toContain("Mis entradas");
+    expect(barra).not.toContain("Cuenta");
     expect(html).toMatch(/max-lg:hidden" href="\/registro">Registrarse</);
     expect(html).toContain('href="/ingresar"');
     expect(html).toContain("<footer");

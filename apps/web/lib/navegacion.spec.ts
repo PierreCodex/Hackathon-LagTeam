@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DESTINOS_POR_ROL, ROLES, destinosCabecera } from "./navegacion";
+import { DESTINOS_POR_ROL, ROLES, destinosBarra, destinosCabecera } from "./navegacion";
 
 describe("menú de la cabecera", () => {
   it.each(ROLES)("quita Cuenta y conserva el orden de la barra (%s)", (rol) => {
@@ -24,6 +24,12 @@ describe("menú de la cabecera", () => {
       "Calendario",
       "Mis entradas",
     ]);
+  });
+
+  it("sin sesión, el público no ve Mis entradas ni Cuenta", () => {
+    expect(destinosCabecera("publico", false).map((d) => d.etiqueta)).toEqual(["Eventos", "Calendario"]);
+    expect(destinosBarra("publico", false).map((d) => d.etiqueta)).toEqual(["Eventos", "Calendario"]);
+    expect(destinosBarra("publico").map((d) => d.etiqueta)).toEqual(["Eventos", "Calendario", "Mis entradas", "Cuenta"]);
   });
 
   it("no cambia la barra del rol", () => {

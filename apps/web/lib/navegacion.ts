@@ -61,10 +61,22 @@ export const DESTINOS_POR_ROL: Record<Rol, readonly Destino[]> = {
   ],
 };
 
+/** Destinos que solo tienen sentido con sesión: un visitante anónimo no tiene entradas ni cuenta. */
+export const DESTINOS_CON_SESION: readonly IconoDestino[] = ["entradas", "cuenta"];
+
+/**
+ * Destinos de la barra inferior. Sin sesión (visitante anónimo, que navega como `publico`) se quitan
+ * los de `DESTINOS_CON_SESION`: "Ingresar" y "Registrarse" ya están en la cabecera.
+ */
+export function destinosBarra(rol: Rol, conSesion = true): readonly Destino[] {
+  const destinos = DESTINOS_POR_ROL[rol];
+  return conSesion ? destinos : destinos.filter((destino) => !DESTINOS_CON_SESION.includes(destino.id));
+}
+
 /**
  * Destinos del menú de la cabecera de escritorio (≥ 1024 px): los de la barra sin "Cuenta",
  * porque la cuenta va a la derecha de la cabecera. Mismo orden que la barra.
  */
-export function destinosCabecera(rol: Rol): readonly Destino[] {
-  return DESTINOS_POR_ROL[rol].filter((destino) => destino.id !== "cuenta");
+export function destinosCabecera(rol: Rol, conSesion = true): readonly Destino[] {
+  return destinosBarra(rol, conSesion).filter((destino) => destino.id !== "cuenta");
 }
