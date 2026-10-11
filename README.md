@@ -67,6 +67,30 @@ pnpm db:stop             # apaga la BD de prueba cuando acabes
 Si la BD no está levantada, `pnpm test:int` falla al inicio, sin ejecutar ninguna prueba, y dice
 que ejecutes `pnpm db:start`. Tras añadir una migración nueva, aplícala con `pnpm exec supabase db reset`.
 
+### Datos de demo de eventos
+
+`supabase/seed.sql` se carga automáticamente al iniciar una BD nueva o ejecutar `pnpm exec supabase db reset`
+(este último borra los datos locales). Incluye una sede ficticia de 643 butacas: Platea baja (190),
+Platea media (204) y Mezanine (249), otra sede en Castilla con zona general de 120 personas, y ocho
+eventos de octubre–noviembre de 2026. El 16, 17 y 18 de octubre tienen eventos aprobados para probar
+Weekend. Hay precios en céntimos de PEN con IGV, una muestra de arte gratuita y eventos pendiente y rechazado.
+
+En la nube, aplica primero todas las migraciones de `supabase/migrations` en orden, incluida
+`20261010020000_eventos.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
+`supabase/seed.sql` y ejecútalo. Puedes ejecutarlo otra vez: conserva los identificadores de la demo
+y no duplica filas. No requiere variables ni herramientas de la CLI dentro del SQL Editor.
+
+La semilla crea únicamente una cuenta de referencia en `auth.users`, con UUID fijo y correo
+`organizador.eventos@example.invalid`, sin contraseña utilizable ni perfil de identidad.
+Sirve como propietario de los eventos de muestra; no es una cuenta para iniciar sesión.
+Las categorías de las zonas numeradas llevan el nombre de su sección, pero la asignación de precios
+a rangos de butacas corresponde a la historia 2.4. No se siembran inventario ni ventas.
+
+Cada categoría de precio incluye el `sede_id` de su evento. Si tiene `seccion_id`, esa sección
+debe ser general y pertenecer a la misma sede; las categorías numeradas usan `seccion_id = null`.
+Las claves foráneas compuestas también rechazan cambiar la sede del evento o de una sección
+mientras ese cambio deje categorías con referencias incompatibles.
+
 ### Escribir una prueba de integración
 
 Crea `apps/api/test/integracion/<algo>.int.spec.ts` y usa las ayudas de `test/integracion/ayudas/`:
@@ -108,7 +132,7 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`.
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
 4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 
