@@ -65,6 +65,8 @@ export interface OrdenParaNegocio {
   id: string;
   usuario_id: string;
   evento_id: string;
+  categoria_id: string;
+  ref: string | null;
   cantidad: number;
   total_centimos: number;
   comision_modelo: ModeloComision;
@@ -302,14 +304,17 @@ export class VentasService {
     return { modelo: fila.modelo, valor: Number(fila.valor) };
   }
 
-  /** Órdenes pagadas con su comisión congelada, para los paneles de `negocio`. */
-  async ordenesPagadas(): Promise<OrdenParaNegocio[]> {
-    const { data, error } = await this.cliente()
+  /** Órdenes pagadas con su comisión congelada, para los paneles de `negocio`. Con `eventoIds`, solo de esos eventos. */
+  async ordenesPagadas(eventoIds?: string[]): Promise<OrdenParaNegocio[]> {
+    if (eventoIds && eventoIds.length === 0) return [];
+    let consulta = this.cliente()
       .from("ventas_ordenes")
-      .select("id, usuario_id, evento_id, cantidad, total_centimos, comision_modelo, comision_valor, comision_importe, pagada_en")
-      .eq("estado", "pagada")
-      .order("pagada_en")
-      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+      .select(
+        "id, usuario_id, evento_id, categoria_id, ref, cantidad, total_centimos, comision_modelo, comision_valor, comision_importe, pagada_en",
+      )
+      .eq("estado", "pagada");
+    if (eventoIds) consulta = consulta.in("evento_id", eventoIds);
+    const { data, error } = await consulta.order("pagada_en").abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
     if (error) {
       this.logger.warn(`No se pudieron leer las órdenes pagadas: ${error.message}`);
       throw bdNoDisponible("No se pudieron leer las ventas. Inténtalo de nuevo.");
@@ -323,13 +328,12 @@ export class VentasService {
     }));
   }
 
-  /** Entradas usadas en la puerta por evento (asistencia). */
-  async asistenciaPorEvento(): Promise<Map<string, number>> {
-    const { data, error } = await this.cliente()
-      .from("ventas_entradas")
-      .select("evento_id")
-      .not("usada_en", "is", null)
-      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+  /** Entradas usadas en la puerta por evento (asistencia). Con `eventoIds`, solo de esos eventos. */
+  async asistenciaPorEvento(eventoIds?: string[]): Promise<Map<string, number>> {
+    if (eventoIds && eventoIds.length === 0) return new Map();
+    let consulta = this.cliente().from("ventas_entradas").select("evento_id").not("usada_en", "is", null);
+    if (eventoIds) consulta = consulta.in("evento_id", eventoIds);
+    const { data, error } = await consulta.abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
     if (error) {
       this.logger.warn(`No se pudo leer la asistencia: ${error.message}`);
       throw bdNoDisponible("No se pudo leer la asistencia. Inténtalo de nuevo.");

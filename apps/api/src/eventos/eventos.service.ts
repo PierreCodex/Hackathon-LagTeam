@@ -618,6 +618,23 @@ export class EventosService {
     return ((data ?? []) as EventoParaNegocio[]).map((e) => ({ ...e, aforo: Number(e.aforo) }));
   }
 
+  /** Eventos aprobados de un organizador con los nombres de sus categorías de precio (panel de ventas, epic 4). */
+  async eventosDelOrganizadorParaNegocio(organizadorId: string): Promise<(EventoParaNegocio & { categorias: { id: string; nombre: string }[] })[]> {
+    const { data, error } = await this.cliente()
+      .from("eventos_eventos")
+      .select("id, organizador_id, titulo, categoria, distrito, inicio, aforo, categorias:eventos_categorias_precio(id, nombre)")
+      .eq("organizador_id", organizadorId)
+      .eq("estado", "aprobado")
+      .order("inicio", { ascending: false })
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer los eventos de ${organizadorId} para sus ventas: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer tus eventos. Inténtalo de nuevo.");
+    }
+    type Fila = EventoParaNegocio & { categorias: { id: string; nombre: string }[] | null };
+    return ((data ?? []) as Fila[]).map((e) => ({ ...e, aforo: Number(e.aforo), categorias: e.categorias ?? [] }));
+  }
+
   private async leerCreado(id: string, datos: AltaEvento): Promise<EventoCreado> {
     const supabase = this.cliente();
     const senal = () => AbortSignal.timeout(TIEMPO_LIMITE_BD_MS);

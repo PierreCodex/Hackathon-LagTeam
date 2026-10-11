@@ -17,7 +17,7 @@ let n = 0;
 function orden(evento_id: string, usuario_id: string, cantidad: number, total: number, extra: Partial<OrdenParaNegocio> = {}): OrdenParaNegocio {
   n += 1;
   return {
-    id: `orden-${n}`, usuario_id, evento_id, cantidad, total_centimos: total,
+    id: `orden-${n}`, usuario_id, evento_id, categoria_id: "cat", ref: null, cantidad, total_centimos: total,
     comision_modelo: "porcentaje", comision_valor: 500, comision_importe: Math.round(total * 0.05),
     pagada_en: `2026-10-0${(n % 3) + 1}T15:00:00Z`, ...extra,
   };

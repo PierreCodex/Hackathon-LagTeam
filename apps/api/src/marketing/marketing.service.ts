@@ -238,6 +238,24 @@ export class MarketingService {
     return ResultadosPiezaSchema.parse({ pieza_id: pieza.id, evento_id: pieza.evento_id, total, enlaces });
   }
 
+  /** Enlaces del organizador con sus clics, para el panel de ventas (`negocio`, epic 4). */
+  async enlacesConClicsDe(organizadorId: string): Promise<(Enlace & { clics: number })[]> {
+    const { data, error } = await this.cliente()
+      .from(TABLA_ENLACES)
+      .select(`${COLUMNAS_ENLACE}, ${TABLA_CLICS}(count)`)
+      .eq("organizador_id", organizadorId)
+      .order("creado_en", { ascending: true })
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer los enlaces de ${organizadorId}: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer tus enlaces. Inténtalo de nuevo.");
+    }
+    return ((data ?? []) as unknown as FilaEnlaceConClics[]).map(({ marketing_clics, ...enlace }) => ({
+      ...enlace,
+      clics: Number(marketing_clics?.[0]?.count ?? 0),
+    }));
+  }
+
   /** Pieza del organizador; ajena, inexistente o con un id que no es UUID → 404 sin revelar que existe. */
   private async piezaDelOrganizador(organizadorId: string, piezaId: string): Promise<PiezaConDueno> {
     const supabase = this.cliente();
