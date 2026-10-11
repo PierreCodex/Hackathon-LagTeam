@@ -79,6 +79,7 @@ context:
 - Filas: "Imperdibles de la semana" (7 días), "Próximos eventos" (todos, sin "Ver todos") y una fila por categoría solo con 2 o más eventos (`MINIMO_FILA_CATEGORIA`). Con 6 eventos de la semilla, las filas de un solo evento quedaban vacías.
 - Ficha `/eventos/[id]`: `cache()` para que la página y `generateMetadata` hagan una sola llamada. Un id inválido o `EVENTO_NO_EXISTE` da 404.
 - Probado en el navegador (3020, base local): menú anónimo Eventos · Calendario; con el comprador, Eventos · Calendario · Mis entradas. Filtros: música + Piura → 1, gratis → la muestra de arte, sin resultados → vacío. Ficha con 3 precios. El evento pendiente da 404. A 360 px no hay desplazamiento horizontal.
+- Conexión con la compra (2026-10-11, tras fusionar la 2.8 en main): "Comprar entradas" de la ficha y del héroe lleva a `/eventos/[id]/comprar` (`rutaComprar`). La ficha pasa a la compra el `?ref=` con el que llega desde `/r/<código>` (3.2), para no perder qué pieza vendió. Sin categorías de precio, no hay botón en la ficha y el héroe muestra "Ver evento". Probado: comprador → ficha → checkout → pago simulado → Mis entradas.
 
 ## Plan Change Log
 

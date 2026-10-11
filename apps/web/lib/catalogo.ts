@@ -130,6 +130,16 @@ export function rutaCatalogo(consulta: Record<string, string> = {}): string {
   return qs ? `eventos?${qs}` : "eventos";
 }
 
+/**
+ * Checkout del evento (2.8). Conserva el `ref` del enlace rastreable (`/r/<código>` lleva a la ficha
+ * con `?ref=`, 3.2) para que la venta se atribuya a su pieza.
+ */
+export function rutaComprar(eventoId: string, ref?: string | string[]): string {
+  const codigo = primero(ref);
+  const base = `/eventos/${eventoId}/comprar`;
+  return codigo ? `${base}?ref=${encodeURIComponent(codigo)}` : base;
+}
+
 /** Céntimos de PEN → "S/ 25" o "S/ 25.50". */
 export function soles(centimos: number): string {
   const soles = centimos / 100;

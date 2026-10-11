@@ -5,13 +5,16 @@ import { cache } from "react";
 import { PantallaSesion } from "@/components/layout/pantalla-sesion";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
-import { etiquetaCategoria, soles, textoPrecio } from "@/lib/catalogo";
+import { etiquetaCategoria, rutaComprar, soles, textoPrecio } from "@/lib/catalogo";
 import { fechaPieza } from "@/lib/pieza";
 import { ImagenEvento } from "../../portada/tarjeta-evento";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 /** Evento publicado de `GET /eventos/:id` (1.6); 404 si no existe o aún no es público. Una llamada por petición. */
 const cargarEvento = cache(async (id: string) => {
@@ -26,9 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: resultado.ok ? `${resultado.datos.titulo} · Reto 18` : "Evento · Reto 18" };
 }
 
-/** Ficha pública del evento (1.11): foto, fecha, sede, descripción y precios. La compra llega con la 2.8. */
-export default async function FichaEvento({ params }: Props) {
+/** Ficha pública del evento (1.11): foto, fecha, sede, descripción, precios y el paso a la compra (2.8). */
+export default async function FichaEvento({ params, searchParams }: Props) {
   const { id } = await params;
+  const { ref } = await searchParams;
   const resultado = await cargarEvento(id);
   const ruta = `/eventos/${id}`;
 
@@ -100,9 +104,11 @@ export default async function FichaEvento({ params }: Props) {
             ) : (
               <p className="text-ink-secondary">Los precios se publicarán pronto.</p>
             )}
-            <Aviso tipo="info" titulo="La compra en línea llega muy pronto.">
-              Mientras tanto, guarda este enlace para volver.
-            </Aviso>
+            {categorias.length > 0 && (
+              <BotonEnlace href={rutaComprar(evento.id, ref)} anchoCompleto>
+                Comprar entradas
+              </BotonEnlace>
+            )}
           </Tarjeta>
         </div>
       </article>
