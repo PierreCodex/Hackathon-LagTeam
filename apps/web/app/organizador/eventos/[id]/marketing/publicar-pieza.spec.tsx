@@ -2,11 +2,47 @@ import { CODIGOS_MARKETING, type PublicacionPieza } from "@reto18/shared";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PIEZA } from "@/test/pieza-fixture";
+import { CODIGO_RESPUESTA_INVALIDA, CODIGO_SIN_CONEXION } from "@/lib/api";
 import { aIsoLima, AvisoErrorPublicar, AvisoResultado, PublicarPieza, textoPublicacion } from "./publicar-pieza";
 
 // Historia 3.4: "Publicar en redes" con Upload-Post.
 
 describe("Publicar en redes (3.4)", () => {
+  it.each([CODIGO_SIN_CONEXION, CODIGO_RESPUESTA_INVALIDA])("respuesta perdida %s: advierte revisar antes de repetir", (codigo) => {
+    const html = renderToStaticMarkup(<AvisoErrorPublicar
+      error={{ codigo, mensaje: "Algo salió mal. Inténtalo de nuevo." }} pieza={PIEZA} texto="Texto de campaña"
+    />);
+    expect(html).toContain("Publicación sin confirmar.");
+    expect(html).toContain("Revisa Upload-Post y tus redes antes de volver a publicar");
+    expect(html).not.toContain("Inténtalo de nuevo");
+    expect(html).toContain("Descargar imagen");
+    expect(html).toContain("Copiar texto");
+  });
+
+  it.each([false, true])("si todas las redes fallan no anuncia publicación ni programación (programada=%s)", (programada) => {
+    const resultado: PublicacionPieza = {
+      pieza_id: PIEZA.id,
+      enlace: { codigo: "aZ09bY18", evento_id: PIEZA.evento_id, pieza_id: PIEZA.id, red: null, zona: null, creado_en: PIEZA.creado_en },
+      url_enlace: "https://web.example/r/aZ09bY18", texto: "Hola", programada,
+      redes: [{ red: "facebook", ok: false, url: null, error: "Sin confirmación" }],
+    };
+    const html = renderToStaticMarkup(<AvisoResultado resultado={resultado} />);
+    expect(html).toContain("No se confirmó la publicación.");
+    expect(html).not.toContain("Publicado a medias.");
+    expect(html).not.toContain("Publicación programada.");
+  });
+
+  it("un envío sin confirmar pide revisar redes y conserva las alternativas de exportación", () => {
+    const html = renderToStaticMarkup(<AvisoErrorPublicar
+      error={{ codigo: CODIGOS_MARKETING.PUBLICACION_SIN_CONFIRMAR, mensaje: "Revisa tus redes antes de repetir." }}
+      pieza={PIEZA} texto="Texto de la campaña"
+    />);
+    expect(html).toContain("Publicación sin confirmar.");
+    expect(html).toContain("Revisa tus redes antes de repetir.");
+    expect(html).toContain("Descargar imagen");
+    expect(html).toContain("Copiar texto");
+  });
+
   it("texto propuesto con los textos de la IA, fecha, sede, precio y hashtags", () => {
     const texto = textoPublicacion(PIEZA);
     expect(texto).toContain("Noche de marinera");

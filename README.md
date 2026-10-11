@@ -116,6 +116,46 @@ pnpm build && pnpm lint && pnpm test
 pnpm test:int            # con la BD de prueba levantada (ver abajo)
 ```
 
+## Marketing: Ollama, flyer y publicación en redes
+
+El organizador genera una pieza desde **Marketing** para un evento aprobado y futuro.
+Ollama propone textos, colores y campaña; la web construye el PNG 4:5 con la foto y los
+datos reales del evento. Al pulsar **Publicar ahora**, la API descarga ese mismo PNG y
+envía el archivo, el texto revisado y el enlace rastreable a Upload-Post.
+
+Configura en el `.env` privado de la raíz (nunca en `.env.example`):
+
+```dotenv
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODELO=qwen2.5:latest
+UPLOADPOST_API_KEY=tu-clave-privada
+WEB_URL=http://localhost:3000
+```
+
+El nombre del modelo debe coincidir con uno instalado en `ollama list`.
+Reinicia la API después de cambiar el entorno. Sin Ollama o si su respuesta no cumple el
+contrato, se conserva la generación mediante respaldo y se indica en Marketing.
+`UPLOADPOST_USER` y `UPLOADPOST_FACEBOOK_PAGE_ID` permiten fijar el perfil y la página;
+si se omiten, se consultan los primeros disponibles en la cuenta.
+
+Upload-Post puede procesar el envío en segundo plano. La API consulta su estado durante
+un máximo total de dos minutos, sin repetir la subida. Solo anuncia éxito cuando recibe
+confirmación por red; programar requiere confirmación con `job_id`. Si no puede confirmar,
+la web pide revisar Upload-Post y las redes antes de repetir, para evitar duplicados, y
+ofrece descargar el flyer y copiar el texto. Véanse las respuestas oficiales de
+[fotos](https://docs.upload-post.com/api/upload-photo/) y
+[estado del envío](https://docs.upload-post.com/api/upload-status/).
+
+Para la prueba personal, crea y aprueba un evento, genera el flyer, revisa el texto y pulsa
+**Publicar ahora** una vez. Comprueba directamente Facebook/Instagram. La campaña es una
+propuesta: este botón publica contenido, no contrata anuncios. La primera URL de `WEB_URL`
+debe apuntar a la web que sirve el PNG; para que otras personas abran el enlace de compra,
+usa su URL pública. En Railway, Ollama debe ser accesible desde allí mediante la URL del túnel.
+
+`marketing-publicaciones.int.spec.ts` verifica generación, bytes del PNG enviado, enlace,
+permisos y falta de confirmación con Supabase local y proveedores simulados; no publica
+en las cuentas reales. Las pruebas de la plantilla web verifican el PNG 1080 × 1350.
+
 ## Pruebas de integración
 
 `pnpm test:int` levanta la app NestJS real (la misma configuración que `main.ts`) contra una

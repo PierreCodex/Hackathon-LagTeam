@@ -11,7 +11,7 @@ import {
 } from "@reto18/shared";
 import { useState } from "react";
 import { AreaTexto, Aviso, Boton, Campo, Chip, Tarjeta } from "@/components/ui";
-import { pedirApi } from "@/lib/api";
+import { CODIGO_RESPUESTA_INVALIDA, CODIGO_SIN_CONEXION, pedirApi } from "@/lib/api";
 import { fechaPieza, nombreRed, textoPrecio, urlPng } from "@/lib/pieza";
 import { tokenDelNavegador } from "@/lib/supabase/navegador";
 
@@ -21,8 +21,8 @@ export type PublicarPiezaProps = {
 };
 
 const REDES: readonly RedPublicacion[] = ["instagram", "facebook"];
-/** La API espera a Upload-Post hasta 2 min (Instagram procesa la foto antes de responder): margen de sobra. */
-const TIEMPO_LIMITE_PUBLICAR_MS = 150_000;
+/** Hasta 2 min para Upload-Post más lectura de pieza, permisos y enlace en la BD. */
+const TIEMPO_LIMITE_PUBLICAR_MS = 180_000;
 
 /** Texto propuesto del post: los textos de la IA, fecha, sede y precio del evento, y hashtags locales. */
 export function textoPublicacion(pieza: Pieza): string {
@@ -136,6 +136,13 @@ export function PublicarPieza({ apiUrl, pieza }: PublicarPiezaProps) {
       </Boton>
 
       {resultado && <AvisoResultado resultado={resultado} />}
+      {resultado?.redes.some((red) => !red.ok) && (
+        <AvisoErrorPublicar
+          error={{ codigo: CODIGOS_MARKETING.PUBLICACION_SIN_CONFIRMAR, mensaje: "Revisa el resultado de cada red antes de repetir el envío. También puedes descargar el flyer y copiar el texto." }}
+          pieza={pieza}
+          texto={resultado.texto}
+        />
+      )}
       {error && <AvisoErrorPublicar error={error} pieza={pieza} texto={texto} />}
     </Tarjeta>
   );
@@ -144,10 +151,13 @@ export function PublicarPieza({ apiUrl, pieza }: PublicarPiezaProps) {
 /** Resultado por red, con el enlace al post si Upload-Post lo devuelve. */
 export function AvisoResultado({ resultado }: { resultado: PublicacionPieza }) {
   const fallidas = resultado.redes.filter((r) => !r.ok);
+  const titulo = fallidas.length === resultado.redes.length ? "No se confirmó la publicación."
+    : fallidas.length > 0 ? "Publicado a medias."
+      : resultado.programada ? "Publicación programada." : "¡Publicado!";
   return (
     <Aviso
       tipo={fallidas.length === 0 ? "exito" : fallidas.length === resultado.redes.length ? "error" : "advertencia"}
-      titulo={resultado.programada ? "Publicación programada." : fallidas.length === 0 ? "¡Publicado!" : "Publicado a medias."}
+      titulo={titulo}
     >
       <ul className="flex flex-col gap-1">
         {resultado.redes.map((r) => (
@@ -178,10 +188,12 @@ export function AvisoResultado({ resultado }: { resultado: PublicacionPieza }) {
 export function AvisoErrorPublicar({ error, pieza, texto }: { error: ErrorApi; pieza: Pieza; texto: string }) {
   const [copiado, setCopiado] = useState(false);
   const noConfigurada = error.codigo === CODIGOS_MARKETING.PUBLICACION_NO_CONFIGURADA;
+  const respuestaPerdida = error.codigo === CODIGO_SIN_CONEXION || error.codigo === CODIGO_RESPUESTA_INVALIDA;
+  const sinConfirmar = respuestaPerdida || error.codigo === CODIGOS_MARKETING.PUBLICACION_SIN_CONFIRMAR;
   return (
     <Aviso
       tipo={noConfigurada ? "advertencia" : "error"}
-      titulo="No pudimos publicar en redes."
+      titulo={sinConfirmar ? "Publicación sin confirmar." : "No pudimos publicar en redes."}
       accion={
         <div className="flex flex-wrap gap-2">
           <a
@@ -205,7 +217,9 @@ export function AvisoErrorPublicar({ error, pieza, texto }: { error: ErrorApi; p
         </div>
       }
     >
-      {error.mensaje}
+      {respuestaPerdida
+        ? "No recibimos la confirmación del envío. Revisa Upload-Post y tus redes antes de volver a publicar para evitar duplicados."
+        : error.mensaje}
     </Aviso>
   );
 }

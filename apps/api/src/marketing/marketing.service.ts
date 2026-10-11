@@ -30,7 +30,7 @@ import { IaService } from "../ia/ia.service.js";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
 import { VentasService } from "../ventas/ventas.service.js";
 import { esCodigoValido, generarCodigo } from "./codigo-enlace.js";
-import { PublicadorUploadPost } from "./publicador-upload-post.js";
+import { PublicacionSinConfirmar, PublicadorUploadPost } from "./publicador-upload-post.js";
 
 export const TABLA_PIEZAS = "marketing_piezas";
 export const TABLA_ENLACES = "marketing_enlaces";
@@ -278,8 +278,8 @@ export class MarketingService {
       const mensaje = error instanceof Error ? error.message : String(error);
       this.logger.warn(`No se pudo publicar la pieza ${pieza.id}: ${mensaje}`);
       throw new BadGatewayException({
-        codigo: CODIGOS_MARKETING.PUBLICACION_FALLIDA,
-        mensaje: `No pudimos publicar en redes (${mensaje}). Descarga la imagen y copia el texto.`,
+        codigo: error instanceof PublicacionSinConfirmar ? CODIGOS_MARKETING.PUBLICACION_SIN_CONFIRMAR : CODIGOS_MARKETING.PUBLICACION_FALLIDA,
+        mensaje: error instanceof PublicacionSinConfirmar ? mensaje : `No pudimos publicar en redes (${mensaje}). Descarga la imagen y copia el texto.`,
       });
     }
   }
