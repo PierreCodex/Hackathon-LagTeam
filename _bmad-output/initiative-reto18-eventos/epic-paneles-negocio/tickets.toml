@@ -20,10 +20,10 @@ title = "UI: panel de ventas del organizador"
 description = "Entrega el panel del organizador con sus ventas por evento, por categoría de precio y por pieza, que se actualiza al volver a la pantalla (CAP-11)."
 verify = "La compra de la demo hecha desde el enlace de una pieza aparece en el panel del organizador, asignada a esa pieza, segundos después."
 covers = ["CAP-11"]
-after = [1, "1.7", "2.8"]
+after = [1, "1.12", "2.8"]
 hitl = false
 risk = "low"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 
 [[entry]]
 id = 2
@@ -44,10 +44,10 @@ title = "UI: comisión y liquidación"
 description = "Entrega al administrador la pantalla para elegir el modelo de ingresos y su valor, y la tabla de liquidación por organizador (CAP-12)."
 verify = "Desde el móvil, el administrador cambia la comisión, hace una compra nueva y la liquidación del organizador refleja la nueva comisión solo en esa venta."
 covers = ["CAP-12"]
-after = [2, "1.7"]
+after = [2, "1.12"]
 hitl = false
 risk = "low"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]
 
 [[entry]]
@@ -69,8 +69,8 @@ title = "UI: tablero del administrador"
 description = "Entrega el tablero del administrador con gráficos de ventas, asistencia, categorías y perfil del público, el filtro de fechas y el botón de descargar Excel (CAP-13)."
 verify = "El tablero muestra los datos de ejemplo y los de la demo, y el Excel descargado se abre con las mismas cifras."
 covers = ["CAP-13"]
-after = [3, "1.7"]
+after = [3, "1.12"]
 hitl = false
 risk = "low"
-assignee = "Sandro David"
+assignee = "Manuel Alexis"
 notes = ["Reserva: si Sandro David va cargado, la toma quien termine primero."]

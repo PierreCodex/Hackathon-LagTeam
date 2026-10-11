@@ -7,6 +7,7 @@ sources:
   - ../spec-reto18-plataforma-eventos/demo-flow.md
   - ../spec-reto18-plataforma-eventos/mapa-asientos.md
   - ../spec-reto18-plataforma-eventos/piezas-marketing.md
+  - ../change-layout-escritorio-estilo-joinnus/change-layout-escritorio-estilo-joinnus.md
 ---
 
 # Plataforma de eventos de Piura: espina de experiencia
@@ -15,7 +16,7 @@ sources:
 
 ## Foundation
 
-Web móvil primero (Next.js), a 360 px, sin app nativa. Cuatro tipos de usuario con un solo inicio de sesión y menús distintos por rol: **público**, **organizador**, **administrador** y **puerta** (personal que escanea; es una vista del organizador/administrador, instalable como PWA). Sistema de UI: lo elige la historia 1.7 `[ASSUMPTION: Tailwind + componentes tipo shadcn/ui; DESIGN.md define los tokens, la librería solo los aplica]`. Idioma: español de Perú.
+Web (Next.js) para móvil desde 360 px y para escritorio desde 1024 px, sin app nativa. Cuatro tipos de usuario con un solo inicio de sesión y menús distintos por rol: **público**, **organizador**, **administrador** y **puerta** (personal que escanea; es una vista del organizador/administrador, instalable como PWA). Sistema de UI: lo elige la historia 1.7 `[ASSUMPTION: Tailwind + componentes tipo shadcn/ui; DESIGN.md define los tokens, la librería solo los aplica]`. Idioma: español de Perú.
 
 **Construcción con datos simulados.** Cada pantalla se construye primero contra datos de muestra (los stubs de los contratos y la semilla) y se conecta a la API real cuando el ticket de API correspondiente se fusiona. Por eso toda pantalla debe poder renderizarse con una fuente de datos intercambiable y mostrar sus estados (cargando, vacío, error) desde el primer día.
 
@@ -23,25 +24,27 @@ Web móvil primero (Next.js), a 360 px, sin app nativa. Cuatro tipos de usuario 
 
 | Superficie | Rol | Se llega desde | Propósito | Historia |
 |---|---|---|---|---|
-| Catálogo y calendario | Público (sin sesión) | Inicio, enlaces rastreables `/r/…` | Buscar y filtrar eventos aprobados | 1.11 |
+| Catálogo y calendario | Público (sin sesión) | Inicio, enlaces rastreables `/r/…` | Portada: buscador, destacados, categorías y filas de eventos; calendario mensual | 1.11 |
 | Ficha del evento | Público | Catálogo, enlace de pieza | Ver el evento y empezar la compra | 1.11 |
 | Registro / inicio de sesión | Todos | Al comprar, o desde la cabecera | Entrar con WhatsApp obligatorio | 1.8 |
 | Elegir butaca | Público | Ficha | Escoger asiento o cantidad | 2.11 |
 | Pago simulado | Público | Elegir butaca | Tarjeta, Yape o Plin, dicho como simulado | 2.8 |
-| Mis entradas | Público | Barra inferior | QR por entrada, sección, fila y asiento | 2.8 |
-| Alta de evento | Organizador | Barra inferior | Formulario en pasos, con APDAYC | 1.9 |
+| Mis entradas | Público | Menú del rol | QR por entrada, sección, fila y asiento | 2.8 |
+| Alta de evento | Organizador | Menú del rol | Formulario en pasos, con APDAYC | 1.9 |
 | Pizarra del mapa | Organizador | Alta de evento / Sedes | Crear la sede y pintar precios | 2.9, 2.10 |
 | Marketing | Organizador | Evento → Marketing | Flyer, textos, campaña, publicar | 3.8, 3.9 |
-| Ventas | Organizador | Barra inferior | Ventas por evento, categoría y pieza | 4.4 |
-| Aprobación | Administrador | Barra inferior | Aprobar, rechazar, destacar | 1.10 |
-| Weekend | Administrador | Barra inferior | Afiche colectivo y piezas | 3.10 |
-| Comisión y liquidación | Administrador | Barra inferior | Configurar y liquidar | 4.5 |
-| Tablero | Administrador | Barra inferior | Cifras y Excel | 4.6 |
-| Escáner de puerta | Puerta | Barra inferior | Validar QR, también sin conexión | 2.12 |
+| Ventas | Organizador | Menú del rol | Ventas por evento, categoría y pieza | 4.4 |
+| Aprobación | Administrador | Menú del rol | Aprobar, rechazar, destacar | 1.10 |
+| Weekend | Administrador | Menú del rol | Afiche colectivo y piezas | 3.10 |
+| Comisión y liquidación | Administrador | Menú del rol | Configurar y liquidar | 4.5 |
+| Tablero | Administrador | Menú del rol | Cifras y Excel | 4.6 |
+| Escáner de puerta | Puerta | Menú del rol | Validar QR, también sin conexión | 2.12 |
 
-Barra inferior fija por rol: **Público** Eventos · Calendario · Mis entradas · Cuenta. **Organizador** Mis eventos · Marketing · Ventas · Cuenta. **Administrador** Aprobar · Weekend · Tablero · Cuenta. **Puerta** Escanear · Registro. Sin menú hamburguesa. Una hoja modal como máximo, nunca dos.
+Menú por rol: **Público** Eventos · Calendario · Mis entradas · Cuenta. **Organizador** Mis eventos · Marketing · Ventas · Cuenta. **Administrador** Aprobar · Weekend · Tablero · Cuenta. **Puerta** Escanear · Registro. En móvil y tableta es una barra inferior fija; en escritorio (≥ 1024 px) va en la cabecera y no hay barra inferior. Una sola fuente para los dos: `lib/navegacion.ts`. Sin menú hamburguesa. Una hoja modal como máximo, nunca dos.
 
-→ Composición de referencia: [`mockups/catalogo.html`](mockups/catalogo.html), [`mockups/mapa-y-compra.html`](mockups/mapa-y-compra.html), [`mockups/mis-entradas.html`](mockups/mis-entradas.html), [`mockups/marketing.html`](mockups/marketing.html). La espina manda en caso de conflicto.
+**Acceso.** Una sola pantalla de ingreso para todos: correo y contraseña. El rol no se elige al entrar; al iniciar sesión, cada cuenta llega a su portada (público: catálogo; organizador: Mis eventos; administrador: Aprobar). El tipo de cuenta solo se elige al registrarse.
+
+→ Composición de referencia: [`mockups/escritorio.html`](mockups/escritorio.html) (portada, acceso y panel en escritorio y móvil; manda sobre las demás en layout y paleta), [`mockups/catalogo.html`](mockups/catalogo.html), [`mockups/mapa-y-compra.html`](mockups/mapa-y-compra.html), [`mockups/mis-entradas.html`](mockups/mis-entradas.html), [`mockups/marketing.html`](mockups/marketing.html). La espina manda en caso de conflicto.
 
 ## Voice and Tone
 
@@ -93,6 +96,7 @@ Comportamiento. El aspecto vive en `DESIGN.md.Components`.
 - Toque para actuar. Sin gestos ocultos; la pizarra usa pellizco y arrastre solo dentro de su lienzo.
 - El botón primario de cada pantalla está al alcance del pulgar, anclado abajo cuando hay una acción de avance.
 - Confirmación solo en acciones destructivas o irreversibles (rechazar evento, pagar).
+- Los carruseles (héroe y filas de eventos) avanzan solo cuando se toca o se pulsa una flecha; con reducir movimiento se desplazan sin animación.
 - **Prohibido:** carruseles automáticos, ventanas emergentes de bienvenida, notificaciones de reenganche, contadores de insistencia, pedir datos reales de tarjeta.
 
 ## Accessibility Floor
@@ -111,13 +115,14 @@ Comportamiento. El contraste visual vive en `DESIGN.md`.
 ## Inspiration & Anti-patterns
 
 - **Tomado de Teleticket y Joinnus:** el mapa de butacas con colores por precio y el resumen fijo abajo, pero sin pasos de compra innecesarios.
+- **Tomado de Joinnus:** la estructura de la portada (buscador con filtros, héroe con lateral, categorías con iconos, filas por tema con "Ver todos", pie completo) y la pantalla de acceso en dos mitades. Se descarta su paleta, el carrusel automático, los favoritos y el blog.
 - **Rechazado, la compra con cuenta obligatoria antes de ver el evento:** el catálogo y la ficha son públicos; solo se pide el registro al pagar.
 - **Rechazado, la presentación de IA como protagonista:** la IA aparece como resultado ("Tu flyer está listo"), no como chat. El organizador revisa lo que propone antes de publicar.
 - **Rechazado, el editor libre del mapa:** la pizarra se limita a secciones, filas y bloques.
 
 ## Responsive & Platform
 
-Móvil primero. A partir de 768 px: formularios y entradas centrados a 480 px; catálogo en rejilla de 2 a 3 columnas; Ventas y Tablero pueden usar tablas completas. La puerta y la compra se prueban en móvil real; el administrador puede trabajar en portátil.
+Móvil primero, y escritorio de verdad desde 1024 px: cabecera con menú, contenido hasta 1280 px y sin barra inferior (`DESIGN.md` §Layout). Formularios y entradas siguen en columna de 480 px; Ventas y Tablero usan tablas completas. Toda historia UI se verifica a 360 px y a 1440 px. La puerta y la compra se prueban en móvil real; el administrador puede trabajar en portátil.
 
 ## Key Flows
 

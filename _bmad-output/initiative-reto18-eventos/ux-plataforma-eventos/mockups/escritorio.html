@@ -1,0 +1,350 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portada y acceso · escritorio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Prototipo de la propuesta change-layout-escritorio-estilo-joinnus, opción 1 de paleta: la del manual de marca.
+   Carbón #272424 en cabecera, héroe y pie (como las cabeceras del manual); contenido en gris claro #F1F1F2 con tarjetas blancas;
+   texto #373435 (el de "cultura" en el logo); el rojo #ED3237 solo como acento: botón principal, subrayado activo, etiqueta "Destacado". */
+:root{
+ --carbon:#272424;--carbon-2:#373435;--fondo:#F1F1F2;--tarjeta:#FFFFFF;--linea:#DCDCDE;--linea-osc:#3F3C3C;
+ --tinta:#373435;--tinta-2:#6D6E71;--gris:#BDBFC1;--gris-m:#727376;--gris-club:#848688;
+ --rojo:#ED3237;--rojo-p:#C4262B;--ok:#2E8B57;--aviso:#B07A00}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--fondo);font-family:Inter,Arial,sans-serif;color:var(--tinta);font-size:16px;line-height:1.5}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+@media(min-width:1024px){.wrap{padding:0 32px}}
+.meta{font-size:13px;font-weight:500;color:var(--tinta-2);line-height:1.4}
+h1{font-size:28px;font-weight:900;line-height:1.1}h2{font-size:20px;font-weight:800;line-height:1.2}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 20px;border-radius:12px;background:var(--rojo);color:#fff;font-weight:700;white-space:nowrap}
+.btn:hover{background:var(--rojo-p)}
+.btn.sec{background:transparent;border:1px solid var(--gris-m);color:var(--tinta)}.btn.sec:hover{border-color:var(--tinta)}
+.cta .btn.sec,footer .btn.sec,.btn.sec.inv{border-color:var(--gris-m);color:#fff}.cta .btn.sec:hover,footer .btn.sec:hover,.btn.sec.inv:hover{border-color:#fff}
+.btn.sm{height:40px;padding:0 16px;font-size:15px}
+/* Selector de vistas del prototipo (no es parte del diseño) */
+.proto{position:fixed;right:12px;bottom:84px;z-index:50;display:flex;gap:6px;background:#fff;border:1px dashed #999;border-radius:9999px;padding:6px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.proto button{font-size:12px;padding:6px 10px;border-radius:9999px;color:#555}.proto button.on{background:var(--carbon);color:#fff}
+@media(min-width:1024px){.proto{bottom:12px}}
+.vista{display:none}.vista.on{display:block}
+/* Cabecera carbón */
+header{background:var(--carbon);color:#fff;position:sticky;top:0;z-index:20}
+header .wrap{display:flex;align-items:center;gap:32px;height:68px}
+.logo img{height:44px;display:block}
+.menu{display:none;gap:28px;height:100%}
+.menu a{display:flex;align-items:center;height:100%;font-size:15px;font-weight:500;color:var(--gris);position:relative}
+.menu a:hover{color:#fff}.menu a.on{color:#fff}.menu a.on:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--rojo)}
+.acc{margin-left:auto;display:flex;gap:10px;align-items:center}
+.acc .solo-d{display:none}
+.avatar{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500}
+.avatar b{width:36px;height:36px;border-radius:50%;background:var(--carbon-2);display:grid;place-items:center;font-size:14px}
+.avatar .nm{display:none}
+@media(min-width:1024px){.menu{display:flex}.acc .solo-d{display:inline-flex}.avatar .nm{display:block}}
+/* Buscador: banda blanca bajo la cabecera */
+.buscador{background:var(--tarjeta);border-bottom:1px solid var(--linea)}
+.buscador .wrap{display:grid;gap:12px;padding-top:16px;padding-bottom:16px}
+.campo{display:flex;flex-direction:column;gap:4px}.campo label{font-size:12px;font-weight:700;color:var(--tinta)}
+.campo .in{height:44px;border:1px solid var(--gris);border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;color:var(--tinta-2);font-size:15px;justify-content:space-between}
+.filtros{display:none}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{height:32px;padding:0 12px;border-radius:9999px;background:var(--fondo);border:1px solid var(--linea);color:var(--tinta-2);font-size:13px;font-weight:500;display:flex;align-items:center;white-space:nowrap}
+.chip.on{border-color:var(--tinta);color:var(--tinta)}.chip.on:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rojo);margin-right:6px}
+.lupa{display:none}
+@media(min-width:1024px){
+ .buscador .wrap{grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;align-items:end}
+ .filtros{display:contents}.chips.solo-m{display:none}
+ .lupa{width:44px;height:44px;border-radius:12px;background:var(--carbon);color:#fff;display:grid;place-items:center}
+}
+/* Héroe carbón con el flyer del evento */
+.heroe{display:grid;gap:16px;margin-top:24px}
+.slide{position:relative;border-radius:12px;overflow:hidden;background:var(--carbon);color:#fff;display:flex;flex-direction:column}
+.slide .fly{aspect-ratio:4/5;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:20px}
+.slide .fly b{display:none;position:relative;font-size:26px;font-weight:900;line-height:1.05;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.slide .txt{padding:20px 20px 28px;display:flex;flex-direction:column;gap:8px;position:relative}
+.slide .txt .meta{color:var(--gris)}
+.slide .iso{position:absolute;top:16px;right:16px;width:48px;opacity:.5}
+.flecha{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(39,36,36,.85);border:1px solid var(--linea-osc);color:#fff;display:grid;place-items:center;font-size:18px;z-index:2}
+.flecha.izq{left:12px}.flecha.der{right:12px}
+.puntos{display:flex;gap:6px;margin-top:12px}
+.puntos i{width:8px;height:8px;border-radius:50%;background:var(--gris-m)}.puntos i.on{background:#fff;width:20px;border-radius:9999px}
+.lateral{display:none}
+@media(min-width:1024px){
+ .heroe{grid-template-columns:3fr 1fr}
+ .slide{flex-direction:row-reverse;min-height:400px}
+ .slide .fly{aspect-ratio:auto;width:42%}.slide .fly b{display:block}
+ .slide .txt{flex:1;justify-content:center;padding:40px 40px 40px 80px}
+ .slide .txt h1{font-size:44px}
+ .flecha.der{right:calc(42% + 12px)}
+ .slide .iso{right:auto;left:80px;top:32px}
+ .lateral{display:flex;flex-direction:column;gap:16px}
+}
+.promo{flex:1;border-radius:12px;background:var(--tarjeta);border:1px solid var(--linea);padding:20px;display:flex;flex-direction:column;gap:8px;justify-content:flex-end;position:relative;overflow:hidden}
+.promo.osc{background:var(--carbon-2);border-color:var(--carbon-2);color:#fff}
+.promo .tag{font-size:12px;font-weight:700;color:var(--tinta-2);letter-spacing:.04em}
+.promo.osc .tag{color:var(--gris)}
+.promo h2{font-size:18px}
+.promo .lnk{font-size:14px;font-weight:700;margin-top:4px;text-decoration:underline;text-decoration-color:var(--rojo);text-underline-offset:4px}
+.promo .marca-agua{position:absolute;top:16px;right:16px;width:72px;opacity:.5}
+/* Categorías */
+.cats{display:flex;gap:8px;overflow-x:auto;margin-top:24px;padding:12px;background:var(--tarjeta);border:1px solid var(--linea);border-radius:12px;scrollbar-width:none}
+.cat{flex:1 0 96px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px;border-radius:12px;color:var(--tinta-2)}
+.cat:hover{background:var(--fondo);color:var(--tinta)}
+.cat svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:1.6}
+.cat span{font-size:13px;font-weight:500;position:relative}
+.cat.on{color:var(--tinta)}.cat.on span{font-weight:700}.cat.on span:before{content:"";position:absolute;left:-10px;top:7px;width:6px;height:6px;border-radius:50%;background:var(--rojo)}
+/* Filas */
+.seccion{margin-top:40px}
+.sec-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+.sec-top .der{display:flex;align-items:center;gap:12px}
+.vertodos{font-size:14px;font-weight:700;color:var(--tinta);text-decoration:underline;text-decoration-color:var(--rojo);text-underline-offset:4px}
+.mini{width:32px;height:32px;border-radius:50%;border:1px solid var(--gris);background:#fff;display:none;place-items:center}
+@media(min-width:1024px){.mini{display:grid}}
+.fila{display:grid;grid-auto-flow:column;grid-auto-columns:46%;gap:16px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;padding-bottom:4px}
+.fila::-webkit-scrollbar{display:none}
+@media(min-width:768px){.fila{grid-auto-columns:30%}}
+@media(min-width:1024px){.fila{grid-auto-columns:calc((100% - 64px)/5)}}
+.tarjeta{scroll-snap-align:start;display:flex;flex-direction:column;background:var(--tarjeta);border:1px solid var(--linea);border-radius:12px;overflow:hidden}
+.tarjeta:hover{border-color:var(--gris)}
+.poster{aspect-ratio:4/5;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;color:#fff}
+.poster b{position:relative;font-weight:900;font-size:20px;line-height:1.05;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.dest{position:absolute;top:10px;left:10px;font-size:11px;font-weight:700;background:var(--rojo);color:#fff;padding:3px 8px;border-radius:9999px;z-index:1}
+.tarjeta .cuerpo{padding:12px;display:flex;flex-direction:column;gap:6px}
+.tarjeta .lin{display:flex;justify-content:space-between}
+.tarjeta h3{font-size:15px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:39px}
+.desde{font-size:14px;color:var(--tinta-2)}.desde b{color:var(--tinta);font-weight:800}
+/* Artes de póster: simulan los flyers de cada evento (tienen sus propios colores, no son la interfaz) */
+.a1{background:radial-gradient(circle at 70% 30%,#c8553d 0,#5a2318 40%,#1a0d0a 80%)}
+.a2{background:radial-gradient(circle at 30% 20%,#e0a400 0,#6b4a00 40%,#140e00 80%)}
+.a3{background:radial-gradient(circle at 60% 70%,#2BB5A0 0,#0b4a41 40%,#020c0a 80%)}
+.a4{background:radial-gradient(circle at 40% 40%,#7C8CFF 0,#262f7a 40%,#06081c 80%)}
+.a5{background:linear-gradient(160deg,#5a5b5e,#1b1a1a 70%)}
+.a6{background:repeating-linear-gradient(45deg,#4a3b2f 0 14px,#2e241c 14px 28px)}
+.a7{background:radial-gradient(circle at 50% 100%,#d77a2f 0,#5a2c0b 45%,#140902 85%)}
+.a8{background:linear-gradient(200deg,#e0a400,#a3402a 50%,#2a110b)}
+/* Banda CTA carbón y pie */
+.cta{margin-top:48px;border-radius:12px;background:var(--carbon);color:#fff;padding:24px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.cta .meta{color:var(--gris)}
+.cta h2{font-size:22px}
+.cta .marca-agua{position:absolute;right:-20px;bottom:-30px;width:220px;opacity:.12}
+@media(min-width:1024px){.cta{flex-direction:row;align-items:center;justify-content:space-between;padding:32px 40px}.cta h2{font-size:26px}.cta .marca-agua{right:260px}}
+footer{margin-top:56px;background:var(--carbon);color:#fff;padding:40px 0 calc(40px + 72px)}
+@media(min-width:1024px){footer{padding-bottom:40px}}
+footer .meta{color:var(--gris)}
+.pie{display:grid;gap:28px;grid-template-columns:1fr 1fr}
+.pie h4{font-size:14px;font-weight:800;margin-bottom:12px}
+.pie a{display:block;font-size:14px;color:var(--gris);margin-bottom:10px}.pie a:hover{color:#fff}
+.pie .marca{grid-column:1/-1}.pie .marca img{height:52px}
+.redes{display:flex;gap:10px;margin-top:4px}.redes span{width:36px;height:36px;border-radius:50%;border:1px solid var(--gris-m);display:grid;place-items:center;font-size:12px;font-weight:700}
+@media(min-width:1024px){.pie{grid-template-columns:2fr 1fr 1fr 1.4fr}.pie .marca{grid-column:auto}}
+.copy{border-top:1px solid var(--linea-osc);margin-top:28px;padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+/* Barra inferior carbón: solo < 1024 px */
+.barra{position:fixed;left:0;right:0;bottom:0;background:var(--carbon);border-top:1px solid var(--linea-osc);display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+.barra a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 12px;font-size:12px;color:var(--gris);position:relative}
+.barra a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.barra a.on{color:#fff}.barra a.on:before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;background:var(--rojo)}
+@media(min-width:1024px){.barra{display:none}}
+/* Acceso */
+.acceso{min-height:100dvh;display:grid;background:var(--tarjeta)}
+.panel{display:none;position:relative;overflow:hidden;background:var(--carbon);color:#fff}
+.panel .cnt{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:48px;text-align:center}
+.panel .logo-p{height:64px}
+.panel h1{font-size:44px;line-height:1.05}
+.panel .fly{width:280px;aspect-ratio:4/5;border-radius:12px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;text-align:left}
+.panel .fly b{font-size:28px;font-weight:900;line-height:1;position:relative}
+.panel .fly .meta{position:relative;margin-top:8px;color:#fff}
+.panel .marca-agua{position:absolute;width:420px;opacity:.06;left:-80px;bottom:-60px}
+.form{display:flex;flex-direction:column;padding:20px 16px 40px;max-width:520px;width:100%;margin:0 auto}
+.form .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.volver{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.reg{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--tinta-2)}.reg a{border:1px solid var(--gris-m);border-radius:9999px;padding:6px 14px;color:var(--tinta);font-weight:700}
+.form .logo-f{height:56px;margin-top:40px;align-self:flex-start}
+.form h1{margin-top:28px;font-size:32px}.form .sub{color:var(--tinta-2);margin-top:6px}
+.f{display:flex;flex-direction:column;gap:6px;margin-top:20px}.f label{font-size:14px;font-weight:700}
+.f .in{height:48px;border:1px solid var(--gris);border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--tinta-2)}
+.f .in.foco{border:2px solid var(--tinta);color:var(--tinta)}
+.olv{align-self:flex-end;margin-top:12px;font-size:14px;color:var(--gris-m);text-decoration:line-through}
+.form .btn{margin-top:28px;width:100%}
+.nota{margin-top:16px;font-size:13px;color:var(--tinta-2);text-align:center}
+@media(min-width:1024px){
+ .acceso{grid-template-columns:1fr 1fr}.panel{display:block}
+ .form{justify-content:center;padding:40px 64px;position:relative;max-width:none}
+ .form>*:not(.top):not(.logo-f):not(.olv){max-width:480px;width:100%;margin-left:auto;margin-right:auto}
+ .form .logo-f{margin-left:calc(50% - 240px)}.form .olv{margin-right:calc(50% - 240px)}
+ .form .top{position:absolute;top:48px;left:64px;right:64px}
+}
+/* Panel organizador */
+.org-top{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+@media(min-width:1024px){.org-top{flex-direction:row;justify-content:space-between;align-items:flex-end}}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+@media(min-width:1024px){.kpis{grid-template-columns:repeat(4,1fr);gap:16px}}
+.kpi{background:var(--tarjeta);border:1px solid var(--linea);border-radius:12px;padding:16px}.kpi b{display:block;font-size:28px;font-weight:900;margin-top:4px}
+.tabla{margin-top:24px;border:1px solid var(--linea);border-radius:12px;overflow:hidden;background:var(--tarjeta)}
+.tr{display:grid;grid-template-columns:64px 1fr auto;gap:16px;align-items:center;padding:12px 16px;border-top:1px solid var(--linea)}
+.tr:first-child{border-top:0}.tr.h{background:var(--fondo);font-size:12px;font-weight:700;color:var(--tinta-2)}
+.tr .p{width:64px;aspect-ratio:4/5;border-radius:6px;position:relative;overflow:hidden}
+.tr .c{display:none}
+@media(min-width:1024px){.tr{grid-template-columns:64px 2fr 1fr 1fr 1fr auto}.tr .c{display:block}}
+.estado{font-size:12px;font-weight:700;padding:4px 10px;border-radius:9999px;background:var(--fondo);border:1px solid var(--linea);display:inline-flex;align-items:center;gap:6px}
+.estado:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}.estado.pen:before{background:var(--aviso)}
+</style></head><body>
+
+<div class="proto" aria-label="Vistas del prototipo">
+ <button data-v="portada" class="on">Portada</button><button data-v="ingresar">Ingresar</button><button data-v="org">Organizador</button>
+</div>
+
+<!-- ============ PORTADA (público, sin sesión) ============ -->
+<div class="vista on" id="portada">
+<header><div class="wrap">
+ <a class="logo" href="#"><img src="marca/logo-oscuro.png" alt="Club de Arte &amp; Cultura"></a>
+ <nav class="menu"><a class="on" href="#">Eventos</a><a href="#">Calendario</a><a href="#">Weekend</a><a href="#">Mis entradas</a></nav>
+ <div class="acc"><a class="btn sec sm inv solo-d" href="#">Registrarse</a><a class="btn sm" data-ir="ingresar" href="#">Ingresar</a></div>
+</div></header>
+
+<section class="buscador"><div class="wrap">
+ <div class="campo"><label>Busca tu próximo evento</label><div class="in">Obras, conciertos, artistas…<span>⌕</span></div></div>
+ <div class="filtros">
+  <div class="campo"><label>Fecha</label><div class="in">Todas<span>▾</span></div></div>
+  <div class="campo"><label>Distrito</label><div class="in">Piura y Castilla<span>▾</span></div></div>
+  <div class="campo"><label>Precio</label><div class="in">Todos<span>▾</span></div></div>
+  <div class="campo"><label>Categoría</label><div class="in">Todas<span>▾</span></div></div>
+  <div class="lupa" aria-label="Buscar">⌕</div>
+ </div>
+ <div class="chips solo-m"><span class="chip on">Este fin de semana</span><span class="chip">Distrito</span><span class="chip">Precio</span><span class="chip">Categoría</span></div>
+</div></section>
+
+<main class="wrap">
+ <section class="heroe">
+  <div class="slide">
+   <div class="fly a1"><b>Noche de música piurana</b></div>
+   <button class="flecha izq" aria-label="Anterior">‹</button><button class="flecha der" aria-label="Siguiente">›</button>
+   <div class="txt">
+    <img class="iso" src="marca/isotipo-blanco.png" alt="">
+    <span class="meta">DESTACADO · MÚSICA</span>
+    <h1>Noche de música piurana</h1>
+    <span class="meta">Vie 16 oct · 8:00 p. m. · Teatro Municipal, Piura</span>
+    <div style="display:flex;gap:16px;align-items:center;margin-top:12px"><a class="btn" href="#">Comprar entradas</a><span class="meta" style="color:#fff">Desde <b style="font-size:18px">S/ 25</b></span></div>
+    <div class="puntos"><i class="on"></i><i></i><i></i><i></i></div>
+   </div>
+  </div>
+  <aside class="lateral">
+   <a class="promo osc" href="#"><img class="marca-agua" src="marca/isotipo-blanco.png" alt=""><span class="tag">PIURA CULTURAL WEEKEND</span><h2>17 al 19 de octubre: la ruta cultural del fin de semana</h2><span class="lnk">Ver la ruta</span></a>
+   <a class="promo" href="#"><span class="tag">ORGANIZADORES</span><h2>¿Tienes un evento? Publícalo y véndelo con IA</h2><span class="lnk">Publica tu evento</span></a>
+  </aside>
+ </section>
+
+ <nav class="cats" aria-label="Categorías">
+  <a class="cat on" href="#"><svg viewBox="0 0 32 32"><path d="M12 24V8l14-3v16"/><circle cx="9" cy="24" r="3"/><circle cx="23" cy="21" r="3"/></svg><span>Música</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><path d="M6 7h20v9a10 10 0 0 1-20 0z"/><path d="M11 13h2M19 13h2M12 19c2 2 6 2 8 0"/></svg><span>Teatro</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><circle cx="18" cy="6" r="2.5"/><path d="M18 9l-3 8 5 4 1 7M15 17l-6 3M18 11l6 4"/></svg><span>Danza</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="18" rx="2"/><path d="M5 20l7-6 6 5 3-3 6 5"/><circle cx="21" cy="12" r="2"/></svg><span>Artes visuales</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><rect x="4" y="10" width="18" height="14" rx="2"/><path d="M22 15l6-4v12l-6-4"/></svg><span>Cine</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><path d="M6 6h9a3 3 0 0 1 3 3v17a3 3 0 0 0-3-3H6zM26 6h-5a3 3 0 0 0-3 3"/><path d="M26 6v17h-5a3 3 0 0 0-3 3"/></svg><span>Literatura</span></a>
+  <a class="cat" href="#"><svg viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="20" rx="2"/><path d="M5 13h22M11 4v6M21 4v6"/></svg><span>Calendario</span></a>
+ </nav>
+
+ <section class="seccion">
+  <div class="sec-top"><h2>Imperdibles de la semana</h2><div class="der"><a class="vertodos" href="#">Ver todos</a><span class="mini">‹</span><span class="mini">›</span></div></div>
+  <div class="fila">
+   <a class="tarjeta" href="#"><div class="poster a1"><span class="dest">Destacado</span><b>Noche de música piurana</b></div><div class="cuerpo"><div class="lin meta"><span>16 OCT</span><span>Piura</span></div><h3>Noche de música piurana</h3><span class="desde">Desde <b>S/ 25</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a2"><b>Historias del río Piura</b></div><div class="cuerpo"><div class="lin meta"><span>17 OCT</span><span>Piura</span></div><h3>Historias del río Piura</h3><span class="desde">Desde <b>S/ 20</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a3"><b>Domingo de danza norteña</b></div><div class="cuerpo"><div class="lin meta"><span>18 OCT</span><span>Castilla</span></div><h3>Domingo de danza norteña</h3><span class="desde">Desde <b>S/ 15</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a4"><b>Colores del norte</b></div><div class="cuerpo"><div class="lin meta"><span>24 OCT</span><span>Castilla</span></div><h3>Muestra de arte: colores del norte</h3><span class="desde">Desde <b>S/ 10</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a5"><b>Cine bajo el cielo de Piura</b></div><div class="cuerpo"><div class="lin meta"><span>31 OCT</span><span>Piura</span></div><h3>Cine bajo el cielo de Piura</h3><span class="desde">Desde <b>S/ 12</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a6"><b>Voces y versos de Castilla</b></div><div class="cuerpo"><div class="lin meta"><span>07 NOV</span><span>Castilla</span></div><h3>Voces y versos de Castilla</h3><span class="desde">Desde <b>S/ 10</b></span></div></a>
+  </div>
+ </section>
+
+ <section class="seccion">
+  <div class="sec-top"><h2>Música en vivo</h2><div class="der"><a class="vertodos" href="#">Ver todos</a><span class="mini">‹</span><span class="mini">›</span></div></div>
+  <div class="fila">
+   <a class="tarjeta" href="#"><div class="poster a8"><b>Noche de música piurana</b></div><div class="cuerpo"><div class="lin meta"><span>16 OCT</span><span>Piura</span></div><h3>Noche de música piurana</h3><span class="desde">Desde <b>S/ 25</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a7"><b>Tondero y cumanana</b></div><div class="cuerpo"><div class="lin meta"><span>23 OCT</span><span>Catacaos</span></div><h3>Tondero y cumanana en la plaza</h3><span class="desde">Desde <b>S/ 18</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a4"><b>Jazz en el malecón</b></div><div class="cuerpo"><div class="lin meta"><span>25 OCT</span><span>Piura</span></div><h3>Jazz en el malecón Eguiguren</h3><span class="desde">Desde <b>S/ 30</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a3"><b>Coros de Sullana</b></div><div class="cuerpo"><div class="lin meta"><span>30 OCT</span><span>Sullana</span></div><h3>Encuentro de coros de Sullana</h3><span class="desde">Desde <b>S/ 15</b></span></div></a>
+   <a class="tarjeta" href="#"><div class="poster a2"><b>Rock del desierto</b></div><div class="cuerpo"><div class="lin meta"><span>08 NOV</span><span>Talara</span></div><h3>Rock del desierto</h3><span class="desde">Desde <b>S/ 35</b></span></div></a>
+  </div>
+ </section>
+
+ <section class="cta">
+  <img class="marca-agua" src="marca/isotipo-blanco.png" alt="">
+  <div style="position:relative"><h2>¿Organizas eventos en Piura?</h2><p class="meta" style="margin-top:6px">Publica tu evento, arma tu mapa de butacas y deja que la IA prepare tu campaña.</p></div>
+  <a class="btn sec" href="#" style="position:relative">Publica tu evento</a>
+ </section>
+</main>
+
+<footer><div class="wrap">
+ <div class="pie">
+  <div class="marca"><img src="marca/logo-oscuro.png" alt="Club de Arte &amp; Cultura"><p class="meta" style="margin-top:14px;max-width:320px">La red cultural de Piura: todos los eventos de la región en un solo lugar.</p></div>
+  <div><h4>Conócenos</h4><a href="#">Sobre el Club</a><a href="#">Preguntas frecuentes</a><a href="#">Para organizadores</a></div>
+  <div><h4>Legales</h4><a href="#">Términos y condiciones</a><a href="#">Política de privacidad</a><a href="#">Libro de reclamaciones</a></div>
+  <div><h4>Síguenos</h4><div class="redes"><span>IG</span><span>FB</span><span>TT</span><span>X</span></div><h4 style="margin-top:20px">¿Necesitas ayuda?</h4><a class="btn sec sm" href="#" style="display:inline-flex">Contáctanos por WhatsApp</a></div>
+ </div>
+ <div class="copy meta"><span>© 2026 Club de Arte &amp; Cultura · Piura</span><span>Pago simulado: no se cobra nada.</span></div>
+</div></footer>
+
+<nav class="barra" aria-label="Navegación">
+ <a class="on" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Eventos</a>
+ <a href="#"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</a>
+ <a href="#"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 0 4v5h18v-5a2 2 0 0 1 0-4V5H3z"/></svg>Mis entradas</a>
+ <a href="#" data-ir="ingresar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Cuenta</a>
+</nav>
+</div>
+
+<!-- ============ INGRESAR ============ -->
+<div class="vista" id="ingresar">
+<div class="acceso">
+ <div class="panel"><img class="marca-agua" src="marca/isotipo-blanco.png" alt=""><div class="cnt">
+  <img class="logo-p" src="marca/logo-oscuro.png" alt="Club de Arte &amp; Cultura">
+  <h1>Crea y vende<br>tu evento con IA</h1>
+  <p style="color:var(--gris);font-size:18px">Todos los eventos culturales de Piura, en un solo lugar.</p>
+  <div class="fly a1"><b>Noche de música piurana</b><span class="meta">16 OCT · Teatro Municipal, Piura</span></div>
+ </div></div>
+ <div class="form">
+  <div class="top"><a class="volver" href="#" data-ir="portada">‹ Volver</a><div class="reg">¿No tienes cuenta? <a href="#">Regístrate</a></div></div>
+  <img class="logo-f" src="marca/logo-claro.png" alt="Club de Arte &amp; Cultura">
+  <h1>¡Bienvenido!</h1>
+  <p class="sub">Ingresa a tu cuenta.</p>
+  <div class="f"><label>Correo</label><div class="in foco">lucia@teatroriopiura.pe</div></div>
+  <div class="f"><label>Contraseña</label><div class="in">••••••••<span title="Mostrar contraseña">◉</span></div></div>
+  <span class="olv" title="Aplazado: deferred-work.md">¿Olvidaste tu contraseña?</span>
+  <a class="btn" href="#" data-ir="org">Ingresar</a>
+  <p class="nota">Público, organizador o administrador: entras igual y llegas a tu panel.</p>
+ </div>
+</div>
+</div>
+
+<!-- ============ PANEL ORGANIZADOR (tras ingresar) ============ -->
+<div class="vista" id="org">
+<header><div class="wrap">
+ <a class="logo" href="#" data-ir="portada"><img src="marca/logo-oscuro.png" alt="Club de Arte &amp; Cultura"></a>
+ <nav class="menu"><a class="on" href="#">Mis eventos</a><a href="#">Marketing</a><a href="#">Ventas</a></nav>
+ <div class="acc"><div class="avatar"><b>L</b><span class="nm">Lucía · Organizadora ▾</span></div></div>
+</div></header>
+<main class="wrap">
+ <div class="org-top"><div><span class="meta">Hola, Lucía</span><h1 style="margin-top:4px">Mis eventos</h1></div><a class="btn" href="#">Nuevo evento</a></div>
+ <div class="kpis">
+  <div class="kpi"><span class="meta">Entradas vendidas</span><b>184</b></div>
+  <div class="kpi"><span class="meta">Ingresos (IGV incl.)</span><b>S/ 4 120</b></div>
+  <div class="kpi"><span class="meta">Clics en tus piezas</span><b>1 036</b></div>
+  <div class="kpi"><span class="meta">Eventos publicados</span><b>2</b></div>
+ </div>
+ <div class="tabla">
+  <div class="tr h"><span></span><span>Evento</span><span class="c">Fecha</span><span class="c">Vendidas</span><span class="c">Estado</span><span></span></div>
+  <div class="tr"><div class="p a2"></div><div><b>Historias del río Piura</b><div class="meta">Teatro Municipal · Piura</div></div><span class="c meta">17 oct</span><span class="c">132 / 643</span><span class="c"><span class="estado">Aprobado</span></span><a class="vertodos" href="#">Marketing</a></div>
+  <div class="tr"><div class="p a6"></div><div><b>Encuentro cultural de noviembre</b><div class="meta">Teatro Municipal · Piura</div></div><span class="c meta">14 nov</span><span class="c">—</span><span class="c"><span class="estado pen">Pendiente</span></span><a class="vertodos" href="#">Ver</a></div>
+ </div>
+</main>
+<footer><div class="wrap"><div class="copy meta" style="border:0;margin:0;padding:0"><span>© 2026 Club de Arte &amp; Cultura · Piura</span><span>Pago simulado: no se cobra nada.</span></div></div></footer>
+<nav class="barra" aria-label="Navegación">
+ <a class="on" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>Mis eventos</a>
+ <a href="#"><svg viewBox="0 0 24 24"><path d="M3 11l15-6v14L3 13zM8 13v5"/></svg>Marketing</a>
+ <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Ventas</a>
+ <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Cuenta</a>
+</nav>
+</div>
+
+<script>
+function ver(v){document.querySelectorAll('.vista').forEach(e=>e.classList.toggle('on',e.id===v));document.querySelectorAll('.proto button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));scrollTo(0,0);history.replaceState(null,'','#'+v)}
+document.querySelectorAll('.proto button').forEach(b=>b.onclick=()=>ver(b.dataset.v));
+document.querySelectorAll('[data-ir]').forEach(a=>a.onclick=e=>{e.preventDefault();ver(a.dataset.ir)});
+function porHash(){var v=location.hash.slice(1);if(v&&document.getElementById(v))ver(v)}porHash();addEventListener("hashchange",porHash);
+</script>
+</body></html>

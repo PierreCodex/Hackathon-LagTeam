@@ -29,7 +29,7 @@ slug = "epic-paneles-negocio"
 title = "Paneles y negocio"
 covers = ["CAP-11", "CAP-12", "CAP-13"]
 after = [
-  { epic = 1, needs = "sistema de diseño y layout móvil (1.7)" },
+  { epic = 1, needs = "paleta del manual y layout de escritorio y móvil (1.12)" },
   { epic = 2, needs = "órdenes pagadas con comisión congelada, asistencia y ventas_config_comision (AD-10)" },
   { epic = 3, needs = "enlaces rastreables y clics por pieza (AD-8)" },
 ]
