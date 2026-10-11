@@ -115,6 +115,21 @@ export function guardaDeRol(sesion: Sesion, rolRequerido: RolApi): Guarda {
 }
 
 /**
+ * Decide qué ve una ruta abierta a cualquier cuenta, o a una lista de roles (historia 8: "Mis entradas"
+ * es de cualquier cuenta; el escáner, de organizador o admin). Sin lista (o vacía), cualquier cuenta vale.
+ * `rolRequerido` del resultado "sin-permiso" es solo el primero de la lista: quien lo pinta (`GuardaCuenta`)
+ * construye el texto a partir de la lista completa, no de este único valor.
+ */
+export function guardaDeCuenta(sesion: Sesion, roles?: readonly RolApi[]): Guarda {
+  if (sesion.tipo === "anonima") return { tipo: "ingresar" };
+  if (sesion.tipo === "error") return { tipo: "error", error: sesion.error };
+  if (roles && roles.length > 0 && !roles.includes(sesion.perfil.rol)) {
+    return { tipo: "sin-permiso", rolRequerido: roles[0]!, portada: portadaDeRol(sesion.perfil.rol) };
+  }
+  return { tipo: "permitido", perfil: sesion.perfil };
+}
+
+/**
  * Ruta interna segura para volver tras entrar: empieza por `/`, no por `//` ni `/\`
  * (evita redirecciones abiertas a otro dominio). Si no vale, `null`.
  */
