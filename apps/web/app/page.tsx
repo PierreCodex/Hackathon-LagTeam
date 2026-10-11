@@ -1,3 +1,5 @@
+import { Pantalla } from "@/components/layout";
+import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { consultarSalud, resumir } from "../lib/salud";
 
 // Se consulta en cada visita: nunca se sirve una salud cacheada.
@@ -8,14 +10,25 @@ export default async function Inicio() {
   const sano = api === "ok" && bd === "ok";
 
   return (
-    <main>
-      <h1>Eventos culturales de Piura</h1>
-      <section className="tarjeta" aria-live="polite">
-        <p className={`estado ${sano ? "ok" : "error"}`}>
-          API {api} · BD {bd}
-        </p>
-        <p className="detalle">{detalle}</p>
-      </section>
-    </main>
+    <Pantalla titulo="Eventos culturales de Piura">
+      <Tarjeta como="section" aria-labelledby="titulo-salud" className="flex flex-col gap-3">
+        <h2 id="titulo-salud" className="text-meta text-ink-secondary">
+          Estado del sistema
+        </h2>
+        <Aviso
+          tipo={sano ? "exito" : "error"}
+          titulo={`API ${api} · BD ${bd}`}
+          accion={
+            sano ? undefined : (
+              <BotonEnlace href="/" variante="secundario" prefetch={false}>
+                Reintentar
+              </BotonEnlace>
+            )
+          }
+        >
+          {detalle}
+        </Aviso>
+      </Tarjeta>
+    </Pantalla>
   );
 }
