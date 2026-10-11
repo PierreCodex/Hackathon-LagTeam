@@ -5,6 +5,7 @@ import { cache } from "react";
 import { PantallaSesion } from "@/components/layout/pantalla-sesion";
 import { Aviso, BotonEnlace, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
+import { categoriasDeZonaGeneral } from "@/lib/compra";
 import { etiquetaCategoria, rutaComprar, soles, textoPrecio } from "@/lib/catalogo";
 import { fechaPieza } from "@/lib/pieza";
 import { ImagenEvento } from "../../portada/tarjeta-evento";
@@ -104,10 +105,16 @@ export default async function FichaEvento({ params, searchParams }: Props) {
             ) : (
               <p className="text-ink-secondary">Los precios se publicarán pronto.</p>
             )}
-            {categorias.length > 0 && (
+            {categoriasDeZonaGeneral(categorias).length > 0 ? (
               <BotonEnlace href={rutaComprar(evento.id, ref)} anchoCompleto>
                 Comprar entradas
               </BotonEnlace>
+            ) : (
+              categorias.length > 0 && (
+                <Aviso tipo="info" titulo="La elección de butaca llega muy pronto.">
+                  Este evento tiene butacas numeradas: podrás elegir la tuya en el mapa de la sala.
+                </Aviso>
+              )
             )}
           </Tarjeta>
         </div>

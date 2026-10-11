@@ -27,6 +27,14 @@ function etiquetaPrecio(centimos: number): string {
   return centimos === 0 ? "Entrada libre" : `S/ ${soles(centimos)}`;
 }
 
+/**
+ * Categorías que este checkout puede vender: las de zona general (con `seccion_id`). Las de butacas
+ * numeradas se compran eligiendo butaca (2.11); la API las rechaza aquí con `CATEGORIA_NO_VALIDA`.
+ */
+export function categoriasDeZonaGeneral(categorias: readonly CategoriaPrecio[]): CategoriaPrecio[] {
+  return categorias.filter((categoria) => categoria.seccion_id !== null);
+}
+
 /** Una opción por categoría de precio del evento, con su precio en la etiqueta. */
 export function opcionesCategoria(categorias: readonly CategoriaPrecio[]): OpcionCompra[] {
   return categorias.map((categoria) => ({
