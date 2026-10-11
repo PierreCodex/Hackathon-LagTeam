@@ -67,17 +67,30 @@ const PRECIOS = {
     { asiento_id: ASIENTO, seccion: "Platea baja", fila: "A", numero: 1, categoria_id: CATEGORIA },
     { asiento_id: "55555555-5555-4555-8555-555555555555", seccion: "Platea baja", fila: "A", numero: 3, categoria_id: null },
   ],
+  categorias: [{ id: CATEGORIA, evento_id: EVENTO, sede_id: "66666666-6666-4666-8666-666666666666", nombre: "VIP", color: "#D97706", precio_centimos: 5000, seccion_id: null }],
 };
 
-/** Cliente simulado: cada RPC responde según su nombre; `from` devuelve `evento`. */
-function simulado(respuestas: Record<string, Respuesta>, evento: Respuesta = { data: { id: EVENTO, organizador_id: ORGANIZADOR }, error: null }) {
+/**
+ * Cliente simulado: cada RPC responde según su nombre. `from("eventos_eventos")` devuelve `evento`
+ * (la verificación de dueño); `from("eventos_categorias_precio")` devuelve `categorias` (el `select`
+ * extra de `preciosDe`), por defecto las de `PRECIOS`.
+ */
+function simulado(
+  respuestas: Record<string, Respuesta>,
+  evento: Respuesta = { data: { id: EVENTO, organizador_id: ORGANIZADOR }, error: null },
+  categorias: Respuesta = { data: PRECIOS.categorias, error: null },
+) {
   const llamadas = vi.fn();
   const cliente = {
     rpc: (nombre: string, args: unknown) => {
       llamadas(nombre, args);
       return { abortSignal: async () => ({ status: 200, ...(respuestas[nombre] ?? { data: null, error: { message: `sin respuesta para ${nombre}` } }) }) };
     },
-    from: () => {
+    from: (tabla: string) => {
+      if (tabla === "eventos_categorias_precio") {
+        const consultaCategorias = { select: () => consultaCategorias, eq: () => consultaCategorias, order: () => consultaCategorias, abortSignal: async () => categorias };
+        return consultaCategorias;
+      }
       const consulta = {
         select: () => consulta,
         eq: () => consulta,
