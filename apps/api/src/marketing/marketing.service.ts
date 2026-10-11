@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   ConflictException,
   Inject,
   Injectable,
@@ -17,6 +18,9 @@ import {
   type OrigenIa,
   type Pieza,
   PiezaSchema,
+  type PublicacionPieza,
+  PublicacionPiezaSchema,
+  type PublicarPieza,
   type ResultadosPieza,
   ResultadosPiezaSchema,
   type TextosYCampana,
@@ -26,6 +30,7 @@ import { IaService } from "../ia/ia.service.js";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
 import { VentasService } from "../ventas/ventas.service.js";
 import { esCodigoValido, generarCodigo } from "./codigo-enlace.js";
+import { PublicadorUploadPost } from "./publicador-upload-post.js";
 
 export const TABLA_PIEZAS = "marketing_piezas";
 export const TABLA_ENLACES = "marketing_enlaces";
@@ -66,6 +71,7 @@ export class MarketingService {
     @Inject(EventosService) private readonly eventos: EventosService,
     @Inject(IaService) private readonly ia: IaService,
     @Inject(VentasService) private readonly ventas: VentasService,
+    @Inject(PublicadorUploadPost) private readonly publicador: PublicadorUploadPost,
   ) {}
 
   /**
@@ -238,6 +244,46 @@ export class MarketingService {
     return ResultadosPiezaSchema.parse({ pieza_id: pieza.id, evento_id: pieza.evento_id, total, enlaces });
   }
 
+  /**
+   * Publica (o programa) el flyer 4:5 de la pieza en Instagram y Facebook con Upload-Post (3.4).
+   * Crea un enlace rastreable para el post y lo añade al texto, para que sus clics y ventas cuenten
+   * en la pieza (AD-8). Sin configuración → 503; si Upload-Post falla → 502. En ambos casos la web
+   * ofrece descargar el PNG y copiar el texto.
+   */
+  async publicarPieza(organizadorId: string, piezaId: string, datos: PublicarPieza): Promise<PublicacionPieza> {
+    const web = urlWeb();
+    if (!this.publicador.configurado() || !web) {
+      throw new ServiceUnavailableException({
+        codigo: CODIGOS_MARKETING.PUBLICACION_NO_CONFIGURADA,
+        mensaje: "La publicación en redes no está configurada. Descarga la imagen y copia el texto.",
+      });
+    }
+    // `obtenerPieza` comprueba que el evento sigue aprobado; `crearEnlace`, que la pieza es del organizador.
+    const pieza = await this.obtenerPieza(piezaId);
+    const enlace = await this.crearEnlace(organizadorId, piezaId, {
+      red: datos.redes.length === 1 ? datos.redes[0] : undefined,
+    });
+    const urlEnlace = `${web}/r/${enlace.codigo}`;
+    const texto = `${datos.texto ?? textoPorDefecto(pieza)}\n\nEntradas: ${urlEnlace}`;
+
+    try {
+      const resultado = await this.publicador.publicarFoto({
+        redes: datos.redes,
+        imagenUrl: `${web}/piezas/${encodeURIComponent(pieza.id)}/4x5`,
+        texto,
+        programarPara: datos.programar_para,
+      });
+      return PublicacionPiezaSchema.parse({ pieza_id: pieza.id, enlace, url_enlace: urlEnlace, texto, ...resultado });
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`No se pudo publicar la pieza ${pieza.id}: ${mensaje}`);
+      throw new BadGatewayException({
+        codigo: CODIGOS_MARKETING.PUBLICACION_FALLIDA,
+        mensaje: `No pudimos publicar en redes (${mensaje}). Descarga la imagen y copia el texto.`,
+      });
+    }
+  }
+
   /** Pieza del organizador; ajena, inexistente o con un id que no es UUID → 404 sin revelar que existe. */
   private async piezaDelOrganizador(organizadorId: string, piezaId: string): Promise<PiezaConDueno> {
     const supabase = this.cliente();
@@ -275,6 +321,17 @@ export function datosDePieza(evento: EventoParaPieza): DatosPieza {
     precio_minimo_centimos: evento.precio_minimo_centimos,
     foto_url: evento.foto_url,
   };
+}
+
+/** Primera URL de `WEB_URL` (la web pública), sin barra final. */
+function urlWeb(): string | undefined {
+  return process.env.WEB_URL?.split(",")[0]?.trim().replace(/\/+$/, "") || undefined;
+}
+
+/** Texto del post cuando el organizador no escribe uno: los textos de la IA y los hashtags locales. */
+export function textoPorDefecto(pieza: Pieza): string {
+  const { textos } = pieza;
+  return `${textos.titular}\n\n${textos.descripcion}\n\n${textos.llamado}\n\n#PiuraCultural #QueHacerEnPiura`;
 }
 
 function aPieza(fila: FilaPieza, evento: EventoParaPieza): Pieza {

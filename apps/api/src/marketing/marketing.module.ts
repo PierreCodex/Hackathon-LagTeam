@@ -4,6 +4,7 @@ import { IaModule } from "../ia/ia.module.js";
 import { VentasModule } from "../ventas/ventas.module.js";
 import { MarketingController } from "./marketing.controller.js";
 import { MarketingService } from "./marketing.service.js";
+import { PublicadorUploadPost } from "./publicador-upload-post.js";
 
 /**
  * Módulo `marketing`: piezas, enlaces rastreables y clics (`marketing_*`). Lee eventos solo por
@@ -13,7 +14,7 @@ import { MarketingService } from "./marketing.service.js";
 @Module({
   imports: [EventosModule, IaModule, VentasModule],
   controllers: [MarketingController],
-  providers: [MarketingService],
+  providers: [MarketingService, PublicadorUploadPost],
   exports: [MarketingService],
 })
 export class MarketingModule {}
