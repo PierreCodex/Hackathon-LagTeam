@@ -126,6 +126,12 @@ export function MapaButacas({ eventoId, mapa, evento, butacasIniciales, apiUrl }
       await manejarError(pagada.error, id);
       return;
     }
+    // La butaca queda vendida en esta pantalla también (las demás la reciben por Realtime).
+    const vendida = seleccion;
+    setButacas((anteriores) => anteriores.map((b) => (b.asiento_id === vendida ? { ...b, estado: "vendida" } : b)));
+    setSeleccion(null);
+    setOrdenId(null);
+    router.refresh();
     router.push("/mis-entradas");
   }
 

@@ -46,6 +46,9 @@ async function cargarDatos(id: string): Promise<DatosButacas> {
  * (AD-1 no exige entrar para VER el mapa, solo para comprar). "Comprar" sin sesión manda a `/ingresar`
  * y vuelve aquí (lo decide `MapaButacas`).
  */
+// Siempre fresco: el estado de las butacas cambia con cada compra.
+export const dynamic = "force-dynamic";
+
 export default async function ElegirButaca({ params }: Props) {
   const { id } = await params;
   const ruta = `/eventos/${id}/butacas`;
