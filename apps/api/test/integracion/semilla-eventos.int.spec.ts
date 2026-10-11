@@ -1,4 +1,4 @@
-import { CategoriaPrecioSchema, EventoSchema, MapaSedeSchema } from "@reto18/shared";
+import { CategoriaPrecioSchema, EventoRevisionSchema, MapaSedeSchema } from "@reto18/shared";
 import { expect, it } from "vitest";
 import { CROQUIS, ORGANIZADOR_DEMO_ID, SEDE_CROQUIS_ID, SEDE_GENERAL_ID } from "../fixtures/croquis.js";
 import { clienteAdminDePrueba } from "./ayudas/supabase.js";
@@ -43,8 +43,12 @@ it("la demo tiene eventos variados, Weekend completo y una zona general con prec
   const admin = clienteAdminDePrueba();
   const eventos = await admin.from("eventos_eventos").select("*").eq("organizador_id", ORGANIZADOR_DEMO_ID);
   expect(eventos.error).toBeNull();
-  const datos = EventoSchema.array().parse(eventos.data);
+  const datos = EventoRevisionSchema.array().parse(eventos.data);
   expect(datos).toHaveLength(8);
+  expect(datos.find((e) => e.id === "13600000-0000-4000-8000-000000000007")).toMatchObject({
+    estado: "pendiente", descripcion: expect.stringContaining("DJ"), alerta_apdayc: expect.stringContaining("DJ"),
+  });
+  expect(datos.filter((e) => e.alerta_apdayc !== null)).toHaveLength(1);
   expect(datos.some((e) => e.estado === "pendiente")).toBe(true);
   expect(datos.some((e) => e.estado === "aprobado" && e.destacado)).toBe(true);
   expect(new Set(datos.map((e) => e.categoria)).size).toBe(7);

@@ -19,6 +19,7 @@ export const TIEMPO_LIMITE_STORAGE_MS = 10_000;
 
 export const BUCKET_FOTOS = "eventos-fotos";
 export const BUCKET_CONSTANCIAS = "eventos-constancias";
+export const DURACION_FIRMA_CONSTANCIA_SEGUNDOS = 300;
 
 /** Lo que usa el módulo de un archivo de multer (memoria). */
 export interface ArchivoEntrada {
@@ -86,7 +87,7 @@ export function archivoNoValido(mensaje: string): BadRequestException {
 function storageNoDisponible(): ServiceUnavailableException {
   return new ServiceUnavailableException({
     codigo: CODIGOS_EVENTOS.STORAGE_NO_DISPONIBLE,
-    mensaje: "No se pudieron guardar los archivos. Inténtalo en unos minutos.",
+    mensaje: "No se pudo acceder al almacenamiento de archivos. Inténtalo en unos minutos.",
   });
 }
 
@@ -106,10 +107,32 @@ export class ArchivosEventos {
 
   /**
    * Sube la constancia y devuelve la URL del objeto (`…/storage/v1/object/eventos-constancias/<ruta>`).
-   * El bucket es privado: la URL no se abre sin firma (la firma la 1.10 para el admin).
+   * El bucket es privado: la URL no se abre sin firma.
    */
   subirConstancia(organizadorId: string, archivo: ArchivoEntrada, tipo: string): Promise<ArchivoSubido> {
     return this.subir(BUCKET_CONSTANCIAS, organizadorId, archivo, tipo);
+  }
+
+  /** Firma únicamente un objeto del bucket privado y del propietario indicado por la BD. */
+  async firmarConstancia(organizadorId: string, urlGuardada: string): Promise<string> {
+    if (!this.supabase) throw storageNoDisponible();
+    const almacen = this.supabase.storage.from(BUCKET_CONSTANCIAS);
+    const base = almacen.getPublicUrl("").data.publicUrl.replace("/storage/v1/object/public/", "/storage/v1/object/");
+    const prefijo = `${base}${organizadorId}/`;
+    const nombre = urlGuardada.startsWith(prefijo) ? urlGuardada.slice(prefijo.length) : "";
+    // Rutas canónicas generadas en subir(): UUID/extensión. No admite firmas, traversal ni otro origen.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|jpg|png|webp)$/i.test(nombre)) {
+      throw archivoNoValido("La ruta de la constancia no pertenece al archivo privado del organizador");
+    }
+    try {
+      const { data, error } = await conTiempoLimite(
+        almacen.createSignedUrl(`${organizadorId}/${nombre}`, DURACION_FIRMA_CONSTANCIA_SEGUNDOS),
+      );
+      if (error || !data?.signedUrl) throw error ?? new Error("Firma vacía");
+      return data.signedUrl;
+    } catch {
+      throw storageNoDisponible();
+    }
   }
 
   /** Borra lo subido. Nunca lanza: si falla, deja el aviso en el log con las rutas. */

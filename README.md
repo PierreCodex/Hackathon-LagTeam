@@ -54,6 +54,37 @@ curl localhost:3001/api/v1/identidad/perfil -H "Authorization: Bearer $TOKEN"
 curl -X POST localhost:3001/api/v1/eventos -H "Authorization: Bearer $TOKEN"   -F 'datos={"titulo":"Noche de marinera","categoria":"danza","descripcion":"Marinera norteña con parejas de Piura.","inicio":"2026-12-05T20:00:00-05:00","aforo":100,"hay_musica":false,"sede":{"tipo":"existente","sede_id":"13100000-0000-4000-8000-000000000001"},"categorias":[{"nombre":"General","precio_centimos":2000}]}'   -F foto=@foto.jpg
 ```
 
+### Revisión de eventos (historia 1.5; contratos para la UI 1.10)
+
+Todas las rutas llevan el prefijo `/api/v1` y requieren `Authorization: Bearer <token>`.
+
+| Ruta | Rol | Entrada y respuesta 200 |
+|---|---|---|
+| `GET /eventos/pendientes` | admin | Array de `EventoRevisionSchema`, solo pendientes |
+| `GET /eventos/mis-eventos` | organizador | Array del mismo contrato, solo del usuario del token |
+| `GET /eventos/:id/constancia` | admin | `{ "url": "…" }` con firma de 300 segundos, o `{ "url": null }` si no tiene archivo |
+| `PATCH /eventos/:id/aprobar` | admin | Sin cuerpo; devuelve evento aprobado, con `motivo_rechazo: null` |
+| `PATCH /eventos/:id/rechazar` | admin | `{ "motivo_rechazo": "Completar el programa" }`; devuelve evento rechazado y `destacado: false` |
+| `PATCH /eventos/:id/destacado` | admin | `{ "destacado": true }` o `false`; devuelve el evento actualizado |
+
+Las listas se ordenan por `inicio` y luego `id` ascendente. Incluyen los datos del evento,
+`motivo_rechazo`, la URL privada almacenada y `alerta_apdayc` (texto o `null`). El motivo del
+rechazo se recorta y debe tener entre 1 y 600 caracteres. Aprobar/rechazar solo admite
+`pendiente`; destacar/quitar destacado solo admite `aprobado`. Las decisiones anteriores no
+se cambian y dos decisiones concurrentes no pueden sobrescribirse.
+
+Errores con formato `{ "error": { "codigo", "mensaje" } }`: 400 `PETICION_INVALIDA` para UUID
+o cuerpo inválido; 400 `ARCHIVO_NO_VALIDO` si la ruta almacenada de la constancia es ajena o
+inválida; 401 `NO_AUTENTICADO`; 403 `SIN_PERMISO`; 404 `EVENTO_NO_EXISTE`; 409
+`ESTADO_EVENTO_INCOMPATIBLE`; 503 `BD_NO_DISPONIBLE` o `STORAGE_NO_DISPONIBLE` (límite de
+10 segundos por llamada). Tras 409 o un fallo de conexión, recargar el evento antes de repetir.
+
+La constancia permanece privada. La firma se solicita solo al abrirla, no se guarda en la BD,
+y únicamente permite objetos del bucket `eventos-constancias` bajo el propietario del evento.
+Aplicar `20261012000000_eventos_aprobacion.sql` antes de desplegar esta API: añade
+`alerta_apdayc` nullable y conserva los permisos. La semilla incluye una alerta de DJ en el
+pendiente `13600000-0000-4000-8000-000000000007`; no se ejecuta IA.
+
 Antes de abrir un PR, lo mismo que corre la CI (`.github/workflows/ci.yml`):
 
 ```bash
@@ -76,7 +107,9 @@ pnpm db:stop             # apaga la BD de prueba cuando acabes
 ```
 
 Si la BD no está levantada, `pnpm test:int` falla al inicio, sin ejecutar ninguna prueba, y dice
-que ejecutes `pnpm db:start`. Tras añadir una migración nueva, aplícala con `pnpm exec supabase db reset`.
+que ejecutes `pnpm db:start`. Tras añadir una migración nueva, aplícala con
+`pnpm exec supabase migration up --local`. `supabase db reset` borra los datos locales:
+úsalo únicamente si el equipo autoriza reiniciar esa BD.
 
 ### Datos de demo de eventos
 
@@ -87,7 +120,7 @@ eventos de octubre–noviembre de 2026. El 16, 17 y 18 de octubre tienen eventos
 Weekend. Hay precios en céntimos de PEN con IGV, una muestra de arte gratuita y eventos pendiente y rechazado.
 
 En la nube, aplica primero todas las migraciones de `supabase/migrations` en orden, incluidas
-`20261010020000_eventos.sql` y `20261011000000_eventos_alta.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
+`20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql` y `20261012000000_eventos_aprobacion.sql`. Después abre **Supabase > SQL Editor**, pega el contenido completo de
 `supabase/seed.sql` y ejecútalo. Puedes ejecutarlo otra vez: conserva los identificadores de la demo
 y no duplica filas. No requiere variables ni herramientas de la CLI dentro del SQL Editor.
 
@@ -143,7 +176,7 @@ Las variables están explicadas en `.env.example`. Las claves reales nunca se su
 ### 1. Supabase
 
 1. Crear el proyecto (plan gratuito).
-2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql`; esta última también crea los buckets de Storage `eventos-fotos` y `eventos-constancias`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
+2. Aplicar las migraciones de `supabase/migrations`, en orden (`20261010000000_salud.sql`, `20261010010000_identidad.sql`, `20261010020000_eventos.sql`, `20261011000000_eventos_alta.sql` y `20261012000000_eventos_aprobacion.sql`; la de alta crea los buckets `eventos-fotos` y `eventos-constancias`): pegarlas en **SQL Editor** y ejecutarlas, o con la CLI `supabase link` + `supabase db push`. Para la demo, ejecutar después `supabase/seed.sql` en el SQL Editor (ver Datos de demo de eventos).
 3. Copiar de **Project Settings > API** la *Project URL* (`SUPABASE_URL`) y la clave *service_role* (`SUPABASE_SERVICE_ROLE_KEY`). La clave *service_role* va solo a Railway, nunca a Vercel (AD-1).
 4. Crear el administrador: rellenar `ADMIN_CORREO`, `ADMIN_CONTRASENA` y `ADMIN_WHATSAPP` en el `.env` local y ejecutar `pnpm --filter @reto18/api sembrar:admin`. Se puede repetir: actualiza la contraseña sin duplicar la cuenta. Si `ADMIN_CORREO` ya es de una cuenta con otro rol, se niega; para ascenderla igualmente: `pnpm --filter @reto18/api sembrar:admin -- --forzar`. No hace falta tocar la confirmación por correo de Supabase: la API crea las cuentas ya confirmadas.
 

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -14,6 +15,8 @@ import {
   CODIGOS_EVENTOS,
   type Evento,
   type EventoCreado,
+  type EventoRevision,
+  type ConstanciaEvento,
   type SedeResumen,
 } from "@reto18/shared";
 import { SUPABASE_CLIENTE, type ClienteSupabase } from "../supabase/supabase.module.js";
@@ -32,6 +35,7 @@ export const COLUMNAS_EVENTO =
   "id, organizador_id, sede_id, titulo, descripcion, categoria, distrito, inicio, estado, motivo_rechazo, " +
   "destacado, hay_musica, constancia_apdayc_url, foto_url, aforo";
 export const COLUMNAS_CATEGORIA = "id, evento_id, sede_id, nombre, color, precio_centimos, seccion_id";
+export const COLUMNAS_REVISION = `${COLUMNAS_EVENTO}, alerta_apdayc`;
 
 /** Colores que se asignan, en orden, a las categorías que llegan sin color. */
 export const PALETA_CATEGORIAS = ["#D97706", "#2563EB", "#7C3AED", "#059669", "#DC2626", "#0891B2"] as const;
@@ -57,6 +61,73 @@ export class EventosService {
     @Inject(SUPABASE_CLIENTE) private readonly supabase: ClienteSupabase,
     @Inject(ArchivosEventos) private readonly archivos: ArchivosEventos,
   ) {}
+
+  listarPendientes(): Promise<EventoRevision[]> {
+    return this.listarRevision("estado", "pendiente");
+  }
+
+  listarPropios(organizadorId: string): Promise<EventoRevision[]> {
+    return this.listarRevision("organizador_id", organizadorId);
+  }
+
+  private async listarRevision(campo: "estado" | "organizador_id", valor: string): Promise<EventoRevision[]> {
+    const { data } = await this.consultarRevision(this.cliente().from("eventos_eventos")
+      .select(COLUMNAS_REVISION).eq(campo, valor).order("inicio").order("id")
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS)));
+    return (data ?? []) as unknown as EventoRevision[];
+  }
+
+  async constancia(id: string): Promise<ConstanciaEvento> {
+    const evento = await this.leerRevision(id);
+    return { url: evento.constancia_apdayc_url
+      ? await this.archivos.firmarConstancia(evento.organizador_id, evento.constancia_apdayc_url)
+      : null };
+  }
+
+  aprobar(id: string): Promise<EventoRevision> {
+    return this.actualizarRevision(id, "pendiente", { estado: "aprobado", motivo_rechazo: null });
+  }
+
+  rechazar(id: string, motivo: string): Promise<EventoRevision> {
+    return this.actualizarRevision(id, "pendiente", { estado: "rechazado", motivo_rechazo: motivo, destacado: false });
+  }
+
+  destacar(id: string, destacado: boolean): Promise<EventoRevision> {
+    return this.actualizarRevision(id, "aprobado", { destacado });
+  }
+
+  private async actualizarRevision(
+    id: string, estado: "pendiente" | "aprobado", cambios: Record<string, unknown>,
+  ): Promise<EventoRevision> {
+    // El filtro se evalúa dentro del UPDATE: dos revisores no pueden sobrescribir sus decisiones.
+    const { data } = await this.consultarRevision(this.cliente().from("eventos_eventos")
+      .update(cambios).eq("id", id).eq("estado", estado).select(COLUMNAS_REVISION)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS)).maybeSingle());
+    if (data) return data as unknown as EventoRevision;
+    await this.leerRevision(id); // Distingue un UUID inexistente de un estado incompatible.
+    throw new ConflictException({
+      codigo: CODIGOS_EVENTOS.ESTADO_EVENTO_INCOMPATIBLE,
+      mensaje: `La acción requiere un evento ${estado}. Recarga el evento.`,
+    });
+  }
+
+  private async leerRevision(id: string): Promise<EventoRevision> {
+    const { data } = await this.consultarRevision(this.cliente().from("eventos_eventos")
+      .select(COLUMNAS_REVISION).eq("id", id)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS)).maybeSingle());
+    if (!data) throw new NotFoundException({ codigo: CODIGOS_EVENTOS.EVENTO_NO_EXISTE, mensaje: "El evento no existe" });
+    return data as unknown as EventoRevision;
+  }
+
+  private async consultarRevision<T>(consulta: PromiseLike<{ data: T; error: unknown }>): Promise<{ data: T }> {
+    try {
+      const resultado = await consulta;
+      if (resultado.error) throw resultado.error;
+      return resultado;
+    } catch {
+      throw bdNoDisponible("No se pudo consultar o actualizar el evento. Recarga antes de repetir la acción.");
+    }
+  }
 
   /**
    * Alta de un evento `pendiente`. Valida todo antes de subir nada; sube la foto (y la constancia

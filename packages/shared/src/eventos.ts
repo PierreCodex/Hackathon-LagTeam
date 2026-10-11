@@ -69,6 +69,18 @@ export const EventoSchema = z.object({
 });
 export type Evento = z.infer<typeof EventoSchema>;
 
+/** Contratos de revisión administrativa; el contrato del alta permanece compatible. */
+export const EventoIdSchema = z.uuid();
+export const RechazoEventoSchema = z.object({ motivo_rechazo: z.string().trim().min(1).max(600) });
+export type RechazoEvento = z.infer<typeof RechazoEventoSchema>;
+export const DestacadoEventoSchema = z.object({ destacado: z.boolean() });
+export type DestacadoEvento = z.infer<typeof DestacadoEventoSchema>;
+export const EventoRevisionSchema = EventoSchema.extend({ alerta_apdayc: z.string().nullable() });
+export type EventoRevision = z.infer<typeof EventoRevisionSchema>;
+export const ListaEventosRevisionSchema = z.array(EventoRevisionSchema);
+export const ConstanciaEventoSchema = z.object({ url: z.url().nullable() });
+export type ConstanciaEvento = z.infer<typeof ConstanciaEventoSchema>;
+
 /** Importes enteros en céntimos de PEN, con IGV incluido. */
 export const CategoriaPrecioSchema = z.object({
   id: z.uuid(), evento_id: z.uuid(), sede_id: z.uuid(), nombre: texto, color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -151,6 +163,8 @@ export const CODIGOS_EVENTOS = {
   ARCHIVO_NO_VALIDO: "ARCHIVO_NO_VALIDO",
   MUSICA_SIN_CONSTANCIA: "MUSICA_SIN_CONSTANCIA",
   SEDE_NO_EXISTE: "SEDE_NO_EXISTE",
+  EVENTO_NO_EXISTE: "EVENTO_NO_EXISTE",
+  ESTADO_EVENTO_INCOMPATIBLE: "ESTADO_EVENTO_INCOMPATIBLE",
   AFORO_SUPERA_SEDE: "AFORO_SUPERA_SEDE",
   STORAGE_NO_DISPONIBLE: "STORAGE_NO_DISPONIBLE",
   /** Mismo valor que `CODIGO_BD_NO_DISPONIBLE`. */

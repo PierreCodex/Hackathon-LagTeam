@@ -11,12 +11,18 @@ import {
   Injectable,
   type NestInterceptor,
   PayloadTooLargeException,
+  Param,
+  Patch,
   Post,
   UploadedFiles,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileFieldsInterceptor } from "@nestjs/platform-express";
 import { CODIGOS_EVENTOS, type EventoCreado, type SedeResumen, TAMANO_MAXIMO_ARCHIVO_EVENTO } from "@reto18/shared";
+import {
+  EventoIdSchema, RechazoEventoSchema, DestacadoEventoSchema,
+  type RechazoEvento, type DestacadoEvento, type EventoRevision, type ConstanciaEvento,
+} from "@reto18/shared";
 import type { Observable } from "rxjs";
 import { Roles, UsuarioActual, type UsuarioAutenticado } from "../identidad/roles.js";
 import { archivoNoValido } from "./archivos-eventos.js";
@@ -64,6 +70,48 @@ export class MultipartAltaInterceptor implements NestInterceptor {
 @Controller("eventos")
 export class EventosController {
   constructor(@Inject(EventosService) private readonly eventos: EventosService) {}
+
+  @Get("pendientes")
+  @Roles("admin")
+  pendientes(): Promise<EventoRevision[]> {
+    return this.eventos.listarPendientes();
+  }
+
+  @Get("mis-eventos")
+  @Roles("organizador")
+  misEventos(@UsuarioActual() usuario: UsuarioAutenticado): Promise<EventoRevision[]> {
+    return this.eventos.listarPropios(usuario.id);
+  }
+
+  @Get(":id/constancia")
+  @Roles("admin")
+  constancia(@Param("id", { schema: EventoIdSchema }) id: string): Promise<ConstanciaEvento> {
+    return this.eventos.constancia(id);
+  }
+
+  @Patch(":id/aprobar")
+  @Roles("admin")
+  aprobar(@Param("id", { schema: EventoIdSchema }) id: string): Promise<EventoRevision> {
+    return this.eventos.aprobar(id);
+  }
+
+  @Patch(":id/rechazar")
+  @Roles("admin")
+  rechazar(
+    @Param("id", { schema: EventoIdSchema }) id: string,
+    @Body({ schema: RechazoEventoSchema }) datos: RechazoEvento,
+  ): Promise<EventoRevision> {
+    return this.eventos.rechazar(id, datos.motivo_rechazo);
+  }
+
+  @Patch(":id/destacado")
+  @Roles("admin")
+  destacar(
+    @Param("id", { schema: EventoIdSchema }) id: string,
+    @Body({ schema: DestacadoEventoSchema }) datos: DestacadoEvento,
+  ): Promise<EventoRevision> {
+    return this.eventos.destacar(id, datos.destacado);
+  }
 
   /**
    * `POST /api/v1/eventos` (organizador): alta multipart. Campo `datos` (JSON de `AltaEventoSchema`),

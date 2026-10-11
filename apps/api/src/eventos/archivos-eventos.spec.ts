@@ -8,6 +8,7 @@ import {
   detectarTipo,
   TIEMPO_LIMITE_STORAGE_MS,
   validarArchivo,
+  DURACION_FIRMA_CONSTANCIA_SEGUNDOS,
 } from "./archivos-eventos.js";
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
@@ -46,6 +47,62 @@ describe("detectarTipo y validarArchivo", () => {
         response: { codigo: CODIGOS_EVENTOS.ARCHIVO_NO_VALIDO, mensaje: expect.stringContaining(`${campo}:`) },
       }),
     );
+  });
+});
+
+describe("firma privada de constancias", () => {
+  const propietario = "13000000-0000-4000-8000-000000000001";
+  const nombre = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.pdf";
+  const base = "http://127.0.0.1:54321/storage/v1/object/";
+  const url = `${base}eventos-constancias/${propietario}/${nombre}`;
+  function preparar(firma: () => Promise<unknown> = async () => ({ data: { signedUrl: "https://storage.test/firmada" }, error: null })) {
+    const createSignedUrl = vi.fn(firma);
+    const from = vi.fn((bucket: string) => ({
+      getPublicUrl: (ruta: string) => ({ data: { publicUrl: `${base}public/${bucket}/${ruta}` } }),
+      createSignedUrl,
+    }));
+    return { archivos: new ArchivosEventos({ storage: { from } } as unknown as ClienteSupabase), createSignedUrl, from };
+  }
+  afterEach(() => vi.useRealTimers());
+
+  it("firma 300 segundos el objeto del propietario", async () => {
+    const s = preparar();
+    expect(await s.archivos.firmarConstancia(propietario, url)).toBe("https://storage.test/firmada");
+    expect(s.from).toHaveBeenCalledWith("eventos-constancias");
+    expect(s.createSignedUrl).toHaveBeenCalledWith(`${propietario}/${nombre}`, 300);
+    expect(DURACION_FIRMA_CONSTANCIA_SEGUNDOS).toBe(300);
+  });
+
+  it.each([
+    url.replace("127.0.0.1", "ajeno.test"), url.replace("eventos-constancias", "eventos-fotos"),
+    url.replace(propietario, "otro"), `${url}?token=firma`, `${url}#fragmento`,
+    url.replace(nombre, `../${nombre}`), url.replace(nombre, `%2e%2e/${nombre}`),
+    url.replace(nombre, `${nombre}/extra`), "no-es-url", url.replace(nombre, ""),
+  ])("rechaza una ruta ajena o inválida %# sin pedir firma", async (ruta) => {
+    const s = preparar();
+    await expect(s.archivos.firmarConstancia(propietario, ruta)).rejects.toMatchObject({
+      status: 400, response: { codigo: "ARCHIVO_NO_VALIDO" },
+    });
+    expect(s.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    async () => ({ data: null, error: { message: "fallo" } }),
+    async () => { throw new Error("red caída"); },
+    async () => ({ data: null, error: null }),
+  ])("traduce fallos de firma a 503 %#", async (firma) => {
+    await expect(preparar(firma).archivos.firmarConstancia(propietario, url)).rejects.toMatchObject({
+      status: 503, response: { codigo: "STORAGE_NO_DISPONIBLE" },
+    });
+  });
+
+  it("limita la espera de firma y admite Storage no configurado", async () => {
+    vi.useFakeTimers();
+    const s = preparar(() => new Promise(() => {}));
+    const comprobacion = expect(s.archivos.firmarConstancia(propietario, url)).rejects.toMatchObject({ status: 503 });
+    await vi.advanceTimersByTimeAsync(TIEMPO_LIMITE_STORAGE_MS);
+    await comprobacion;
+    await expect(new ArchivosEventos(null).firmarConstancia(propietario, url)).rejects.toMatchObject({ status: 503 });
   });
 });
 
