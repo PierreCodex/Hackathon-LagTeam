@@ -39,7 +39,7 @@ describe("calcularComision (AD-10)", () => {
 function evento(cambios: Partial<EventoParaVenta> = {}): EventoParaVenta {
   return {
     id: EVENTO, organizador_id: USUARIO, estado: "aprobado", publicado: true, inicio: "2030-11-21T01:00:00+00:00",
-    aforo: 50, titulo: "Noche piurana", sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
+    aforo: 50, titulo: "Noche piurana", sede_id: "sede-1", sede: { nombre: "Teatro", direccion: "Jr. Prueba 123" },
     categorias: [
       { id: CATEGORIA, nombre: "General", precio_centimos: 4000, seccion_id: "s1", capacidad_zona: 120 },
       { id: "c2", nombre: "Preferencial", precio_centimos: 6000, seccion_id: "s1", capacidad_zona: 120 },

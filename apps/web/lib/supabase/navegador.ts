@@ -4,7 +4,8 @@ import { configSupabase } from "./config";
 
 /**
  * Cliente de Supabase para componentes de cliente, con la sesión de las cookies.
- * Solo para Auth (AD-1): se usa para leer el token y mandarlo a la API, nunca para tablas ni Storage.
+ * Para Auth (leer el token y mandarlo a la API) y, desde la 2.11, para la lectura pública en vivo
+ * de `ventas_evento_asientos` por Realtime (AD-1: solo `SELECT`; nunca otra tabla ni Storage).
  * Devuelve `null` si faltan las variables públicas de Supabase.
  */
 export function crearClienteNavegador(): SupabaseClient | null {

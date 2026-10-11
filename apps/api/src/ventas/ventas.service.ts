@@ -11,9 +11,11 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import {
+  type ButacaVenta,
   CODIGOS_VENTAS,
   type Comision,
   type CrearOrden,
+  type CrearOrdenAsiento,
   type Entrada,
   type MetodoPago,
   type MiEntrada,
@@ -156,6 +158,67 @@ export class VentasService {
   }
 
   /**
+   * Butacas de un evento numerado a la venta: asegura el inventario (idempotente, resuelve el precio de
+   * cada butaca desde los rangos de la 2.4) y devuelve su estado actual (sin pintar por categoría, AD-1
+   * y la decisión del recorte del 11/10/2026). El navegador lee las actualizaciones en vivo por Realtime.
+   */
+  async butacasDeVenta(eventoId: string): Promise<ButacaVenta[]> {
+    const evento = await this.eventos.datosParaVenta(eventoId);
+    if (!evento || evento.estado !== "aprobado" || !evento.publicado) throw eventoNoEncontrado();
+    await this.rpc<void>("ventas_asegurar_inventario_butacas", { p_evento_id: eventoId }, "preparar las butacas");
+    const { data, error } = await this.cliente()
+      .from("ventas_evento_asientos")
+      .select("asiento_id, precio_centimos, estado")
+      .eq("evento_id", eventoId)
+      .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
+    if (error) {
+      this.logger.warn(`No se pudieron leer las butacas del evento ${eventoId}: ${error.message}`);
+      throw bdNoDisponible("No se pudieron leer las butacas. Inténtalo de nuevo.");
+    }
+    const filas = (data ?? []) as { asiento_id: string; precio_centimos: number; estado: "disponible" | "vendida" }[];
+    const etiquetas = await this.eventos.etiquetasDeAsientos(filas.map((f) => f.asiento_id));
+    return filas
+      .flatMap((f) => {
+        const etiqueta = etiquetas.get(f.asiento_id);
+        if (!etiqueta) return [];
+        return [{
+          asiento_id: f.asiento_id,
+          seccion: etiqueta.seccion,
+          fila: etiqueta.fila,
+          numero: etiqueta.numero,
+          precio_centimos: Number(f.precio_centimos),
+          estado: f.estado,
+        }];
+      })
+      .sort((a, b) => a.seccion.localeCompare(b.seccion) || a.fila.localeCompare(b.fila) || a.numero - b.numero);
+  }
+
+  /**
+   * Orden `pendiente` de una butaca numerada de un evento aprobado y publicado. Sin bloqueo temporal de
+   * la butaca (decisión del recorte del 11/10/2026): dos compradores pueden tener cada uno una orden
+   * pendiente de la misma butaca; solo quien paga primero se la queda (lo decide `pagar`, AD-5).
+   */
+  async crearOrdenAsiento(usuarioId: string, datos: CrearOrdenAsiento): Promise<Orden> {
+    this.cliente();
+    const evento = await this.eventos.datosParaVenta(datos.evento_id);
+    if (!evento || evento.estado !== "aprobado" || !evento.publicado) throw eventoNoEncontrado();
+    const fila = await this.rpc<FilaOrden>(
+      "ventas_crear_orden_asiento",
+      {
+        p_datos: {
+          usuario_id: usuarioId,
+          evento_id: evento.id,
+          asiento_id: datos.asiento_id,
+          inicio: evento.inicio,
+          ref: datos.ref ?? null,
+        },
+      },
+      "crear la orden de la butaca",
+    );
+    return aOrden(fila);
+  }
+
+  /**
    * Paga una orden propia `pendiente` con la pasarela (AD-6). Si la orden venció, anula el cobro y
    * responde 409 `ORDEN_EXPIRADA`. Al pagar se congelan la comisión (AD-10), se crean las entradas y
    * se encola el aviso de WhatsApp (si falla la bandeja, la compra sigue: AD-9).
@@ -207,16 +270,22 @@ export class VentasService {
       evento_id: pagada.evento_id,
       qr: this.qr.firmar(id),
       usada_en: null,
+      asiento: null,
     }));
+    // Cantidad siempre 1 en una orden de butaca (2.11): hay exactamente una entrada que etiquetar.
+    if (pagada.asiento_id && entradas.length > 0) {
+      const etiquetas = await this.eventos.etiquetasDeAsientos([pagada.asiento_id]);
+      entradas[0]!.asiento = etiquetas.get(pagada.asiento_id) ?? null;
+    }
     await this.avisarCompra(comprador.telefono, pagada, entradas);
     return { orden: pagada, entradas };
   }
 
-  /** Entradas de la cuenta con su evento (título, inicio y sede), su QR firmado y `usada_en`. */
+  /** Entradas de la cuenta con su evento (título, inicio y sede), su QR firmado, `usada_en` y su butaca (si tiene). */
   async misEntradas(usuarioId: string): Promise<MiEntrada[]> {
     const { data, error } = await this.cliente()
       .from("ventas_entradas")
-      .select("id, orden_id, evento_id, categoria_id, usada_en, creado_en")
+      .select("id, orden_id, evento_id, categoria_id, asiento_id, usada_en, creado_en")
       .eq("usuario_id", usuarioId)
       .order("creado_en", { ascending: false })
       .order("id")
@@ -226,14 +295,17 @@ export class VentasService {
       throw bdNoDisponible("No se pudieron leer tus entradas. Inténtalo de nuevo.");
     }
     const filas = (data ?? []) as {
-      id: string; orden_id: string; evento_id: string; categoria_id: string; usada_en: string | null;
+      id: string; orden_id: string; evento_id: string; categoria_id: string; asiento_id: string | null; usada_en: string | null;
     }[];
     if (filas.length === 0) return [];
     this.qr.exigir();
     const ids = [...new Set(filas.map((f) => f.evento_id))];
-    const eventos = new Map(
-      (await Promise.all(ids.map((id) => this.eventos.datosParaVenta(id)))).flatMap((e) => (e ? [[e.id, e] as const] : [])),
-    );
+    const [eventos, etiquetas] = await Promise.all([
+      Promise.all(ids.map((id) => this.eventos.datosParaVenta(id))).then(
+        (lista) => new Map(lista.flatMap((e) => (e ? [[e.id, e] as const] : []))),
+      ),
+      this.eventos.etiquetasDeAsientos([...new Set(filas.flatMap((f) => (f.asiento_id ? [f.asiento_id] : [])))]),
+    ]);
     return filas.flatMap((f) => {
       const evento = eventos.get(f.evento_id);
       if (!evento) return [];
@@ -243,6 +315,7 @@ export class VentasService {
         evento_id: f.evento_id,
         qr: this.qr.firmar(f.id),
         usada_en: f.usada_en,
+        asiento: f.asiento_id ? etiquetas.get(f.asiento_id) ?? null : null,
         categoria: evento.categorias.find((c) => c.id === f.categoria_id)?.nombre ?? "",
         evento: { id: evento.id, titulo: evento.titulo, inicio: evento.inicio, sede: evento.sede },
       }];
@@ -435,12 +508,15 @@ export class VentasService {
     });
   }
 
-  /** Llama a una RPC y traduce sus errores `P0001` a los códigos del módulo. */
+  /**
+   * Llama a una RPC y traduce sus errores `P0001` a los códigos del módulo. `T` puede ser `void`
+   * (una RPC SQL `void`, como `ventas_asegurar_inventario_butacas`, siempre devuelve `data: null` sin error).
+   */
   private async rpc<T>(nombre: string, args: Record<string, unknown>, accion: string): Promise<T> {
     const { data, error, status } = await this.cliente()
       .rpc(nombre, args)
       .abortSignal(AbortSignal.timeout(TIEMPO_LIMITE_BD_MS));
-    if (!error && data !== null && data !== undefined) return data as T;
+    if (!error) return data as T;
     const errorBd = error as ErrorBd | null;
     const traducido = errorBd?.code === "P0001" ? ERRORES_RPC[errorBd.message] : undefined;
     if (traducido) throw traducido(errorBd?.details ?? errorBd!.message);
@@ -472,6 +548,7 @@ function aOrden(fila: FilaOrden): Orden {
     metodo_pago: fila.metodo_pago ?? null,
     pagada_en: fila.pagada_en ?? null,
     creado_en: fila.creado_en,
+    asiento_id: fila.asiento_id ?? null,
   });
 }
 
@@ -481,6 +558,10 @@ const ERRORES_RPC: Record<string, (mensaje: string) => HttpException> = {
   [CODIGOS_VENTAS.SIN_CUPO]: (m) => new ConflictException({ codigo: CODIGOS_VENTAS.SIN_CUPO, mensaje: m }),
   [CODIGOS_VENTAS.CATEGORIA_NO_VALIDA]: (m) =>
     new BadRequestException({ codigo: CODIGOS_VENTAS.CATEGORIA_NO_VALIDA, mensaje: `categoria_id: ${m}` }),
+  [CODIGOS_VENTAS.ASIENTO_NO_EXISTE]: (m) =>
+    new NotFoundException({ codigo: CODIGOS_VENTAS.ASIENTO_NO_EXISTE, mensaje: m }),
+  [CODIGOS_VENTAS.BUTACA_NO_DISPONIBLE]: (m) =>
+    new ConflictException({ codigo: CODIGOS_VENTAS.BUTACA_NO_DISPONIBLE, mensaje: m }),
   [CODIGOS_VENTAS.ORDEN_NO_ENCONTRADA]: (m) =>
     new NotFoundException({ codigo: CODIGOS_VENTAS.ORDEN_NO_ENCONTRADA, mensaje: m }),
   [CODIGOS_VENTAS.ORDEN_NO_PENDIENTE]: (m) => ordenNoPendiente(m),
