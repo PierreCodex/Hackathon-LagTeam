@@ -140,6 +140,13 @@ export function rutaComprar(eventoId: string, ref?: string | string[]): string {
   return codigo ? `${base}?ref=${encodeURIComponent(codigo)}` : base;
 }
 
+/** Mapa de butacas del evento (2.11), conservando el `ref` de la pieza si llegó por un enlace rastreable. */
+export function rutaButacas(eventoId: string, ref?: string | string[]): string {
+  const codigo = primero(ref);
+  const base = `/eventos/${eventoId}/butacas`;
+  return codigo ? `${base}?ref=${encodeURIComponent(codigo)}` : base;
+}
+
 /** Céntimos de PEN → "S/ 25" o "S/ 25.50". */
 export function soles(centimos: number): string {
   const soles = centimos / 100;
