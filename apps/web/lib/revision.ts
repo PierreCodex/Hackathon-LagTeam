@@ -39,13 +39,26 @@ export const ESTADO_EVENTO: Record<EstadoEvento, { simbolo: string; texto: strin
 };
 
 /**
- * Texto del estado en Mis eventos. Un aprobado sin publicar dice qué le falta (la 2.9 pondrá el botón);
- * uno ya publicado (los de la semilla) lo dice.
+ * Texto del estado en Mis eventos. Un aprobado sin publicar dice qué le falta (el botón de `accionButacas`
+ * lleva a la pizarra); uno ya publicado (los de la semilla) lo dice.
  */
 export function textoEstadoOrganizador(evento: Pick<EventoRevision, "estado" | "publicado">): string {
   const base = ESTADO_EVENTO[evento.estado].texto;
   if (evento.estado !== "aprobado") return base;
   return evento.publicado ? `${base} · Publicado` : `${base} · Falta armar el mapa y publicar`;
+}
+
+/**
+ * Botón de la tarjeta en Mis eventos hacia la pizarra de la sede del evento. Pendiente o aprobado sin
+ * publicar: "Armar butacas" (el mapa aún se puede editar). Publicado: "Ver butacas" (el mapa está cerrado).
+ * Rechazado: sin botón.
+ */
+export function accionButacas(
+  evento: Pick<EventoRevision, "estado" | "publicado" | "sede_id">,
+): { texto: string; href: string } | null {
+  if (evento.estado === "rechazado") return null;
+  const href = `/organizador/sedes/${evento.sede_id}/mapa`;
+  return { texto: evento.publicado ? "Ver butacas" : "Armar butacas", href };
 }
 
 /** Quita de la lista el evento que otra sesión ya decidió. */

@@ -226,10 +226,14 @@ describe("Mis eventos (1.10)", () => {
     expect(html).toContain("Completar la descripción del programa.");
   });
 
-  it("aprobado sin publicar → Falta armar el mapa y publicar, sin enlace", () => {
+  it("aprobado sin publicar → Falta armar el mapa y publicar, con Armar butacas hacia la pizarra de su sede", () => {
     const html = pintarFila({ ...PENDIENTE, estado: "aprobado" });
     expect(html).toContain("Aprobado · Falta armar el mapa y publicar");
-    expect(html).not.toContain("<a ");
+    expect(html).toMatch(new RegExp(`<a [^>]*href="/organizador/sedes/${PENDIENTE.sede_id}/mapa"[^>]*>Armar butacas</a>`));
+  });
+
+  it("rechazado → sin botón de butacas", () => {
+    expect(pintarFila({ ...PENDIENTE, estado: "rechazado", motivo_rechazo: "x" })).not.toContain("butacas");
   });
 
   const pintarContenido = (eventos: EventoRevision[], error?: ErrorApi) =>

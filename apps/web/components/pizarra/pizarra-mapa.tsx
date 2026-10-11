@@ -2,7 +2,17 @@
 
 import { LIMITES_MAPA, MapaSedeSchema, type MapaSede } from "@reto18/shared";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type ChangeEvent,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { Aviso, Boton, BotonEnlace, Campo, Tarjeta } from "@/components/ui";
 import { pedirApi } from "@/lib/api";
 import { clases } from "@/lib/clases";
@@ -39,18 +49,26 @@ export type PizarraMapaProps = {
   apiUrl: string;
 };
 
+/** Lado de una butaca en px, por paso del control de tamaño: el último cumple el mínimo táctil de 48 px. */
+const TAMANOS_BUTACA = [28, 36, 48] as const;
+
 const MENSAJE_SIN_SESION = "Tu sesión se cerró. Recarga la página para ingresar de nuevo.";
 
 function evitarEnvioEnter(e: KeyboardEvent<HTMLInputElement>) {
   if (e.key === "Enter") e.preventDefault();
 }
 
-/** Pizarra visual del mapa de la sede (historia 2.9): secciones → filas → bloques → asientos. */
+/**
+ * Pizarra visual del mapa de la sede (historia 2.9): un lienzo oscuro con forma de sala (escenario arriba,
+ * secciones en tarjetas, filas centradas) donde se edita sobre el mapa: tocar una butaca la quita, "+" al
+ * final de cada bloque añade una y el hueco entre bloques es el pasillo.
+ */
 export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [estado, setEstado] = useState<EstadoPizarra>(() => (mapaInicial ? aMapaInicial(mapaInicial) : estadoInicialPizarra()));
   const [modoActual, setModoActual] = useState(modo);
+  const [paso, setPaso] = useState(0);
   const [sedeIdActual, setSedeIdActual] = useState(sedeId);
 
   const [errorLocal, setErrorLocal] = useState<{ campo: string | null; mensaje: string } | null>(null);
@@ -64,6 +82,13 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
   const [duplicarEnviando, setDuplicarEnviando] = useState(false);
 
   const foco = useRef<string | null>(null);
+  const lienzo = useRef<HTMLDivElement>(null);
+
+  // El lienzo abre centrado (escenario y pasillo central a la vista) y se vuelve a centrar al cambiar el tamaño.
+  useEffect(() => {
+    const el = lienzo.current;
+    if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  }, [paso]);
 
   useEffect(() => {
     const id = foco.current;
@@ -198,6 +223,10 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
     limpiarErrores();
   }
 
+  const totalButacas = estado.secciones.reduce(
+    (suma, s) => suma + s.filas.reduce((sf, f) => sf + f.bloques.reduce((sb, b) => sb + b.asientos.length, 0), 0),
+    0,
+  );
   const topeSecciones = estado.secciones.length + estado.zonasGenerales.length >= LIMITES_MAPA.secciones;
 
   return (
@@ -304,97 +333,223 @@ export function PizarraMapa({ modo, sedeId, mapaInicial, apiUrl }: PizarraMapaPr
           />
         </Tarjeta>
 
-        <div className="flex flex-col gap-4">
-          {estado.secciones.map((seccion, i) => (
-            <Tarjeta key={seccion.id} como="section" aria-labelledby={`titulo-seccion-${i}`} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 id={`titulo-seccion-${i}`} className="sr-only">
-                  Sección {i + 1}
-                </h3>
-                <Campo
-                  id={idCampoSeccionNombre(i)}
-                  etiqueta={`Nombre de la sección ${i + 1}`}
-                  maxLength={60}
-                  value={seccion.nombre}
-                  onChange={(e) => cambiarNombreSeccion(seccion.id, e.target.value)}
-                  onKeyDown={evitarEnvioEnter}
-                  error={camposConError[idCampoSeccionNombre(i)]}
-                  className="flex-1"
-                />
-                <Boton
-                  variante="secundario"
-                  onClick={() => {
-                    setEstado((a) => quitarSeccion(a, seccion.id));
-                    limpiarErrores();
-                  }}
-                >
-                  Quitar sección
-                </Boton>
-              </div>
+        <section
+          aria-label="Pizarra del mapa"
+          className="superficie-inversa flex flex-col overflow-hidden rounded-md bg-surface-inverse text-ink-on-inverse"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-inverse px-4 py-3">
+            <p className="text-meta text-ink-on-inverse-secondary">
+              <span className="text-body text-ink-on-inverse">{totalButacas}</span> {totalButacas === 1 ? "butaca" : "butacas"}
+              {" · "}
+              Toca una butaca para quitarla
+            </p>
+            <div className="flex items-center gap-2" role="group" aria-label="Tamaño de las butacas">
+              <BotonLienzo
+                aria-label="Butacas más pequeñas"
+                disabled={paso === 0}
+                onClick={() => setPaso((p) => Math.max(0, p - 1))}
+              >
+                −
+              </BotonLienzo>
+              <BotonLienzo
+                aria-label="Butacas más grandes"
+                disabled={paso === TAMANOS_BUTACA.length - 1}
+                onClick={() => setPaso((p) => Math.min(TAMANOS_BUTACA.length - 1, p + 1))}
+              >
+                +
+              </BotonLienzo>
+            </div>
+          </div>
 
-              <div className="flex flex-col gap-3">
-                {seccion.filas.map((fila, j) => (
-                  <FilaPizarra
-                    key={fila.id}
-                    fila={fila}
-                    i={i}
-                    j={j}
-                    camposConError={camposConError}
-                    puedeQuitarFila={seccion.filas.length > 1}
-                    onCambiarNombre={(valor) => cambiarNombreFila(seccion.id, fila.id, valor)}
-                    onQuitarFila={() => {
-                      setEstado((a) => quitarFila(a, seccion.id, fila.id));
+          <div ref={lienzo} className="overflow-x-auto">
+            <div
+              className="flex min-w-max flex-col items-center gap-6 px-4 py-6"
+              style={{ "--butaca": `${TAMANOS_BUTACA[paso]}px` } as CSSProperties}
+            >
+              <p className="w-full border-y border-border-inverse py-2 text-center text-meta tracking-[0.4em] text-ink-on-inverse-secondary">
+                ESCENARIO
+              </p>
+
+              {estado.secciones.map((seccion, i) => (
+                <div
+                  key={seccion.id}
+                  role="group"
+                  aria-labelledby={idCampoSeccionNombre(i)}
+                  className="flex w-full flex-col items-center gap-2 rounded-md border border-border-inverse bg-surface-inverse-raised px-4 py-4"
+                >
+                  <div className="flex w-full items-start justify-center gap-2">
+                    <NombreEnLienzo
+                      id={idCampoSeccionNombre(i)}
+                      etiqueta={`Nombre de la sección ${i + 1}`}
+                      placeholder="Nombre de la sección"
+                      maxLength={60}
+                      value={seccion.nombre}
+                      onChange={(valor) => cambiarNombreSeccion(seccion.id, valor)}
+                      error={camposConError[idCampoSeccionNombre(i)]}
+                      className="w-64 text-center text-body"
+                    />
+                    <BotonLienzo
+                      aria-label={`Quitar sección ${seccion.nombre || i + 1}`}
+                      title="Quitar sección"
+                      onClick={() => {
+                        setEstado((a) => quitarSeccion(a, seccion.id));
+                        limpiarErrores();
+                      }}
+                    >
+                      ✕
+                    </BotonLienzo>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1">
+                    {seccion.filas.map((fila, j) => (
+                      <FilaPizarra
+                        key={fila.id}
+                        fila={fila}
+                        i={i}
+                        j={j}
+                        camposConError={camposConError}
+                        puedeQuitarFila={seccion.filas.length > 1}
+                        onCambiarNombre={(valor) => cambiarNombreFila(seccion.id, fila.id, valor)}
+                        onQuitarFila={() => {
+                          setEstado((a) => quitarFila(a, seccion.id, fila.id));
+                          limpiarErrores();
+                        }}
+                        onAgregarBloque={() => {
+                          setEstado((a) => agregarBloque(a, seccion.id, fila.id));
+                          limpiarErrores();
+                        }}
+                        onQuitarBloque={(bloqueId) => {
+                          setEstado((a) => quitarBloque(a, seccion.id, fila.id, bloqueId));
+                          limpiarErrores();
+                        }}
+                        onAgregarAsiento={(bloqueId) => {
+                          setEstado((a) => agregarAsiento(a, seccion.id, fila.id, bloqueId));
+                          limpiarErrores();
+                        }}
+                        onQuitarAsiento={(bloqueId, asientoId) => {
+                          setEstado((a) => quitarAsiento(a, seccion.id, fila.id, bloqueId, asientoId));
+                          limpiarErrores();
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <BotonLienzo
+                    punteado
+                    className="mt-2 px-4"
+                    disabled={seccion.filas.length >= LIMITES_MAPA.filasPorSeccion}
+                    onClick={() => {
+                      setEstado((a) => crearFila(a, seccion.id));
                       limpiarErrores();
                     }}
-                    onAgregarBloque={() => {
-                      setEstado((a) => agregarBloque(a, seccion.id, fila.id));
-                      limpiarErrores();
-                    }}
-                    onQuitarBloque={(bloqueId) => {
-                      setEstado((a) => quitarBloque(a, seccion.id, fila.id, bloqueId));
-                      limpiarErrores();
-                    }}
-                    onAgregarAsiento={(bloqueId) => {
-                      setEstado((a) => agregarAsiento(a, seccion.id, fila.id, bloqueId));
-                      limpiarErrores();
-                    }}
-                    onQuitarAsiento={(bloqueId, asientoId) => {
-                      setEstado((a) => quitarAsiento(a, seccion.id, fila.id, bloqueId, asientoId));
-                      limpiarErrores();
-                    }}
-                  />
-                ))}
-              </div>
+                  >
+                    + Agregar fila
+                  </BotonLienzo>
+                </div>
+              ))}
 
               <Boton
-                variante="secundario"
-                disabled={seccion.filas.length >= LIMITES_MAPA.filasPorSeccion}
+                variante="inverso"
+                disabled={topeSecciones}
                 onClick={() => {
-                  setEstado((a) => crearFila(a, seccion.id));
+                  setEstado((a) => crearSeccion(a));
                   limpiarErrores();
                 }}
               >
-                Agregar fila
+                + Agregar sección
               </Boton>
-            </Tarjeta>
-          ))}
-        </div>
-
-        <Boton
-          variante="secundario"
-          disabled={topeSecciones}
-          onClick={() => {
-            setEstado((a) => crearSeccion(a));
-            limpiarErrores();
-          }}
-        >
-          Agregar sección
-        </Boton>
+            </div>
+          </div>
+        </section>
 
         <Boton type="submit" disabled={guardando} anchoCompleto className="sm:w-auto">
           {guardando ? "Guardando…" : "Guardar"}
         </Boton>
       </form>
+    </div>
+  );
+}
+
+/** Botón compacto del lienzo oscuro (tamaño de butaca, quitar, agregar fila). */
+function BotonLienzo({
+  punteado,
+  className,
+  ...resto
+}: ButtonHTMLAttributes<HTMLButtonElement> & { punteado?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={clases(
+        "inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-sm border text-meta",
+        punteado ? "border-dashed border-ink-on-inverse-secondary" : "border-border-inverse",
+        "text-ink-on-inverse-secondary hover:border-ink-on-inverse hover:text-ink-on-inverse",
+        "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border-inverse",
+        className,
+      )}
+      {...resto}
+    />
+  );
+}
+
+/** Nombre editable dentro del lienzo (sección o fila), con su error debajo y el mismo id que señala la API. */
+function NombreEnLienzo({
+  id,
+  etiqueta,
+  placeholder,
+  maxLength,
+  value,
+  onChange,
+  error,
+  className,
+  errorFlotante,
+}: {
+  id: string;
+  etiqueta: string;
+  placeholder: string;
+  maxLength: number;
+  value: string;
+  onChange: (valor: string) => void;
+  error?: string;
+  className?: string;
+  /** El error flota bajo el campo, sin mover la fila (nombres de fila). */
+  errorFlotante?: boolean;
+}) {
+  const idError = error ? `${id}-error` : undefined;
+  return (
+    <div className="relative flex flex-col items-center gap-1">
+      <input
+        id={id}
+        aria-label={etiqueta}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={idError}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={evitarEnvioEnter}
+        className={clases(
+          "h-8 rounded-sm border bg-transparent px-1 text-ink-on-inverse placeholder:text-ink-muted",
+          "hover:border-border-inverse focus:border-ink-on-inverse",
+          error ? "border-accent" : "border-transparent",
+          className,
+        )}
+      />
+      {error && (
+        <p
+          id={idError}
+          className={clases(
+            "text-meta text-ink-on-inverse",
+            errorFlotante
+              ? "absolute top-full left-0 z-10 mt-1 w-56 rounded-sm border border-border-inverse bg-surface-inverse p-2"
+              : "max-w-64 text-center",
+          )}
+        >
+          <span aria-hidden="true" className="text-accent">
+            ✕{" "}
+          </span>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -427,70 +582,90 @@ function FilaPizarra({
   const numeros = numerosDeFila(fila);
   const idCampo = idCampoFilaNombre(i, j);
   const totalAsientos = fila.bloques.reduce((suma, b) => suma + b.asientos.length, 0);
+  const nombre = fila.nombre || String(j + 1);
 
   return (
-    <div className="flex flex-col gap-2 rounded-sm border border-border-hairline p-3">
-      <div className="flex items-center justify-between gap-3">
-        <Campo
-          id={idCampo}
-          etiqueta={`Nombre de la fila ${j + 1}`}
-          maxLength={20}
-          value={fila.nombre}
-          onChange={(e) => onCambiarNombre(e.target.value)}
-          onKeyDown={evitarEnvioEnter}
-          error={camposConError[idCampo]}
-          className="max-w-xs flex-1"
-        />
-        {puedeQuitarFila && (
-          <Boton variante="secundario" onClick={onQuitarFila}>
-            Quitar fila
-          </Boton>
-        )}
-      </div>
+    <div className="group flex items-start gap-2">
+      <NombreEnLienzo
+        id={idCampo}
+        etiqueta={`Nombre de la fila ${j + 1}`}
+        placeholder="Fila"
+        maxLength={20}
+        value={fila.nombre}
+        onChange={onCambiarNombre}
+        error={camposConError[idCampo]}
+        errorFlotante
+        className="w-10 text-center text-meta"
+      />
 
-      <div className="flex flex-wrap items-start gap-4">
+      <div className="flex items-center">
         {fila.bloques.map((bloque: EstadoBloque, k) => (
-          <div key={bloque.id} className="flex flex-col gap-2 rounded-sm border border-border-hairline p-2">
-            <div className="flex flex-wrap gap-1">
-              {bloque.asientos.map((asiento, a) => (
-                <button
-                  key={asiento.id}
-                  type="button"
-                  aria-label={`Quitar asiento ${numeros[k]?.[a]}`}
-                  disabled={bloque.asientos.length <= 1}
-                  onClick={() => onQuitarAsiento(bloque.id, asiento.id)}
-                  className={clases(
-                    "flex size-8 shrink-0 items-center justify-center rounded-sm border border-ink-muted bg-seat-held text-meta text-ink-on-inverse",
-                    bloque.asientos.length <= 1 ? "cursor-not-allowed opacity-70" : "hover:border-ink-primary",
-                  )}
-                >
-                  {numeros[k]?.[a]}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Boton
-                variante="secundario"
+          <Fragment key={bloque.id}>
+            {k > 0 && (
+              <button
+                type="button"
+                aria-label={`Quitar pasillo ${k} de la fila ${nombre}`}
+                title="Quitar pasillo (y sus butacas de la derecha)"
+                onClick={() => onQuitarBloque(bloque.id)}
+                className="mx-1 flex h-(--butaca) w-[calc(var(--butaca)*0.75)] items-center justify-center rounded-sm hover:bg-surface-inverse"
+              >
+                <span aria-hidden="true" className="h-full w-px bg-border-inverse" />
+              </button>
+            )}
+            <div className="flex items-center gap-0.5">
+              {bloque.asientos.map((asiento, a) => {
+                const unico = bloque.asientos.length <= 1;
+                return (
+                  <button
+                    key={asiento.id}
+                    type="button"
+                    aria-label={`Quitar asiento ${numeros[k]?.[a]} de la fila ${nombre}`}
+                    disabled={unico}
+                    onClick={() => onQuitarAsiento(bloque.id, asiento.id)}
+                    className={clases(
+                      "flex size-(--butaca) shrink-0 items-center justify-center rounded-sm bg-seat-held",
+                      "text-[calc(var(--butaca)*0.4)] leading-none text-ink-on-inverse",
+                      unico ? "cursor-not-allowed opacity-70" : "hover:bg-state-error",
+                    )}
+                  >
+                    {numeros[k]?.[a]}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                aria-label={`Añadir asiento al bloque ${k + 1} de la fila ${nombre}`}
                 disabled={totalAsientos >= LIMITES_MAPA.asientosPorFila}
                 onClick={() => onAgregarAsiento(bloque.id)}
+                className={clases(
+                  "ml-0.5 flex h-(--butaca) w-[calc(var(--butaca)*0.6)] shrink-0 items-center justify-center rounded-sm border border-dashed border-ink-on-inverse-secondary",
+                  "text-[calc(var(--butaca)*0.5)] leading-none text-ink-on-inverse-secondary",
+                  "hover:border-ink-on-inverse hover:text-ink-on-inverse disabled:cursor-not-allowed disabled:opacity-40",
+                )}
               >
-                + asiento
-              </Boton>
-              {fila.bloques.length > 1 && (
-                <Boton variante="secundario" onClick={() => onQuitarBloque(bloque.id)}>
-                  Quitar pasillo
-                </Boton>
-              )}
+                +
+              </button>
             </div>
-          </div>
+          </Fragment>
         ))}
-        <Boton
-          variante="secundario"
+      </div>
+
+      <div className="flex items-center gap-1 opacity-60 group-focus-within:opacity-100 group-hover:opacity-100">
+        <BotonLienzo
+          className="gap-1 px-2"
+          aria-label={`Añadir pasillo a la fila ${nombre}`}
+          title="Añadir pasillo"
           disabled={fila.bloques.length >= LIMITES_MAPA.asientosPorFila}
           onClick={onAgregarBloque}
         >
-          + pasillo
-        </Boton>
+          <span aria-hidden="true">+</span>
+          <span aria-hidden="true" className="h-4 w-px bg-current" />
+        </BotonLienzo>
+        {puedeQuitarFila && (
+          <BotonLienzo aria-label={`Quitar fila ${nombre}`} title="Quitar fila" onClick={onQuitarFila}>
+            ✕
+          </BotonLienzo>
+        )}
       </div>
     </div>
   );
