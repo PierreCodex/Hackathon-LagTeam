@@ -21,7 +21,7 @@ import {
 const AHORA = Date.parse("2026-10-10T12:00:00-05:00");
 const SEDE_SEMBRADA = "11111111-1111-4111-8111-111111111111";
 const SEDES = [
-  { id: SEDE_SEMBRADA, nombre: "Teatro Municipal", direccion: "Av. Grau 100", distrito: "Piura", capacidad: 643 },
+  { id: SEDE_SEMBRADA, nombre: "Teatro Municipal", direccion: "Av. Grau 100", distrito: "Piura", capacidad: 643, propia: true },
 ];
 const FOTO = { size: 1024, type: "image/jpeg", name: "foto.jpg" };
 const PDF = { size: 2048, type: "application/pdf", name: "constancia.pdf" };
