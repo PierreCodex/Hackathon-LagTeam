@@ -48,6 +48,7 @@ graph TD
     ventas --> notificaciones
     acceso --> ventas
     marketing --> eventos
+    marketing --> ventas
     marketing --> ia
     marketing --> notificaciones
     negocio --> ventas
